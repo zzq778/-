@@ -33,7 +33,7 @@ export async function handleApi(request,env) {
   const {actions,sources}=actionBundle(topics);
   const messages = [ {role:'system',content:buildSystemPrompt(region,topics)}, ...history, {role:'user',content:question} ];
   try {
-    const result = await env.AI.run(MODEL,{messages,max_tokens:450,temperature:0.25});
+    const result = await env.AI.run(MODEL,{messages,max_completion_tokens:900,temperature:0.25,chat_template_kwargs:{enable_thinking:false}});
     const text = (typeof result?.response==='string' ? result.response : typeof result?.output_text==='string' ? result.output_text : typeof result?.choices?.[0]?.message?.content==='string' ? result.choices[0].message.content : '').trim();
     if (!text) return reply({error:'EMPTY_AI',message:'模型未返回有效回答，请重试'},502);
     return reply({text,region,model:MODEL,actions,sources,disclaimer:'学生竞赛项目 · 具体政策及办理要求请以官方渠道为准'});
