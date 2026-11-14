@@ -129,9 +129,13 @@ export async function handleApi(request,env) {
   const guideKey = payload?.context?.guide;
   const pageName = typeof tabKey === 'string' && Object.hasOwn(safeTabs, tabKey) ? safeTabs[tabKey] : '首页';
   const guideName = typeof guideKey === 'string' && Object.hasOwn(safeGuides, guideKey) ? safeGuides[guideKey] : '';
+  const selectedTask=payload?.context?.task;
+  const taskId=typeof selectedTask?.id==='string'&&Object.hasOwn(safeGuides,selectedTask.id)?selectedTask.id:null;
+  const understood=Number.isInteger(selectedTask?.understood)&&selectedTask.understood>=0&&selectedTask.understood<=3?selectedTask.understood:null;
+  const taskContext=taskId!==null&&understood!==null?` 用户本机保留了${safeGuides[taskId]}导办清单，标记已了解 ${understood}/3 步。该状态只是阅读标记，不是政府办理进度。`:'';
   const topics = relevantTopics(finalQuestion);
   const {actions,sources}=actionBundle(topics);
-  const pageContext = `\n应用上下文：用户当前位于${pageName}${guideName?'，正在浏览'+guideName:''}。可以建议应用内现有导办入口，但不得声称已在政府网站替用户操作。`;
+  const pageContext = `\n应用上下文：用户当前位于${pageName}${guideName?'，正在浏览'+guideName:''}。${taskContext}可以建议应用内现有导办入口，但不得声称已在政府网站替用户操作。`;
   const messages = [ {role:'system',content:buildSystemPrompt(region,topics)+pageContext}, ...history, {role:'user',content:finalQuestion} ];
   try {
     let text,usedModel=MODEL;

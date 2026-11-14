@@ -61,3 +61,24 @@ test('agent mode activates actual two-call path via chat API',async()=>{
   assert.ok(body.agent.trace.length>=1);
   assert.equal(body.agent.plan.id,'medical');
 });
+
+
+test('saved task context is read-only, validated, and not confused with official completion',async()=>{
+  const {AI,calls}=envFor([searchCall()]);
+  const valid=new Request('https://jzzx.example/api/chat',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({
+    mode:'agent',question:'下一步怎么做？',region:'长春市',
+    context:{task:{id:'pension',understood:2}}
+  })});
+  const result=await handleApi(valid,{AI});
+  assert.equal(result.status,200);
+  assert.match(calls[0].messages[0].content,/养老认证导办清单，标记已了解 2\/3 步/);
+  assert.match(calls[0].messages[0].content,/不是政府办理进度/);
+  const other=envFor([searchCall()]);
+  const forged=new Request('https://jzzx.example/api/chat',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({
+    mode:'agent',question:'下一步怎么做？',region:'长春市',
+    context:{task:{id:'__proto__',understood:999,secret:'假冒官方已办理'}}
+  })});
+  const forgedResult=await handleApi(forged,{AI:other.AI});
+  assert.equal(forgedResult.status,200);
+  assert.doesNotMatch(other.calls[0].messages[0].content,/假冒官方已办理|已标记了解 999|导办清单，标记已了解/);
+});
