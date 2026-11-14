@@ -24,3 +24,18 @@
 input:focus-visible{outline:none!important}
 .search-field:focus-within{border-color:#bdd0e9;box-shadow:0 0 0 2px rgba(67,108,180,.13)}
 .input-row:focus-visible{border-color:#bdd0e9;box-shadow:0 0 0 2px rgba(67,108,180,.13)}
+/* 个人信息：性别/年龄用滚轮吸附选择，其余字段直接输入 */
+.personal-form{display:grid;gap:14px}
+.personal-field{display:grid;gap:8px;min-width:0}
+.personal-field>span{font-size:12px;font-weight:700;color:#5a6b82;letter-spacing:.3px}
+.wheel-row{position:relative;display:flex;justify-content:center;border:1px solid #e4ebf4;border-radius:16px;background:#fafcff;overflow:hidden}
+.wheel{width:100%;height:132px;overflow-y:auto;scroll-snap-type:y mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none;outline:none}
+.wheel::-webkit-scrollbar{display:none}
+.wheel-option{display:flex;align-items:center;justify-content:center;width:100%;height:44px;scroll-snap-align:center;border:0;background:transparent;color:#a3b0c0;font-size:15px;font-weight:600;transition:color .15s ease,font-size .15s ease}
+.wheel-option.on{color:#16243c;font-size:20px;font-weight:800}
+.wheel-pad{display:block;height:44px}
+.wheel-band{position:absolute;left:8px;right:8px;top:44px;height:44px;border-top:1px solid #dfe7f2;border-bottom:1px solid #dfe7f2;border-radius:12px;background:linear-gradient(180deg,rgba(35,77,158,.06),rgba(35,77,158,.02));pointer-events:none}
+.wheel-row:after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,#fafcff 0%,rgba(250,252,255,0) 34%,rgba(250,252,255,0) 66%,#fafcff 100%)}
+.personal-form .primary{margin-top:4px}
+.elder .wheel-option{font-size:17px}
+.elder .wheel-option.on{font-size:22px}
