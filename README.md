@@ -46,6 +46,7 @@
 
 - **真实 AI**：需要部署完成、Workers AI 绑定可用、网络通畅；本地 `content://downloads` 或 `file://` 打开只会显示明确错误，不会伪造 AI 回答。
 - **知识库 v0.5**：仅为六类政务事项的官方入口级检索，不是最新政策全文 RAG。`src/knowledge.mjs` 写明了已知路径和可点击按钮；要求 AI 不编造具体补贴金额、办理时间等细节。
+- **政策解读库**：`public/policies.js` 收录 6 条政策（医保缴费、失能老人补贴、创业担保贷款、营商环境行动方案、新生儿“一件事”、医保事项下沉），标题、发文机关、文号、发布日期、原文链接均取自 `xxgk.jl.gov.cn` 信息公开页并逐条打开核对（核对日期写在数据文件里）。**“一句话读懂 / 谁用得上 / 怎么做 / 容易误解的点”由参赛项目组撰写，不是官方解释**；页面同时给出原文按钮，办理要求以官方口径为准。仅允许跳转 `*.jl.gov.cn`，其他域名在点击时拦截。
 - **官方入口**：吉林省人民政府 `https://www.jl.gov.cn/`；吉林省网上办事大厅 `https://zwfw.jl.gov.cn/jljhszwfww/`。这些是门户入口，不能当成具体事项的直接办理链接。
 - **应用内操作**：仅允许固定白名单动作 `guide`, `tab`, `official`。**AI 模型不能直接执行任意 JS、打开任意网页、提交政府业务。**
 - **个人信息**：尚无注册登录；用户不应输入身份证号、医保卡号、密码、短信验证码等。用户的提问会发送至 Cloudflare Workers AI 处理。
@@ -57,13 +58,14 @@
 | 文件 | 用途 |
 |---|---|
 | `public/app.js` | 手机交互、AI 聊天请求、站内跳转 |
+| `public/policies.js` | 政策解读库（6 条，逐条对应省政府信息公开原文） |
 | `public/styles.css` | v0.4 已确认的美术基线 |
 | `public/index.html` | 首页入口 |
 | `public/sw.js` | 静态资源离线缓存，API 永不缓存 |
 | `src/knowledge.mjs` | 官方入口、地区列表、政务主题、提示词 |
 | `src/worker.mjs` | AI 服务端、输入校验、限流、错误处理 |
 | `wrangler.jsonc` | Cloudflare 部署、静态资源和 AI 绑定 |
-| `tests/worker.test.mjs` | Node 内置测试 10 项 |
+| `tests/worker.test.mjs` | Node 内置测试（后端 + 政策库共 19 项） |
 | `tests/browser_flow.py` | Playwright 前端模拟测试脚本 |
 
 ## 5. 三人分工建议
@@ -91,7 +93,8 @@ POST /api/chat
 
 ## 6. 实测状态
 
-- `node --test tests/*.test.mjs`：10/10 通过；采用假的 AI binding，不代表真实模型效果。
+- `node --test tests/*.test.mjs`：19/19 通过（后端 10 项 + 政策库 9 项）；采用假的 AI binding，不代表真实模型效果。
+- 政策解读页：用无头 Chrome 在 320/390px 视口下点开「政务服务 → 政策解读 → 条目」，确认 6 条列表、5 个解读区块、原文按钮、非官方域名拦截、无 JS 报错、无横向溢出（一次性脚本，未入库）。
 - `python tests/browser_flow.py`：320、390、430px 视口、交互、API 模拟回复、站内按钮跳转、失败提示全部通过；测试运行器会在测试副本中跳过 `about:blank` 的 HTTPS 协议校验，**未修改生产文件的协议限制**。
 - **尚未验证**：真机网络延迟、云端模型中文回复质量、Cloudflare 部署授权后的真实推理、竞赛现场网络。
 
