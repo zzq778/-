@@ -1,5 +1,6 @@
 import { REGIONS, relevantTopics, actionBundle, buildSystemPrompt } from './knowledge.mjs';
 import { DIRECT_BYTES, filePolicy, handleUploadApi, openLargeFile, streamMultipartFile } from './uploads.mjs';
+import { runCivicAgent } from './agent.mjs';
 
 const MODEL = '@cf/zai-org/glm-4.7-flash';
 const FILE_MODEL = 'deepseek-flash';
@@ -134,19 +135,23 @@ export async function handleApi(request,env) {
   const messages = [ {role:'system',content:buildSystemPrompt(region,topics)+pageContext}, ...history, {role:'user',content:finalQuestion} ];
   try {
     let text,usedModel=MODEL;
+    let agentResult=null;
     if(attachment||largeFile){
       const input=attachment||{name:largeFile.session.name,size:largeFile.session.size};
       const outcome=await askWithFile(env,input,finalQuestion,messages,largeFile);
       if(outcome.error)return reply({error:outcome.error,message:outcome.message,actions,sources},outcome.status);
       text=outcome.text;usedModel=outcome.model;
+    } else if(payload?.mode==='agent') {
+      agentResult=await runCivicAgent(env,{question:finalQuestion,region,history,pageContext});
+      text=agentResult.text;usedModel=agentResult.model;
     } else {
       const result = await env.AI.run(MODEL,{messages,max_completion_tokens:900,temperature:0.25,chat_template_kwargs:{enable_thinking:false}});
       text=(typeof result?.response==='string' ? result.response : typeof result?.output_text==='string' ? result.output_text : typeof result?.choices?.[0]?.message?.content==='string' ? result.choices[0].message.content : '').trim();
     }
     const cleaned = normalizeAiAnswer(text);
     if (!cleaned) return reply({error:'EMPTY_AI',message:'模型未返回有效回答，请重试'},502);
-    const links=(attachment||largeFile)?actionBundle(relevantTopics(finalQuestion+' '+cleaned)):{actions,sources};
-    return reply({text:cleaned,region,model:usedModel,actions:links.actions,sources:links.sources,disclaimer:'非政府官方应用。具体办理要求请以政府官方渠道发布为准。'});
+    const links=agentResult?{actions:agentResult.actions,sources:agentResult.sources}:(attachment||largeFile)?actionBundle(relevantTopics(finalQuestion+' '+cleaned)):{actions,sources};
+    return reply({text:cleaned,region,model:usedModel,actions:links.actions,sources:links.sources,agent:agentResult?{trace:agentResult.trace,plan:agentResult.plan}:null,disclaimer:'非政府官方应用。具体办理要求请以政府官方渠道发布为准。'});
   } catch(e) {
     // 避免把上游服务内部错误、账户信息回传给客户端
     console.error('AI request failed', e?.name||'AIError');
