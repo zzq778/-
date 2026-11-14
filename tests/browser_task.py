@@ -17,6 +17,7 @@ requests=[]
 def build_page(browser,width,values):
     page=browser.new_page(viewport={'width':width,'height':844},device_scale_factor=1)
     page.set_default_timeout(5000)
+    page.set_default_timeout(5000)
     page.on('pageerror',lambda e:errors.append(str(e)))
     page.on('dialog',lambda d:d.accept())
     page.route('**/api/status',lambda r:r.fulfill(status=200,content_type='application/json',body=json.dumps({'ready':True})))
@@ -44,7 +45,6 @@ def build_page(browser,width,values):
 with sync_playwright() as pw:
     browser=pw.chromium.launch(executable_path='/usr/bin/chromium',args=['--no-sandbox','--disable-dev-shm-usage'])
     for width in [320,390,430]:
-        print('width start',width,flush=True)
         page=build_page(browser,width,{})
         assert page.locator('.saved-task').count()==0
         page.locator('[data-action="ai-full"]').first.click()
@@ -71,26 +71,26 @@ with sync_playwright() as pw:
         page.locator('#chatInput').press('Enter')
         page.locator('.agent-plan').wait_for(timeout=6000)
         assert requests[-1]['context']['task']=={'id':'pension','understood':1}
-        print('after second agent',width,flush=True)
         page.locator('[data-action="ai-close"]').first.click()
         if width==390:
+            page.evaluate("window.scrollTo({top:Math.max(0,document.querySelector('.saved-task').offsetTop-170),behavior:'instant'})")
+            page.wait_for_timeout(250)
             page.screenshot(path=str(ROOT/'v071-home-390.png'))
             page.locator('[data-action="task-open"]').first.click()
+            page.locator('.sheet').wait_for(state='visible')
+            page.wait_for_timeout(420)
             page.screenshot(path=str(ROOT/'v071-task-390.png'))
             page.locator('[data-action="modal-close"]').first.click()
-        print('before region',width,flush=True)
         page.locator('[data-action="regions"]').first.click()
         page.locator('[data-region="吉林市"]').click()
         assert '重新核对' in page.locator('.saved-task').inner_text()
         page.locator('[data-action="task-open"]').first.click()
         assert page.locator('.task-region-alert').count()==1
-        print('before delete',width,flush=True)
         page.locator('[data-action="task-delete"]').click()
         assert page.locator('.saved-task').count()==0
         assert page.evaluate('localStorage.getItem("jzzx-saved-guide-v1")') is None
         assert page.evaluate('document.documentElement.scrollWidth<=window.innerWidth'),width
         page.close()
-        print('done width',width,flush=True)
     browser.close()
 assert not errors,errors
 print('Saved task browser simulation PASS: 320/390/430px, save, restore, step, Agent context, region mismatch, deletion')
