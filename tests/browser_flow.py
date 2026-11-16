@@ -4,11 +4,13 @@ ROOT=Path(__file__).resolve().parents[1]/'public'
 html=(ROOT/'index.html').read_text()
 css=(ROOT/'styles.css').read_text()
 js=(ROOT/'app.js').read_text()
+policy_js=(ROOT/'policies.js').read_text()
 # Browser-only test harness: about:blank cannot represent a deployed HTTPS origin.
 # Bypass exactly the protocol guard in the in-memory test copy, retain production file unchanged.
 js=js.replace("if(!['https:','http:'].includes(location.protocol))throw new Error('当前从本地文件打开页面。要使用云端 AI，请将工程部署到 HTTPS 地址。');", "if(false)throw new Error('test');")
 mock='''<script>window.fetch=async(url,options)=>{if(String(url)==='/api/status')return new Response(JSON.stringify({ready:true}),{status:200,headers:{'content-type':'application/json'}});if(String(url)==='/api/chat'){const q=JSON.parse(options.body).question;if(q==='测试思考动画')await new Promise(r=>setTimeout(r,1250));if(q==='测试服务错误')return new Response(JSON.stringify({message:'服务暂不可用'}),{status:503,headers:{'content-type':'application/json'}});return new Response(JSON.stringify({text:'可以先通过吉事办查询长春市的医保报销事项。\\n\\n1. 点击下方「打开吉事办」进入官方平台。\\n2. 在网站内搜索「医保报销」，核对适用地区和办事条件。\\n3. 进入具体事项，按官方指南准备材料。\\n\\n具体报销范围和比例，请以当地医保部门公布的信息为准。',actions:[{type:'guide',value:'medical',label:'查看医保指南'},{type:'official',value:'hall',label:'打开吉事办官方入口'}]}),{status:200,headers:{'content-type':'application/json'}})}throw new Error('Unexpected URL')};</script>'''
 html=html.replace('<link rel="stylesheet" href="./styles.css" />','<style>'+css+'</style>')
+html=html.replace('<script defer src="./policies.js"></script>','<script>'+policy_js+'</script>')
 html=html.replace('<script defer src="./app.js"></script>',mock+'<script>'+js+'</script>')
 errors=[]
 with sync_playwright() as p:

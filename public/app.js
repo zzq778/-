@@ -142,6 +142,39 @@
   function heading(kicker,title,desc){return `${topbar()}<header class="page-header"><div class="eyebrow">${kicker}</div><h1 class="page-title">${title}</h1><p class="page-sub">${desc}</p></header>`}
   function filteredGuides(){return Object.values(guide).filter(x=>(state.filter==='all'||x.cat===state.filter)&&(!state.search||`${x.title} ${x.desc}`.includes(state.search)))}
   function serviceList(){return `<div class="service-list" id="serviceList">${filteredGuides().map(x=>`<button type="button" class="service-row" data-guide="${x.cat}"><span class="row-icon">${ico(kinds.find(a=>a[0]===x.cat)[3])}</span><span class="row-copy"><strong>${esc(x.title)}</strong><small>${esc(x.desc)}</small></span><span class="arrow">${ico('right')}</span></button>`).join('')||'<p class="page-sub">没有匹配的事项，试试其他关键词。</p>'}</div>`}
+  // 政策解读库：条目由 public/policies.js 提供，逐条对应省政府网已核验的原文页面。
+  // 若脚本缺失，页面退化为仅保留“政策文件查询”导办，不显示空列表。
+  const LIBRARY=(typeof window!=='undefined'&&window.POLICY_LIBRARY)||{};
+  const policies=Array.isArray(LIBRARY.items)?LIBRARY.items.filter(x=>x&&typeof x.id==='string'&&typeof x.title==='string'):[];
+  const policyById=new Map(policies.map(x=>[x.id,x]));
+  const policyVerifiedAt=typeof LIBRARY.verifiedAt==='string'?LIBRARY.verifiedAt:'';
+  const policyTopics={pension:'社保养老',medical:'医保健康',cert:'证件办理',policy:'政策文件',nearby:'办事网点',work:'就业便民'};
+  // 政策原文只允许跳转吉林省官方域名，其余一律拦截；这不是安全边界，只是减少误点与钓鱼风险。
+  const POLICY_HOST=/^https?:\/\/(?:[a-z0-9-]+\.)*(?:jl\.gov\.cn)(?::\d+)?(?:\/|$)/i;
+  function openPolicyUrl(url){
+    if(typeof url!=='string'||!POLICY_HOST.test(url)){notice('该链接不属于吉林省官方域名，已拦截');return}
+    const a=document.createElement('a');a.href=url;a.target='_blank';a.rel='noopener noreferrer';document.body.append(a);a.click();a.remove();
+  }
+  function policyRow(p){return `<button type="button" class="policy-row" data-policy="${esc(p.id)}"><span class="policy-tag">${esc(policyTopics[p.topic]||'政策')}</span><span class="policy-row-main"><strong>${esc(p.title)}</strong><small>${esc(p.issuer||'发文机关见原文')} · ${esc(p.publishedAt||'')}</small></span>${ico('right')}</button>`}
+  function policyListSheet(close){
+    const rows=policies.map(policyRow).join('');
+    return `<div class="sheet-header"><strong>政策解读</strong>${close}</div><p class="sheet-desc">共 ${policies.length} 条，逐条对应吉林省政府网原文${policyVerifiedAt?` · 最后核对 ${esc(policyVerifiedAt)}`:''}。每条政策的解读（一句话读懂等）由参赛项目组撰写，<b>不是官方解释</b>。</p><div class="policy-list">${rows}</div><div class="policy-actions"><button type="button" class="primary" data-policy-url="${esc(URLS.government)}zcxx/">前往省政府政策信息栏目 ${ico('external')}</button></div><p class="sheet-legal">仅提供政策入口与通俗解读，不代办、不审批、不代表政府立场；办理要求以官方原文及经办窗口为准。</p>`;
+  }
+  function policySheet(p,close){
+    const d=p.digest||{},actions=Array.isArray(d.actions)?d.actions:[],cautions=Array.isArray(d.cautions)?d.cautions:[],facts=Array.isArray(p.keyFacts)?p.keyFacts:[];
+    const meta=[esc(p.issuer||'发文机关见原文')];
+    if(p.docNo)meta.push(esc(p.docNo));
+    if(p.publishedAt)meta.push(`发布 ${esc(p.publishedAt)}`);
+    meta.push(`<span class="policy-tag">${esc(policyTopics[p.topic]||'政策')}</span>`);
+    return `<div class="sheet-header"><strong class="policy-sheet-title">${esc(p.title)}</strong>${close}</div><p class="policy-meta">${meta.join(' · ')}</p>
+    ${d.oneLine?`<div class="digest-block"><span class="digest-label">一句话读懂</span><p>${esc(d.oneLine)}</p></div>`:''}
+    ${d.who?`<div class="digest-block"><span class="digest-label">谁用得上</span><p>${esc(d.who)}</p></div>`:''}
+    ${actions.length?`<div class="digest-block"><span class="digest-label">居民可以怎么做</span><ol class="guide-steps">${actions.map((s,i)=>`<li><span class="step-circle">${i+1}</span><span>${esc(s)}</span></li>`).join('')}</ol></div>`:''}
+    ${cautions.length?`<div class="digest-block"><span class="digest-label">容易误解的点</span><ul class="digest-points">${cautions.map(s=>`<li>${esc(s)}</li>`).join('')}</ul></div>`:''}
+    ${facts.length?`<div class="digest-block"><span class="digest-label">原文关键信息</span><ul class="digest-points">${facts.map(s=>`<li>${esc(s)}</li>`).join('')}</ul></div>`:''}
+    <div class="policy-actions"><button type="button" class="primary" data-policy-url="${esc(p.url)}">阅读官方原文 ${ico('external')}</button><button type="button" class="secondary" data-action="policy-back">返回政策列表</button></div>
+    <p class="sheet-legal">解读内容由参赛项目组编写（核对日期 ${esc(policyVerifiedAt||'未标注')}），非官方解释；政策可能调整，办理前请以官方原文和经办机构答复为准。</p>`;
+  }
   function services(){return `${heading('01 / SERVICE DIRECTORY','政务服务','常见事项入口与操作步骤，先把路径理清楚。')}<div class="page-wrap"><label class="search-field">${ico('search')}<input id="searchInput" type="search" value="${esc(state.search)}" placeholder="搜索养老、医保、证件……" autocomplete="off" /></label><div class="filter-row"><button type="button" class="filter-pill ${state.filter==='all'?'active':''}" data-filter="all">全部</button>${kinds.map(([id,n])=>`<button type="button" data-filter="${id}" class="filter-pill ${state.filter===id?'active':''}">${esc(n)}</button>`).join('')}</div>${serviceList()}<p class="note-plain">仅提供事项目录与导办说明，不在本应用提交政务申请。</p></div>${fab()}`}
   function newsPage(){return `${heading('02 / VERIFIED SOURCES','政务资讯','把最新政策交给官方发布，把查找路径交给我们。')}<div class="page-wrap news-page"><p class="news-disclaimer">选择下方的官方信息渠道，查看政务动态和政策原文。</p><div class="news-list">${news.map((x,i)=>newsItem(x,i)).join('')}</div></div>${fab()}`}
   function profile(){return `${heading('03 / PERSONAL SETTINGS','我的设置','让政务服务更符合您的习惯。')}<div class="page-wrap"><div class="profile-card"><div class="profile-header"><div class="avatar">${esc((state.alias||'吉').slice(0,1))}</div><div><h3>${esc(state.alias||'访客，您好')}</h3><p>个人偏好仅保存在本机</p></div></div></div>${state.task?`<div class="profile-task">${taskCard()}</div>`:''}<div class="setting-list"><button type="button" class="setting" data-action="personal"><span>个人信息<br><small>${esc(window.JZZX_PROFILE?window.JZZX_PROFILE.summary(window.JZZX_PROFILE.load()):'性别、年龄、手机号、职业、单位')}</small></span>${ico('edit')}</button><button type="button" class="setting" data-action="alias"><span>我的称呼<br><small>只保存在本机</small></span>${ico('edit')}</button><button type="button" class="setting" data-action="regions"><span>当前地区<br><small>${esc(state.region)}</small></span>${ico('right')}</button><button type="button" class="setting" data-action="elder"><span>长辈模式<br><small>更大字号与清楚的操作入口</small></span><span class="switch ${state.elder?'on':''}"></span></button><button type="button" class="setting" data-action="motion"><span>动态效果<br><small>支持系统“减少动态”偏好</small></span><span class="switch ${state.motion?'on':''}"></span></button><button type="button" class="setting" data-action="voice-help"><span>麦克风与语音说明<br><small>如何在 Android 正确使用</small></span>${ico('right')}</button></div><p class="note-plain">吉政知行提供信息导办，不代替政府机关的正式办事服务。</p></div>${fab()}`}
@@ -152,10 +185,12 @@
     if(state.modal==='regions')body=`<div class="sheet-header"><strong>选择所在地区</strong>${close}</div><p class="sheet-desc">切换吉林省内市州。事项办理时请以官方系统的实际地区为准。</p><div class="region-grid">${regions.map(x=>`<button type="button" class="region-option ${x===state.region?'active':''}" data-region="${esc(x)}">${esc(x)}</button>`).join('')}</div>`;
     else if(state.modal==='alias')body=`<div class="sheet-header"><strong>我的称呼</strong>${close}</div><p class="sheet-desc">称呼只保存在当前设备，无需填写真实身份信息。</p><form id="aliasForm"><input class="input-row" name="alias" maxlength="12" placeholder="例如：李同学" value="${esc(state.alias)}" required /><div style="height:16px"></div><button class="primary" type="submit">保存昵称 ${ico('check')}</button></form>`;
     else if(state.modal==='voice-help')body=`<div class="sheet-header"><strong>语音为什么不能用？</strong>${close}</div><p class="sheet-desc">你当前可能从 <code>content://downloads</code> 或本地文件打开页面。这种环境无法保证麦克风和在线语音识别。</p><ol class="guide-steps"><li><span class="step-circle">1</span><span>将 PWA 工程部署到 HTTPS（GitHub Pages 或 Cloudflare Pages），用 Chrome 访问。</span></li><li><span class="step-circle">2</span><span>允许浏览器访问麦克风，并确保系统存在中文语音识别服务。</span></li><li><span class="step-circle">3</span><span>浏览器仍不支持转写时，可以使用手机输入法自带的语音输入。</span></li></ol><p class="sheet-legal">声纹在授权后会跟随声音变化；语音转文字还需要浏览器支持。</p>`;
-     else if(state.modal==='task')body=taskSheet();
+     else if(state.modal==='policy-list')body=policyListSheet(close);
+    else if(state.modal.startsWith('policy:')){const p=policyById.get(state.modal.split(':')[1]);if(!p){state.modal='policy-list';body=policyListSheet(close)}else body=policySheet(p,close)}
+    else if(state.modal==='task')body=taskSheet();
     else if(state.modal==='personal')body=window.JZZX_PROFILE?window.JZZX_PROFILE.sheet():`<div class="sheet-header"><strong>个人信息</strong>${close}</div><p class="sheet-desc">个人信息模块未加载，请刷新页面后重试。</p>`;
-     else if(state.modal.startsWith('guide:')){const key=state.modal.split(':')[1],g=guide[key];if(!g){state.modal=null;modalRoot.innerHTML='';return;}const official=Object.keys(URLS).find(k=>URLS[k]===g.url);body=`<div class="sheet-header"><strong>${esc(g.title)}</strong>${close}</div><p class="sheet-desc">${esc(state.region)} · 办事参考步骤，实际要求请查看官方指南。</p><ol class="guide-steps">${g.steps.map((s,i)=>`<li><span class="step-circle">${i+1}</span><span>${esc(s)}</span></li>`).join('')}</ol><button type="button" class="primary" data-official="${official}">前往官方服务入口 ${ico('external')}</button><p class="sheet-legal">这里提供信息导办；办理申请请使用政府指定渠道。</p>`}
-    modalRoot.innerHTML=`<div class="overlay ${state.modal==='task'?'task-overlay':''}" data-dismiss="modal"><section class="sheet ${state.modal==='task'?'task-sheet':''}" role="dialog" aria-modal="true" aria-label="${state.modal==='task'?'我的导办清单':state.modal.startsWith('guide:')?'办事指南':'设置'}"><div class="drag-handle"></div>${body}</section></div>`;
+     else if(state.modal.startsWith('guide:')){const key=state.modal.split(':')[1],g=guide[key];if(!g){state.modal=null;modalRoot.innerHTML='';return;}const official=Object.keys(URLS).find(k=>URLS[k]===g.url);const policyEntry=key==='policy'&&policies.length?`<button type="button" class="secondary" data-action="policy-list">浏览 ${policies.length} 条已核对政策解读</button>`:'';body=`<div class="sheet-header"><strong>${esc(g.title)}</strong>${close}</div><p class="sheet-desc">${esc(state.region)} · 办事参考步骤，实际要求请查看官方指南。</p><ol class="guide-steps">${g.steps.map((s,i)=>`<li><span class="step-circle">${i+1}</span><span>${esc(s)}</span></li>`).join('')}</ol>${policyEntry}<button type="button" class="primary" data-official="${official}">前往官方服务入口 ${ico('external')}</button><p class="sheet-legal">这里提供信息导办；办理申请请使用政府指定渠道。</p>`}
+    modalRoot.innerHTML=`<div class="overlay ${state.modal==='task'?'task-overlay':''}" data-dismiss="modal"><section class="sheet ${state.modal==='task'?'task-sheet':''}" role="dialog" aria-modal="true" aria-label="${state.modal==='task'?'我的导办清单':(state.modal==='policy-list'||state.modal.startsWith('policy:'))?'政策解读':state.modal.startsWith('guide:')?'办事指南':'设置'}"><div class="drag-handle"></div>${body}</section></div>`;
     if(state.modal==='personal'&&window.JZZX_PROFILE)window.JZZX_PROFILE.enhance(modalRoot);
   }
   const barMarkup=()=>'<span></span>'.repeat(5);
@@ -403,7 +438,9 @@
     const t=target.dataset.tab;if(t){setTab(t);return}
     const k=target.dataset.kind;if(k){state.tab='services';state.filter=k;state.search='';render();window.scrollTo(0,0);return}
     const filter=target.dataset.filter;if(filter){state.filter=filter;render();return}
-    const g=target.dataset.guide;if(g){state.modal='guide:'+g;renderModal();return}
+    const g=target.dataset.guide;if(g){state.modal=(g==='policy'&&policies.length)?'policy-list':'guide:'+g;renderModal();return}
+    const pid=target.dataset.policy;if(pid){if(policyById.has(pid)){state.modal='policy:'+pid;renderModal()}return}
+    const purl=target.dataset.policyUrl;if(purl){openPolicyUrl(purl);return}
     const off=target.dataset.official;if(off){openOfficial(off);return}
     const region=target.dataset.region;if(region){state.region=region;state.modal=null;persist();render();notice(`已切换到${region}`);return}
      const step=target.dataset.taskStep;
@@ -427,6 +464,8 @@
       case 'personal':if(!window.JZZX_PROFILE){notice('个人信息模块未加载，请刷新页面');break}state.modal='personal';renderModal();break;
       case 'alias':state.modal='alias';renderModal();break;
       case 'modal-close':state.modal=null;renderModal();break;
+      case 'policy-list':state.modal='policy-list';renderModal();break;
+      case 'policy-back':state.modal=policies.length?'policy-list':null;renderModal();break;
       case 'elder':state.elder=!state.elder;persist();render();notice(state.elder?'已开启长辈模式':'已退出长辈模式');break;
       case 'motion':state.motion=!state.motion;persist();render();notice(state.motion?'已开启动态效果':'已减少动态效果');break;
       case 'skip-reveal':finishReveal();break;
