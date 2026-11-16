@@ -12,6 +12,16 @@
 - `docs/LXCLAW_INTEGRATION.md` 赛事指定 LXClaw 平台接入前必须核对的事项（**尚未完成接入**）。
 - `public/policies.js` 政务服务「政策解读」：6 条已核对政策，原文链接限定 `*.jl.gov.cn`，每条含要点、一句话读懂、适用人群与行动建议，列表/详情两态，核对日期 2026-11-14。
 
+## 文旅知识库（D1–D2 进行中）
+
+服务对象正从政务服务平移到吉林文旅特色产业，先把「知识底座」做扎实，主框架暂不动。
+
+- `src/wenlv/schema.mjs` 字段规范与校验器（`wenlv-v1`）：4 个校验器、10 个片区、官方域名白名单。
+- `src/wenlv/attractions.mjs` 40 个景点/场馆，9 个市州全覆盖；`routes.mjs` 12 条线路；`calendar.mjs` 12 条时令窗口；`entries.mjs` 8 个官方入口。
+- `npm run build:data` 由上面四个模块生成 `public/wenlv-data.js`（`window.WENLV`），配套 `public/wenlv-ui.js` 渲染；`public/wenlv-preview.html` 是独立预览页（不接 `app.js`）。
+- 规范文档：`docs/WENLV_SCHEMA.md`（字段与测试映射）、`docs/WENLV_DATA_SOURCES.md`（来源与合规红线）、`docs/UX_FLOW.md`（体验流程与演示脚本）。
+- 票价、开放时间、预约名额一律不写死：数据里为 `null`，界面显示「以官方为准」。
+
 ## 本地检查
 
 ```bash

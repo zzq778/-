@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <link rel="icon" href="./assets/icon-192.png" />
+  <meta name="theme-color" content="#f5f7fb" />
+  <title>吉林文旅知识库 · 预览</title>
+  <style>
+    :root { --ink:#0f1c2e; --sub:#5b6b7f; --line:#e3e9f2; --brand:#2c5cf6; --bg:#f5f7fb; }
+    * { box-sizing: border-box; }
+    body { margin:0; background:var(--bg); color:var(--ink);
+      font:16px/1.6 "PingFang SC","Microsoft YaHei","Noto Sans SC",system-ui,sans-serif; }
+    .app { max-width: 1080px; margin: 0 auto; padding: 20px 16px 48px; }
+    .back { display:inline-flex; gap:6px; align-items:center; color:var(--sub); text-decoration:none;
+      font-size:14px; margin-bottom: 12px; }
+    .back:hover { color: var(--brand); }
+    .hero { background: linear-gradient(135deg,#2c5cf6,#4f8bff 55%,#7fb4ff); color:#fff;
+      border-radius: 22px; padding: 26px 22px; box-shadow: 0 14px 34px rgba(44,92,246,.22); }
+    .hero h1 { margin:0 0 6px; font-size: 26px; letter-spacing:.5px; }
+    .hero p { margin:0; opacity:.92; font-size: 14.5px; }
+    .stats { display:flex; gap:10px; margin-top:18px; flex-wrap:wrap; }
+    .stat { background: rgba(255,255,255,.16); border:1px solid rgba(255,255,255,.28);
+      border-radius: 14px; padding: 8px 14px; min-width: 84px; text-align:center; }
+    .stat b { display:block; font-size: 22px; line-height:1.2; }
+    .stat span { font-size: 12px; opacity:.9; }
+    section { margin-top: 30px; }
+    section > h2 { font-size: 18px; margin: 0 0 12px; letter-spacing:.4px; }
+    .chips { display:flex; gap:8px; overflow-x:auto; padding: 2px 2px 10px; scrollbar-width: none; }
+    .chips::-webkit-scrollbar { display: none; }
+    .chip { flex:0 0 auto; border:1px solid var(--line); background:#fff; color:var(--ink);
+      border-radius: 999px; padding: 8px 14px; font-size: 14px; cursor:pointer;
+      display:inline-flex; align-items:center; gap:6px; min-height: 40px; }
+    .chip small { color:var(--sub); font-size:12px; }
+    .chip.on { background: var(--brand); border-color: var(--brand); color:#fff; }
+    .chip.on small { color: rgba(255,255,255,.8); }
+    .grid { display:grid; grid-template-columns: repeat(auto-fill,minmax(260px,1fr)); gap:12px; }
+    .card { background:#fff; border:1px solid var(--line); border-radius:16px; padding:14px 15px; }
+    .card header { display:flex; align-items:flex-start; gap:8px; justify-content:space-between; }
+    .card h3 { margin:0; font-size:16.5px; line-height:1.35; }
+    .level { font-style:normal; font-size:11.5px; color:#b45309; background:#fef3c7;
+      border-radius:6px; padding:2px 6px; white-space:nowrap; }
+    .level.unverified { color:#64748b; background:#f1f5f9; }
+    .meta { margin:8px 0 6px; color:var(--sub); font-size:13px; }
+    .kind { display:inline-block; margin-right:6px; padding:1px 6px; border-radius:6px;
+      background:#eef2ff; color:#3b4dc4; font-size:12px; }
+    .k-snow { background:#e0f2fe; color:#0369a1; }
+    .k-nature { background:#e7f7ec; color:#15803d; }
+    .k-folk { background:#fdeef6; color:#be185d; }
+    .k-relic { background:#fef3e2; color:#b45309; }
+    .k-industry { background:#eef2f7; color:#475569; }
+    .tags { margin:0 0 8px; display:flex; gap:6px; flex-wrap:wrap; }
+    .tag { font-size:12px; color:#465569; background:#f4f6fa; border:1px solid var(--line);
+      border-radius:6px; padding:1px 7px; }
+    .caveat { margin:0 0 8px; font-size:12.5px; color:#7a6248; background:#fffbeb;
+      border-left:3px solid #f6c445; padding:6px 8px; border-radius:6px; }
+    details summary { cursor:pointer; font-size:13px; color:var(--brand); }
+    details ul { margin:8px 0 4px; padding-left:18px; font-size:13px; }
+    details a { color:#1d4ed8; text-decoration:none; }
+    details a:hover { text-decoration:underline; }
+    .tiny { font-size:12px; color:#8494a8; margin:4px 0 0; }
+    .seasons { display:grid; grid-template-columns: repeat(auto-fill,minmax(250px,1fr)); gap:12px; }
+    .season { background:#fff; border:1px solid var(--line); border-radius:16px; padding:14px; }
+    .season header { display:flex; justify-content:space-between; gap:8px; align-items:flex-start; }
+    .season h3 { margin:0; font-size:16px; }
+    .type { font-style:normal; font-size:11.5px; background:#eef2ff; color:#3b4dc4;
+      border-radius:6px; padding:2px 7px; white-space:nowrap; }
+    .season .why { margin:6px 0; font-size:13.5px; color:#33415a; }
+    .months { margin:0; display:flex; gap:6px; }
+    .month { font-size:12px; background:#f1f5f9; border-radius:6px; padding:1px 7px; color:#475569; }
+    .routes { display:grid; gap:12px; }
+    .route { background:#fff; border:1px solid var(--line); border-radius:16px; padding:16px; }
+    .route header { display:flex; justify-content:space-between; gap:10px; align-items:flex-start; }
+    .route h3 { margin:0; font-size:17px; }
+    .days { font-style:normal; font-size:12px; background:var(--brand); color:#fff;
+      border-radius:99px; padding:2px 10px; white-space:nowrap; }
+    .nodes { list-style:none; margin:10px 0 8px; padding:0; }
+    .nodes li { display:grid; grid-template-columns: 40px 44px 1fr; gap:2px 8px;
+      padding:8px 0; border-top:1px dashed var(--line); font-size:14px; }
+    .nodes li:first-child { border-top:none; }
+    .day { color:var(--brand); font-weight:600; font-size:13px; }
+    .slot { color:var(--sub); font-size:13px; }
+    .nodes .why { grid-column: 3; color:var(--sub); font-size:12.5px; }
+    .empty { color:var(--sub); }
+    .foot { margin-top: 34px; padding-top: 16px; border-top:1px solid var(--line);
+      color:var(--sub); font-size:13px; }
+    @media (max-width: 420px) {
+      .hero h1 { font-size: 22px; }
+      .nodes li { grid-template-columns: 36px 40px 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <a class="back" href="./index.html">← 返回吉政知行</a>
+    <div id="wenlv-app"></div>
+  </div>
+
+  <script src="./wenlv-data.js"></script>
+  <script src="./wenlv-ui.js"></script>
+  <script>
+    (function () {
+      var root = document.getElementById('wenlv-app');
+      if (!window.WENLV) {
+        root.innerHTML = '<p>数据未加载：请先执行 npm run build:data 生成 public/wenlv-data.js。</p>';
+        return;
+      }
+      window.WENLV_UI.mount(root);
+    })();
+  </script>
+</body>
+</html>
