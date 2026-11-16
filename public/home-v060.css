@@ -1,0 +1,96 @@
+/* 吉政知行 v0.6.1 — 城市背景无接缝修正。原有布局、AI 接口不变。 */
+:root{--civic-navy:#13335f;--civic-blue:#1c68d7;--civic-sky:#eaf4ff}
+.app{background:#f2f7ff}
+.home-sky{position:relative;isolation:isolate;background:linear-gradient(162deg,#94c8ff 0%,#d5eaff 42%,#f1f8ff 100%);overflow:hidden}
+.home-sky::before{content:"";position:absolute;inset:0 0 auto;height:210px;background:radial-gradient(ellipse 70% 70% at 78% 18%,rgba(255,255,255,.52),transparent 85%);pointer-events:none}
+.home-sky .topbar{height:94px;z-index:3;padding-top:calc(21px + env(safe-area-inset-top));align-items:center}
+.home-sky .brand-square{width:46px;height:46px;border-radius:14px;background:linear-gradient(135deg,#0987d1 8%,#1351a8 78%);font-size:28px;box-shadow:inset 0 2px 7px #ffffff45,0 6px 15px #145da92b}
+.home-sky .brand strong{font-size:20px;letter-spacing:.2px;color:#0a2a56}
+.home-sky .brand small{font-size:12px;letter-spacing:.8px;margin-top:4px;color:#425c80}
+.home-sky .region-chip{background:#ffffffc9;border:1px solid #fff9;color:#123a73;font-size:13px;padding:10px 11px;box-shadow:0 7px 18px #3269b01c}
+.home-hero{height:251px;position:relative;isolation:isolate;padding:16px 21px 0;overflow:hidden}
+.home-hero::after{content:"";position:absolute;inset:auto 0 0;height:32px;z-index:2;pointer-events:none;background:linear-gradient(180deg,transparent,rgba(224,239,255,.57))}
+.home-hero-copy{position:relative;z-index:3;pointer-events:none}
+.home-hero h1{font-size:clamp(27px,7.65vw,36px);line-height:1.35;color:#092852;font-weight:850;letter-spacing:-.9px;margin:25px 0 11px;text-shadow:0 1px 0 #ffffff8a}
+.home-hero p{font-size:clamp(12px,3.2vw,15px);color:#365273;line-height:1.6;font-weight:600;margin:0}
+.city-eyebrow{color:#34619a;font-size:10px;font-weight:700;letter-spacing:.6px;opacity:.8}
+.hero-couple{position:absolute;right:-32px;top:-6px;width:68%;height:272px;object-fit:cover;object-position:65% 50%;z-index:2;pointer-events:none;
+  /* 柔和的椭圆透明渐隐，让人物图与首页天空自然融合，不使用毛玻璃。 */
+  -webkit-mask-image:radial-gradient(ellipse 79% 74% at 80% 50%,#000 43%,rgba(0,0,0,.8) 65%,transparent 100%),linear-gradient(180deg,transparent 0%,#000 16%,#000 88%,transparent 100%);
+  -webkit-mask-composite:source-in;
+  mask-image:radial-gradient(ellipse 79% 74% at 80% 50%,#000 43%,rgba(0,0,0,.8) 65%,transparent 100%),linear-gradient(180deg,transparent 0%,#000 16%,#000 88%,transparent 100%);
+  mask-composite:intersect}
+.hero-landmark{position:absolute;left:-11px;bottom:-4px;width:84%;height:113px;object-fit:cover;object-position:50% 48%;opacity:.70;z-index:1;pointer-events:none;
+  /* 让长春建筑自然消融在城市头图，而非截断于矩形边缘。 */
+  -webkit-mask-image:radial-gradient(ellipse 83% 66% at 29% 62%,#000 40%,transparent 100%);
+  mask-image:radial-gradient(ellipse 83% 66% at 29% 62%,#000 40%,transparent 100%)}
+.home-main{position:relative;padding:0 13px 15px;margin-top:-12px;z-index:2}
+.agent-home-card{position:relative;overflow:hidden;border:1px solid #eff7ff;border-radius:29px;padding:12px 12px 14px;background:linear-gradient(137deg,#d1e6ff 0%,#e8f3ff 48%,#c0dcff 100%);box-shadow:0 13px 35px rgba(49,102,187,.16),inset 0 2px 0 rgba(255,255,255,.8)}
+.agent-home-card::before{content:"";position:absolute;inset:-3px;pointer-events:none;background:radial-gradient(ellipse at 90% 3%,#fff8,transparent 53%);opacity:.85}
+.agent-intro{position:relative;z-index:1;display:grid;grid-template-columns:42% 1fr;min-height:148px;align-items:center}
+.robot-mascot{position:absolute;left:-8px;top:-5px;width:49%;height:160px;object-fit:contain;object-position:center;animation:robot-float 6s ease-in-out infinite;filter:drop-shadow(0 10px 11px #4d89d821)}
+.agent-intro-copy{grid-column:2;padding:5px 0 6px;align-self:center;position:relative}
+.agent-tag{font-weight:750;font-size:10px;letter-spacing:.3px;color:#2961ad;display:flex;align-items:center;gap:6px}
+.tag-dot{width:7px;height:7px;background:#3c91ed;border-radius:50%;box-shadow:0 0 0 4px #5d9ffb25;animation:light-breathe 4s ease-in-out infinite}
+.agent-intro-copy h2{color:#1551ab;font-size:clamp(36px,10.7vw,48px);margin:5px 0 5px;line-height:1.05;letter-spacing:1px;font-weight:850}
+.agent-spark{font-size:22px;vertical-align:top;color:#eeac36;padding-left:2px;display:inline-block;animation:spark-breathe 6s ease-in-out infinite}
+.agent-intro-copy p{color:#426286;font-size:clamp(11px,3vw,14px);font-weight:600;line-height:1.5;margin:0}
+.agent-entry{position:relative;z-index:2;display:flex;align-items:center;gap:7px;background:#fff;padding:7px;border:1px solid #fff;border-radius:24px;min-height:66px;box-shadow:0 5px 16px rgba(32,94,185,.15),0 0 0 3px #ffffff5b}
+.agent-entry:focus-within{box-shadow:0 7px 22px rgba(32,94,185,.19),0 0 0 3px rgba(55,125,226,.15)}
+.agent-entry button{border:0}
+.agent-voice{flex:0 0 47px;width:47px;height:47px;border-radius:17px;background:#edf5ff;color:#2468c1;display:grid;place-items:center}
+.agent-voice svg{width:25px;height:25px}
+.agent-question{background:transparent;display:flex;align-items:center;gap:6px;min-width:0;flex:1;text-align:left;color:#65758e;font-size:clamp(10px,2.83vw,13px);line-height:1.3;font-weight:670;padding:8px 0}
+.agent-wave{display:flex;align-items:center;gap:3px;height:17px;margin-left:auto;flex-shrink:0}
+.agent-wave i{height:10px;width:3px;border-radius:4px;background:#c99fdf;animation:wave-calm 3.6s ease-in-out infinite}
+.agent-wave i:nth-child(1){background:#f7ae74;animation-delay:-.2s}
+.agent-wave i:nth-child(2){background:#e7a8b7;animation-delay:-.55s}
+.agent-wave i:nth-child(3){background:#bb9cef;animation-delay:-.9s}
+.agent-wave i:nth-child(4){background:#9a91ed;animation-delay:-1.25s}
+.agent-wave i:nth-child(5){background:#719eee;animation-delay:-1.6s}
+.agent-open{width:43px;height:43px;flex:0 0 43px;border-radius:50%;background:linear-gradient(145deg,#4b96f4,#1b64d6);color:#fff;display:grid;place-items:center;box-shadow:0 4px 11px #4b83c843}
+.agent-task-row{display:flex;position:relative;z-index:1;gap:6px;margin:12px 0 0;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none;padding:2px 1px 5px}
+.agent-task-row::-webkit-scrollbar{display:none}
+.task-chip{display:flex;align-items:center;justify-content:center;gap:3px;flex:1 0 auto;white-space:nowrap;border:1px solid #ffffffa6;background:rgba(255,255,255,.67);border-radius:100px;color:#204476;font-size:clamp(10px,2.8vw,12px);font-weight:680;padding:9px 9px;box-shadow:0 2px 7px #3c78c313;transition:transform .22s,background .22s}
+.task-chip svg{height:13px;width:13px}
+.task-chip:active,.agent-open:active,.agent-voice:active{transform:scale(.95)}
+.agent-location{position:relative;z-index:1;display:flex;align-items:center;justify-content:center;gap:3px;color:#6184ae;font-size:10px;font-weight:560;margin:7px 0 0}
+.agent-location svg{height:13px;width:13px}
+.home-services,.home-news{margin-top:13px;border-radius:24px;background:rgba(255,255,255,.9);padding:16px 11px 11px;box-shadow:0 5px 20px #3b6ba610;border:1px solid #ffffffb8}
+.home-section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding:0 5px}
+.home-section-head h2{margin:0;color:#142b4e;font-weight:820;font-size:19px;letter-spacing:-.5px}
+.home-section-head h2::before{content:"";display:inline-block;width:4px;height:18px;border-radius:7px;background:#2478e9;vertical-align:-3px;margin-right:10px}
+.home-section-head button{display:flex;align-items:center;gap:3px;color:#657c9c;font-size:12px;border:0;background:transparent;padding:5px 2px}
+.home-section-head button svg{width:14px;height:14px}
+.home-service-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+.home-service{border:0;min-width:0;border-radius:18px;min-height:121px;padding:13px 4px 10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:#193459;background:linear-gradient(150deg,#eef6ff,#dcecff);transition:transform .2s cubic-bezier(.2,.8,.2,1),box-shadow .2s}
+.home-service:active{transform:scale(.96)}
+.home-service:nth-child(2){background:linear-gradient(150deg,#fff3f5,#fbe5e9)}.home-service:nth-child(3){background:linear-gradient(150deg,#fff7ee,#fdf0db)}.home-service:nth-child(4){background:linear-gradient(150deg,#f7f2ff,#ece6ff)}.home-service:nth-child(5){background:linear-gradient(150deg,#ebf8ff,#deedff)}.home-service:nth-child(6){background:linear-gradient(150deg,#ecfbf6,#ddf5ea)}
+.home-service-icon{display:grid;place-items:center;width:39px;height:39px;border-radius:12px;color:#307de2;background:linear-gradient(145deg,#ffffffaf,#ffffff48)}
+.home-service:nth-child(2) .home-service-icon{color:#ef575f}.home-service:nth-child(3) .home-service-icon{color:#e6a044}.home-service:nth-child(4) .home-service-icon{color:#866ae5}.home-service:nth-child(5) .home-service-icon{color:#427de0}.home-service:nth-child(6) .home-service-icon{color:#26a97e}
+.home-service-icon svg{width:28px;height:28px;stroke-width:2.05}
+.home-service strong{font-size:clamp(12px,3.25vw,15px);font-weight:800;line-height:1.1}
+.home-service small{font-size:9px;color:#667c96;white-space:nowrap;letter-spacing:-.3px}
+.home-news{padding-bottom:9px}
+.news-feature{display:flex;align-items:center;text-align:left;gap:11px;width:100%;padding:5px 5px 11px;background:transparent;border:0;border-bottom:1px solid #ecf0f6;color:#183554}
+.news-feature img{width:90px;height:70px;border-radius:11px;object-fit:cover}
+.news-feature span{flex:1;min-width:0}.news-feature strong{display:block;line-height:1.5;font-size:13px;font-weight:780}.news-feature small{display:block;font-size:10px;color:#8091a7;margin-top:7px;line-height:1.4}.news-feature svg{color:#7d97bf;height:16px;width:16px}
+.news-link-row{display:flex;justify-content:space-between;align-items:center;background:transparent;border:0;border-bottom:1px solid #edf1f6;width:100%;padding:12px 6px;color:#27415f;text-align:left;font-size:12px;font-weight:650}
+.news-link-row:last-child{border:0}.news-link-row>span:nth-child(2){display:flex;align-items:center;gap:4px;color:#8193ad;font-size:10px}.news-link-row svg{width:13px;height:13px}
+.home-legal{font-size:10px;line-height:1.8;color:#8292aa;text-align:center;margin:17px 10px 0}
+.home-sky+.home-main~.floating-ai{display:none}
+/* keep navigation visible and avoid visual clutter from the old floating helper on home */
+.home-sky+.home-main~.floating-ai{pointer-events:none}
+.bottom-nav{background:#ffffffed;border-top:1px solid #dfe8f4}
+.tab.active{color:#1968d3}
+@keyframes robot-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+@keyframes light-breathe{0%,100%{opacity:.8;box-shadow:0 0 0 4px #5d9ffb25}50%{opacity:1;box-shadow:0 0 0 7px #5d9ffb1b}}
+@keyframes spark-breathe{0%,100%{opacity:.65;transform:scale(.94)}50%{opacity:1;transform:scale(1.06)}}
+@keyframes wave-calm{0%,100%{transform:scaleY(.75)}50%{transform:scaleY(1.4)}}
+@media(max-width:365px){.home-sky .topbar{padding-left:16px;padding-right:15px}.home-sky .brand strong{font-size:18px}.home-sky .brand small{font-size:10px}.home-hero{padding-left:16px;height:236px}.home-hero h1{font-size:27px}.home-hero p{font-size:12px}.hero-couple{right:-45px;width:65%;top:12px}.agent-intro{min-height:138px}.robot-mascot{height:146px}.agent-question{font-size:10px}.agent-task-row{gap:5px}.task-chip{padding:8px 7px}.agent-home-card{padding:11px}.home-service{min-height:112px}.home-service small{font-size:8px}}
+@media(min-width:440px){.hero-couple{right:-15px;width:57%}.home-hero{height:272px}.home-main{padding-left:18px;padding-right:18px}.home-service{min-height:131px}}
+@media(prefers-reduced-motion:reduce){.robot-mascot,.tag-dot,.agent-spark,.agent-wave i{animation:none!important}}
+.motion-off .robot-mascot,.motion-off .tag-dot,.motion-off .agent-spark,.motion-off .agent-wave i{animation:none!important}
+
+/* 内容始终可见；滚动入场仅用于首屏 Agent，避免低性能设备产生空白。 */
+.home-services.reveal,.home-news.reveal{opacity:1;transform:none;transition:none}

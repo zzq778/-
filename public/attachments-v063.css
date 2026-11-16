@@ -1,0 +1,13 @@
+/* 附件控件沿用现有浅色体系，不引入新框架。 */
+.visually-hidden{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+.attachment-strip[hidden]{display:none!important}
+.attachment-strip{display:flex;align-items:center;gap:9px;margin:0 4px 9px;padding:10px 12px;border-radius:16px;background:#edf5ff;border:1px solid #d4e5fa;color:#173968;min-width:0}
+.attachment-name{display:flex;align-items:center;gap:5px;font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:1}
+.attachment-name svg{width:17px;height:17px;flex:none}
+.attachment-size{font-size:11px;white-space:nowrap;color:#657c9d}
+.attachment-strip button{border:0;background:#dfeaff;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;color:#2758a1;flex:none}
+.attachment-strip button svg{width:16px;height:16px}
+.chat-attachment-label{display:inline-block;margin-top:10px;padding:6px 10px;border-radius:12px;background:rgba(234,245,255,.85);color:#294e80;font-size:12px;max-width:100%;overflow-wrap:anywhere}
+.chat-form .attach-btn{flex:none;color:#426ea8}
+.chat-form .attach-btn svg{width:21px;height:21px}
+@media (prefers-reduced-motion: reduce){.attachment-strip,.attachment-strip button{transition:none!important}}
