@@ -1,42 +1,32 @@
-# 吉政知行 v0.6.3
+# 吉政知行 · 吉林政务任务智能体 v0.7.1
 
-在 v0.6.2 基础上加入图片及文档理解。前端 PWA + Cloudflare Worker，后端无额外运行依赖。
+目标：让用户提出办事目标，由 Agent 检索已核对的政务索引、整理导办步骤，并生成可点击的应用内指南和官方入口。服务目录是辅助入口，不是产品主轴。
 
-## 模型
-- 纯文本：Cloudflare Workers AI `@cf/zai-org/glm-4.7-flash`（沿用原有 AI 绑定）。
-- 有图片/文件：DeepSeek V4.1 Flash，API 名为 `deepseek-flash`，使用 DeepSeek `/files` + `/chat/completions`。
+## 代码结构
+- `public/` 手机 PWA；主要入口在首页的“吉小知”，支持本机保存一份导办清单、按步骤标记已了解，并从首页或“我的”继续。
+- `src/agent.mjs` 受限的模型 Function Calling 和工具执行：`search_services`、`read_service_guide`、`locate_official_portal`。
+- `src/knowledge.mjs` 当前六类入口级政务资料和官方门户白名单，不是最新政策全文 RAG。
+- `src/worker.mjs` Cloudflare Worker API；`mode=agent` 文本走 Agent，附件仍走原有 DeepSeek 路线。
+- `src/uploads.mjs` 大附件分块暂存（需 R2）。
+- `docs/COMPETITION_AGENT_V070.md` 赛项要求、产品主线、风险、分工和验收要求。
+- `docs/LXCLAW_INTEGRATION.md` 赛事指定 LXClaw 平台接入前必须核对的事项（**尚未完成接入**）。
 
-## 测试
+## 本地检查
 
 ```bash
 npm install
 npm test
+python tests/browser_agent.py
+python tests/browser_task.py
 ```
 
-本地自动测试不需要真实 DeepSeek 密钥。完整手机交互测试文件位于 `tests/browser_attachments.py`，需具备 Python Playwright 和 Chromium 的测试环境。
+`npm test` 是使用模拟模型调用的逻辑测试；浏览器脚本用假 API 响应验证界面，不等于真实 Cloudflare 推理已跑通。新任务脚本因测试环境屏蔽回环 HTTP 而模拟 localStorage API，并未执行真实服务端上传。`tests/browser_agent.py` 依赖 Chromium 和 Playwright，且其测试只内联 CSS/JS 以绕过本地 HTTP 访问限制。
 
-## 上线准备（当前未部署）
+## 上线要求
+保留现有 `AI`、`LIMITER` 绑定。附件多模态需要服务端 `DEEPSEEK_API_KEY`，分块上传需要私有 R2 `UPLOADS` 与 Secret `UPLOAD_SIGNING_KEY`。付费 API 必须先有访问控制或真实用量配额。**不要把密钥提交到仓库**。正式上线先通过 GitHub PR 审查，避免直接影响已部署的 `main`。
 
-1. 将 v0.6.3 工程代码合并至现有 GitHub 项目。
-2. 在 Cloudflare Workers → `jizhengzhixing` → Settings → Variables and Secrets 新建 **Secret**：`DEEPSEEK_API_KEY`，填入自己的 DeepSeek API Key。**不要把密钥提交到仓库、放入前端 JS、发送到聊天中。**
-3. 确认原有 Workers AI 绑定 `AI`、限流绑定 `LIMITER` 正常。
-4. **在开放付费附件接口前，限制访问范围**：优先用 Cloudflare Access 允许三名队员和评委的指定账号访问；如果要公众开放，先补充真实登录和服务端配额控制。仅有浏览器 Origin 校验和 IP 限流，不构成用户鉴权。
-5. 再部署，实际测试一张非敏感公开办事截图和一份公开政策 PDF。检查 DeepSeek 账单与 Cloudflare 日志。
+## 比赛合规提醒
+2026 年 11 月赛项规则提供指定 LXClaw 平台，且强调现场实操和现场知识库/提示词/工具微调。这一条件没有被现有 Cloudflare 方案自动满足。目前按产品决策暂停 LXClaw 适配，参赛合规风险仍需在正式参赛前确认。
 
-API Key 没有配置时，文字 AI 仍可运行；附件请求会返回明确的错误 `NO_DEEPSEEK`，**不会生成伪造的文件分析结果**。
-
-## 资源与成本
-
-- v0.6.3 仅支持 ≤8 MiB 的附件；v0.6.4 新增分块大文件通道，按文件类型限制大小。
-- DeepSeek 图片识别按输入 token 计费；PDF/Word/PPT 解析可能产生按页费用，上传后对话还有 token 费用。具体以其当期官方定价为准。
-- DeepSeek 文件保留期设置 1 小时，上游文件存储不归 Cloudflare 管理。不要上传未经脱敏的个人材料。
-- 文件上传解析可能明显慢于纯文本，不等于 UI 卡死。请求等待上限为 180 秒，错误会明确返回。
-
-工程详细变更见 `docs/CHANGELOG_v0.6.3.md`。
-
-## v0.6.4：大文件与三人协作
-
-- 附件限制按文件类型处理：PDF/Word/PPT 100 MB、图片 64 MiB、表格和文本 32 MiB。小文件直传，大文件 8 MiB 分块进入私有 R2 后流式转交 DeepSeek。
-- 大文件功能需要 **R2 bucket `jzzx-uploads`**、Worker 绑定 `UPLOADS` 以及服务端密钥 `UPLOAD_SIGNING_KEY`，见 [`docs/CHANGELOG_v0.6.4.md`](docs/CHANGELOG_v0.6.4.md)。在线使用前还须限制付费 API 的访问范围。
-- 三人 GitHub 分工、分支、PR 约定见 [`docs/TEAM_GITHUB.md`](docs/TEAM_GITHUB.md)。
-- 目前未改动既有 Cloudflare 线上应用，也没有进行真实 100 MB 上传验证。
+## 诚实的功能边界
+当前已实现工具调用、经过核验的入口级索引、导办步骤、站内按钮。尚未完成 LXClaw 集成、政策全文可溯源 RAG、真实用户账户和官方系统自动操作。不能把用户引导到门户描述成已经替用户办理业务。

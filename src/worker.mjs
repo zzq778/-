@@ -1,5 +1,6 @@
 import { REGIONS, relevantTopics, actionBundle, buildSystemPrompt } from './knowledge.mjs';
 import { DIRECT_BYTES, filePolicy, handleUploadApi, openLargeFile, streamMultipartFile } from './uploads.mjs';
+import { runCivicAgent } from './agent.mjs';
 
 const MODEL = '@cf/zai-org/glm-4.7-flash';
 const FILE_MODEL = 'deepseek-flash';
@@ -128,25 +129,33 @@ export async function handleApi(request,env) {
   const guideKey = payload?.context?.guide;
   const pageName = typeof tabKey === 'string' && Object.hasOwn(safeTabs, tabKey) ? safeTabs[tabKey] : '首页';
   const guideName = typeof guideKey === 'string' && Object.hasOwn(safeGuides, guideKey) ? safeGuides[guideKey] : '';
+  const selectedTask=payload?.context?.task;
+  const taskId=typeof selectedTask?.id==='string'&&Object.hasOwn(safeGuides,selectedTask.id)?selectedTask.id:null;
+  const understood=Number.isInteger(selectedTask?.understood)&&selectedTask.understood>=0&&selectedTask.understood<=3?selectedTask.understood:null;
+  const taskContext=taskId!==null&&understood!==null?` 用户本机保留了${safeGuides[taskId]}导办清单，标记已了解 ${understood}/3 步。该状态只是阅读标记，不是政府办理进度。`:'';
   const topics = relevantTopics(finalQuestion);
   const {actions,sources}=actionBundle(topics);
-  const pageContext = `\n应用上下文：用户当前位于${pageName}${guideName?'，正在浏览'+guideName:''}。可以建议应用内现有导办入口，但不得声称已在政府网站替用户操作。`;
+  const pageContext = `\n应用上下文：用户当前位于${pageName}${guideName?'，正在浏览'+guideName:''}。${taskContext}可以建议应用内现有导办入口，但不得声称已在政府网站替用户操作。`;
   const messages = [ {role:'system',content:buildSystemPrompt(region,topics)+pageContext}, ...history, {role:'user',content:finalQuestion} ];
   try {
     let text,usedModel=MODEL;
+    let agentResult=null;
     if(attachment||largeFile){
       const input=attachment||{name:largeFile.session.name,size:largeFile.session.size};
       const outcome=await askWithFile(env,input,finalQuestion,messages,largeFile);
       if(outcome.error)return reply({error:outcome.error,message:outcome.message,actions,sources},outcome.status);
       text=outcome.text;usedModel=outcome.model;
+    } else if(payload?.mode==='agent') {
+      agentResult=await runCivicAgent(env,{question:finalQuestion,region,history,pageContext});
+      text=agentResult.text;usedModel=agentResult.model;
     } else {
       const result = await env.AI.run(MODEL,{messages,max_completion_tokens:900,temperature:0.25,chat_template_kwargs:{enable_thinking:false}});
       text=(typeof result?.response==='string' ? result.response : typeof result?.output_text==='string' ? result.output_text : typeof result?.choices?.[0]?.message?.content==='string' ? result.choices[0].message.content : '').trim();
     }
     const cleaned = normalizeAiAnswer(text);
     if (!cleaned) return reply({error:'EMPTY_AI',message:'模型未返回有效回答，请重试'},502);
-    const links=(attachment||largeFile)?actionBundle(relevantTopics(finalQuestion+' '+cleaned)):{actions,sources};
-    return reply({text:cleaned,region,model:usedModel,actions:links.actions,sources:links.sources,disclaimer:'非政府官方应用。具体办理要求请以政府官方渠道发布为准。'});
+    const links=agentResult?{actions:agentResult.actions,sources:agentResult.sources}:(attachment||largeFile)?actionBundle(relevantTopics(finalQuestion+' '+cleaned)):{actions,sources};
+    return reply({text:cleaned,region,model:usedModel,actions:links.actions,sources:links.sources,agent:agentResult?{trace:agentResult.trace,plan:agentResult.plan}:null,disclaimer:'非政府官方应用。具体办理要求请以政府官方渠道发布为准。'});
   } catch(e) {
     // 避免把上游服务内部错误、账户信息回传给客户端
     console.error('AI request failed', e?.name||'AIError');

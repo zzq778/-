@@ -1,4 +1,4 @@
-/* 吉政知行 v0.6.4：长春城市版首页与 Agent-first 导办。
+/* 吉政知行 v0.7：政务任务智能体。
    保留 v0.4 的界面与动效；AI 请求仅发送到同源 /api/chat。
    不传递身份证、社保卡号或密码等敏感信息。
 */
@@ -57,11 +57,56 @@
   const ico=(id)=>`<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${paths[id]||paths.info}</svg>`;
   const esc=(v)=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const saved=(()=>{try{return JSON.parse(localStorage.getItem('jzzx-motion-v03')||'{}')||{}}catch{return{}}})();
+  const TASK_KEY='jzzx-saved-guide-v1';
+  // Only generic guide steps and checkmarks are stored. No questions, chat transcripts or personal identifiers.
+  function validateSavedTask(item){
+    if(!item || typeof item!=='object' || !Object.hasOwn(guide,item.id) || !regions.includes(item.region))return null;
+    if(typeof item.title!=='string'||item.title.length>60||!Array.isArray(item.steps)||item.steps.length!==3||
+      item.steps.some(x=>typeof x!=='string'||!x.trim()||x.length>160)||
+      !Array.isArray(item.checked)||item.checked.length!==3||item.checked.some(x=>typeof x!=='boolean'))return null;
+    return {id:item.id,title:item.title,region:item.region,steps:item.steps,checked:item.checked};
+  }
+  function loadTask(){try{return validateSavedTask(JSON.parse(localStorage.getItem(TASK_KEY)||'null'))}catch{return null}}
+  function persistTask(){
+    try{if(state.task)localStorage.setItem(TASK_KEY,JSON.stringify(state.task));else localStorage.removeItem(TASK_KEY);return true}
+    catch{return false}
+  }
+  const markedCount=t=>t?.checked.filter(Boolean).length||0;
+  function taskCard(){
+    const t=state.task;if(!t)return '';
+    const mismatch=t.region!==state.region;
+    return `<section class="saved-task reveal" aria-label="本机导办清单"><div class="saved-task-top"><span class="saved-task-label">${ico('check')} 我的导办清单</span><small>${esc(t.region)}</small></div>
+    <h2>${esc(t.title)}</h2><p>${mismatch?'当前地区已变更，请重新核对办事要求。':`已标记了解 ${markedCount(t)} / 3 步 · 不是政府办理进度`}</p>
+    <div class="task-progress" role="img" aria-label="已了解 ${markedCount(t)} 步，共 3 步">${t.checked.map(v=>`<i class="${v?'done':''}"></i>`).join('')}</div>
+    <button type="button" class="task-resume" data-action="task-open">继续查看导办清单 ${ico('right')}</button></section>`;
+  }
+  function savePlan(index){
+    const plan=state.messages[index]?.agent?.plan;
+    if(!plan || !Object.hasOwn(guide,plan.id) || !Array.isArray(plan.steps)||plan.steps.length!==3)return;
+    const candidate=validateSavedTask({id:plan.id,title:plan.title,steps:plan.steps,region:state.region,checked:[false,false,false]});
+    if(!candidate)return;
+    const old=state.task;
+    if(old && (old.id!==candidate.id||old.region!==candidate.region) && !window.confirm('将替换本机已有的导办清单，继续吗？'))return;
+    if(old && old.id===candidate.id && old.region===candidate.region && old.steps.every((x,i)=>x===candidate.steps[i]))candidate.checked=[...old.checked];
+    state.task=candidate;
+    const stored=persistTask();
+    render();notice(stored?'导办清单已保存在本机，可以从首页继续':'当前设备无法永久保存，清单仅在本次打开期间保留');
+  }
+  function taskSheet(){
+    const t=state.task;if(!t)return '';
+    const mismatch=t.region!==state.region;
+    return `<div class="sheet-header"><strong>${esc(t.title)}</strong><button type="button" class="close-round" data-action="modal-close" aria-label="关闭">${ico('close')}</button></div>
+      <p class="sheet-desc">${esc(t.region)} · 已标记了解 ${markedCount(t)} / 3 步</p>
+      ${mismatch?`<p class="task-region-alert">当前选择的是${esc(state.region)}，本清单属于${esc(t.region)}，请重新向吉小知核对。</p>`:''}
+      <div class="task-step-list">${t.steps.map((step,i)=>`<button type="button" class="task-step ${t.checked[i]?'checked':''}" data-task-step="${i}" aria-pressed="${t.checked[i]}"><span class="task-step-index">${t.checked[i]?ico('check'):i+1}</span><span class="task-step-text">${esc(step)}<small>${t.checked[i]?'已标记了解':'点击标记已了解'}</small></span></button>`).join('')}</div>
+      <p class="task-fineprint">勾选只代表您已阅读并了解这一步，不代表政府事项已经办理完成。清单仅保存在当前设备。</p>
+      <div class="task-sheet-actions"><button type="button" class="primary" data-action="task-ask">继续问吉小知 ${ico('arrow')}</button><button type="button" class="task-secondary" data-guide="${esc(t.id)}">查看事项指南 ${ico('right')}</button><button type="button" class="task-delete" data-action="task-delete">清除本机清单</button></div>`;
+  }
   const MAX_DIRECT_BYTES=8*1024*1024;
   const BIG_CHUNK_BYTES=8*1024*1024;
   const LIMITS={images:64*1024*1024,documents:100_000_000,other:32*1024*1024};
   const allowedSize=file=>/\.(jpe?g|png|webp|gif)$/i.test(file.name)?LIMITS.images:/\.(pdf|docx?|pptx?)$/i.test(file.name)?LIMITS.documents:LIMITS.other;
-  const state={tab:'home',region:regions.includes(saved.region)?saved.region:'长春市',elder:!!saved.elder,motion:saved.motion!==false,alias:typeof saved.alias==='string'?saved.alias:'',filter:'all',search:'',attachment:null,modal:null,assistant:null,voice:'idle',voiceMessage:'',messages:[],thinking:false,uploadProgress:'',power:0,aiStatus:'checking'};
+  const state={tab:'home',region:regions.includes(saved.region)?saved.region:'长春市',elder:!!saved.elder,motion:saved.motion!==false,alias:typeof saved.alias==='string'?saved.alias:'',filter:'all',search:'',attachment:null,modal:null,assistant:null,voice:'idle',voiceMessage:'',messages:[],task:loadTask(),thinking:false,uploadProgress:'',power:0,aiStatus:'checking'};
   const reduced=()=>!state.motion || !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
   const content=document.getElementById('content'),nav=document.getElementById('bottomNav'),modalRoot=document.getElementById('modalRoot'),aiRoot=document.getElementById('aiRoot'),toastEl=document.getElementById('toast');
   let recognition=null,micStream=null,micCtx=null,micSource=null,analyser=null,meterHandle=0,toastHandle=null,replyTimer=null,aiController=null;
@@ -73,21 +118,22 @@
   function topbar(){return `<header class="topbar"><div class="brand"><div class="brand-square">吉</div><div><strong>吉政知行</strong><small>把政务说清楚</small></div></div><button type="button" class="region-chip" data-action="regions">${ico('pin')}${esc(state.region)}${ico('down')}</button></header>`}
   function home(){return `<div class="home-sky">${topbar()}
   <section class="home-hero" aria-label="欢迎使用吉政知行">
-    <div class="home-hero-copy"><div class="city-eyebrow">吉林 · 您身边的政务助手</div><h1>您好，欢迎使用<br>吉政知行！</h1><p>政策更好懂，办事更省心。</p></div>
+    <div class="home-hero-copy"><div class="city-eyebrow">吉林 · 您身边的政务助手</div><h1>想办什么事？<br>交给吉小知。</h1><p>找依据、理步骤，帮您走好下一步。</p></div>
     <img class="hero-couple" src="./assets/changchun-people.webp" alt="" loading="eager" decoding="async"/>
     <img class="hero-landmark" src="./assets/changchun-skyline.webp" alt="长春历史建筑与城市风景插画" loading="eager" decoding="async"/>
   </section></div>
   <div class="home-main"><section class="agent-home-card reveal" aria-label="吉小知智能政务助手">
     <div class="agent-intro"><img class="robot-mascot" src="./assets/jixiaozhi-robot.webp" alt="" loading="eager" decoding="async" />
-      <div class="agent-intro-copy"><div class="agent-tag"><span class="tag-dot"></span> 智能政务导办</div><h2>吉小知<span class="agent-spark" aria-hidden="true">✦</span></h2><p>有问题？我帮您查、带您办。</p></div></div>
-    <div class="agent-entry" role="group" aria-label="向吉小知提问"><button type="button" class="agent-voice" data-action="open-ai" aria-label="打开语音助手">${ico('mic')}</button><button type="button" class="agent-question" data-action="ai-full">有什么政务问题，问问吉小知<span class="agent-wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span></button><button type="button" class="agent-open" data-action="ai-full" aria-label="打开智能导办">${ico('arrow')}</button></div>
+      <div class="agent-intro-copy"><div class="agent-tag"><span class="tag-dot"></span> 智能政务导办</div><h2>吉小知<span class="agent-spark" aria-hidden="true">✦</span></h2><p>说出目标，我来查事项、理清步骤。</p></div></div>
+    <div class="agent-entry" role="group" aria-label="向吉小知提问"><button type="button" class="agent-voice" data-action="open-ai" aria-label="打开语音助手">${ico('mic')}</button><button type="button" class="agent-question" data-action="ai-full">描述想办理的事项<span class="agent-wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span></button><button type="button" class="agent-open" data-action="ai-full" aria-label="打开智能导办">${ico('arrow')}</button></div>
     <div class="agent-task-row" aria-label="常见问题快捷提问">
-      <button type="button" class="task-chip" data-prompt="我在${esc(state.region)}，养老保险待遇领取资格认证怎么查？">养老认证怎么做 ${ico('right')}</button>
-      <button type="button" class="task-chip" data-prompt="我在${esc(state.region)}，医保报销去哪里查询办事指南？">医保报销 ${ico('right')}</button>
-      <button type="button" class="task-chip" data-prompt="我在${esc(state.region)}，身份证到期怎么换领？">证件到期怎么办 ${ico('right')}</button>
+      <button type="button" class="task-chip" data-prompt="我在${esc(state.region)}，养老保险待遇领取资格认证怎么查？">规划养老认证 ${ico('right')}</button>
+      <button type="button" class="task-chip" data-prompt="我在${esc(state.region)}，医保报销去哪里查询办事指南？">医保导办 ${ico('right')}</button>
+      <button type="button" class="task-chip" data-prompt="我在${esc(state.region)}，身份证到期怎么换领？">证件换领 ${ico('right')}</button>
     </div>
     <p class="agent-location">${ico('pin')} 根据您选择的${esc(state.region)}提供导办建议</p>
   </section>
+  ${taskCard()}
   <section class="home-services reveal"><div class="home-section-head"><h2>常用服务</h2><button type="button" data-tab="services">全部服务 ${ico('right')}</button></div><div class="home-service-grid">${['pension','medical','cert','policy','nearby','work'].map((id,i)=>{const [_,n,sub,icon]=kinds.find(x=>x[0]===id);return `<button type="button" class="home-service" data-kind="${id}"><span class="home-service-icon">${ico(icon)}</span><strong>${esc(n)}</strong><small>${esc(sub)}</small></button>`}).join('')}</div></section>
   <section class="home-news reveal"><div class="home-section-head"><h2>政务资讯</h2><button type="button" data-tab="news">更多 ${ico('right')}</button></div><button type="button" class="news-feature" data-official="government"><img src="./assets/city-news.webp" alt="政务信息栏目配图" loading="lazy"/><span><strong>吉林省人民政府 · 政务要闻</strong><small>官方新闻、政策发布与通知公告</small></span>${ico('right')}</button><button class="news-link-row" type="button" data-official="hall"><span>吉林省网上办事大厅</span><span>办事入口 ${ico('right')}</span></button><button class="news-link-row" type="button" data-official="personal"><span>个人办事与事项指南</span><span>官方查询 ${ico('right')}</span></button></section>
   <p class="home-legal">吉政知行提供信息导办，不是政府官方应用。办理要求以官方渠道为准。</p></div>`}
@@ -98,7 +144,7 @@
   function serviceList(){return `<div class="service-list" id="serviceList">${filteredGuides().map(x=>`<button type="button" class="service-row" data-guide="${x.cat}"><span class="row-icon">${ico(kinds.find(a=>a[0]===x.cat)[3])}</span><span class="row-copy"><strong>${esc(x.title)}</strong><small>${esc(x.desc)}</small></span><span class="arrow">${ico('right')}</span></button>`).join('')||'<p class="page-sub">没有匹配的事项，试试其他关键词。</p>'}</div>`}
   function services(){return `${heading('01 / SERVICE DIRECTORY','政务服务','常见事项入口与操作步骤，先把路径理清楚。')}<div class="page-wrap"><label class="search-field">${ico('search')}<input id="searchInput" type="search" value="${esc(state.search)}" placeholder="搜索养老、医保、证件……" autocomplete="off" /></label><div class="filter-row"><button type="button" class="filter-pill ${state.filter==='all'?'active':''}" data-filter="all">全部</button>${kinds.map(([id,n])=>`<button type="button" data-filter="${id}" class="filter-pill ${state.filter===id?'active':''}">${esc(n)}</button>`).join('')}</div>${serviceList()}<p class="note-plain">仅提供事项目录与导办说明，不在本应用提交政务申请。</p></div>${fab()}`}
   function newsPage(){return `${heading('02 / VERIFIED SOURCES','政务资讯','把最新政策交给官方发布，把查找路径交给我们。')}<div class="page-wrap news-page"><p class="news-disclaimer">选择下方的官方信息渠道，查看政务动态和政策原文。</p><div class="news-list">${news.map((x,i)=>newsItem(x,i)).join('')}</div></div>${fab()}`}
-  function profile(){return `${heading('03 / PERSONAL SETTINGS','我的设置','让政务服务更符合您的习惯。')}<div class="page-wrap"><div class="profile-card"><div class="profile-header"><div class="avatar">${esc((state.alias||'吉').slice(0,1))}</div><div><h3>${esc(state.alias||'访客，您好')}</h3><p>个人偏好仅保存在本机</p></div></div></div><div class="setting-list"><button type="button" class="setting" data-action="alias"><span>我的称呼<br><small>只保存在本机</small></span>${ico('edit')}</button><button type="button" class="setting" data-action="regions"><span>当前地区<br><small>${esc(state.region)}</small></span>${ico('right')}</button><button type="button" class="setting" data-action="elder"><span>长辈模式<br><small>更大字号与清楚的操作入口</small></span><span class="switch ${state.elder?'on':''}"></span></button><button type="button" class="setting" data-action="motion"><span>动态效果<br><small>支持系统“减少动态”偏好</small></span><span class="switch ${state.motion?'on':''}"></span></button><button type="button" class="setting" data-action="voice-help"><span>麦克风与语音说明<br><small>如何在 Android 正确使用</small></span>${ico('right')}</button></div><p class="note-plain">吉政知行提供信息导办，不代替政府机关的正式办事服务。</p></div>${fab()}`}
+  function profile(){return `${heading('03 / PERSONAL SETTINGS','我的设置','让政务服务更符合您的习惯。')}<div class="page-wrap"><div class="profile-card"><div class="profile-header"><div class="avatar">${esc((state.alias||'吉').slice(0,1))}</div><div><h3>${esc(state.alias||'访客，您好')}</h3><p>个人偏好仅保存在本机</p></div></div></div>${state.task?`<div class="profile-task">${taskCard()}</div>`:''}<div class="setting-list"><button type="button" class="setting" data-action="alias"><span>我的称呼<br><small>只保存在本机</small></span>${ico('edit')}</button><button type="button" class="setting" data-action="regions"><span>当前地区<br><small>${esc(state.region)}</small></span>${ico('right')}</button><button type="button" class="setting" data-action="elder"><span>长辈模式<br><small>更大字号与清楚的操作入口</small></span><span class="switch ${state.elder?'on':''}"></span></button><button type="button" class="setting" data-action="motion"><span>动态效果<br><small>支持系统“减少动态”偏好</small></span><span class="switch ${state.motion?'on':''}"></span></button><button type="button" class="setting" data-action="voice-help"><span>麦克风与语音说明<br><small>如何在 Android 正确使用</small></span>${ico('right')}</button></div><p class="note-plain">吉政知行提供信息导办，不代替政府机关的正式办事服务。</p></div>${fab()}`}
   function render(){document.documentElement.classList.toggle('elder',state.elder);document.documentElement.classList.toggle('motion-off',!state.motion);const r={home,services,news:newsPage,profile}[state.tab]||home;content.innerHTML=r();nav.innerHTML=[['home','首页','home'],['services','服务','grid'],['news','资讯','news'],['profile','我的','user']].map(([id,t,icon])=>`<button type="button" class="tab ${state.tab===id?'active':''}" data-tab="${id}" ${state.tab===id?'aria-current="page"':''}><span class="tab-icon">${ico(icon)}</span><span>${t}</span></button>`).join('');renderModal();renderAssistant();revealOnScroll();}
   function revealOnScroll(){const els=[...document.querySelectorAll('.reveal')];if(!('IntersectionObserver'in window)){els.forEach(e=>e.classList.add('visible'));return;}const o=new IntersectionObserver(entries=>entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');o.unobserve(e.target)}}),{rootMargin:'0px 0px -26px 0px',threshold:.08});els.forEach(e=>o.observe(e));}
   function setTab(t){if(!['home','services','news','profile'].includes(t))return;closeAssistant();state.modal=null;state.tab=t;state.search='';state.filter='all';render();window.scrollTo({top:0,behavior:'instant'})}
@@ -106,8 +152,9 @@
     if(state.modal==='regions')body=`<div class="sheet-header"><strong>选择所在地区</strong>${close}</div><p class="sheet-desc">切换吉林省内市州。事项办理时请以官方系统的实际地区为准。</p><div class="region-grid">${regions.map(x=>`<button type="button" class="region-option ${x===state.region?'active':''}" data-region="${esc(x)}">${esc(x)}</button>`).join('')}</div>`;
     else if(state.modal==='alias')body=`<div class="sheet-header"><strong>我的称呼</strong>${close}</div><p class="sheet-desc">称呼只保存在当前设备，无需填写真实身份信息。</p><form id="aliasForm"><input class="input-row" name="alias" maxlength="12" placeholder="例如：李同学" value="${esc(state.alias)}" required /><div style="height:16px"></div><button class="primary" type="submit">保存昵称 ${ico('check')}</button></form>`;
     else if(state.modal==='voice-help')body=`<div class="sheet-header"><strong>语音为什么不能用？</strong>${close}</div><p class="sheet-desc">你当前可能从 <code>content://downloads</code> 或本地文件打开页面。这种环境无法保证麦克风和在线语音识别。</p><ol class="guide-steps"><li><span class="step-circle">1</span><span>将 PWA 工程部署到 HTTPS（GitHub Pages 或 Cloudflare Pages），用 Chrome 访问。</span></li><li><span class="step-circle">2</span><span>允许浏览器访问麦克风，并确保系统存在中文语音识别服务。</span></li><li><span class="step-circle">3</span><span>浏览器仍不支持转写时，可以使用手机输入法自带的语音输入。</span></li></ol><p class="sheet-legal">声纹在授权后会跟随声音变化；语音转文字还需要浏览器支持。</p>`;
-    else if(state.modal.startsWith('guide:')){const key=state.modal.split(':')[1],g=guide[key];if(!g){state.modal=null;modalRoot.innerHTML='';return;}const official=Object.keys(URLS).find(k=>URLS[k]===g.url);body=`<div class="sheet-header"><strong>${esc(g.title)}</strong>${close}</div><p class="sheet-desc">${esc(state.region)} · 办事参考步骤，实际要求请查看官方指南。</p><ol class="guide-steps">${g.steps.map((s,i)=>`<li><span class="step-circle">${i+1}</span><span>${esc(s)}</span></li>`).join('')}</ol><button type="button" class="primary" data-official="${official}">前往官方服务入口 ${ico('external')}</button><p class="sheet-legal">这里提供信息导办；办理申请请使用政府指定渠道。</p>`}
-    modalRoot.innerHTML=`<div class="overlay" data-dismiss="modal"><section class="sheet" role="dialog" aria-modal="true" aria-label="${state.modal.startsWith('guide:')?'办事指南':'设置'}"><div class="drag-handle"></div>${body}</section></div>`;
+     else if(state.modal==='task')body=taskSheet();
+     else if(state.modal.startsWith('guide:')){const key=state.modal.split(':')[1],g=guide[key];if(!g){state.modal=null;modalRoot.innerHTML='';return;}const official=Object.keys(URLS).find(k=>URLS[k]===g.url);body=`<div class="sheet-header"><strong>${esc(g.title)}</strong>${close}</div><p class="sheet-desc">${esc(state.region)} · 办事参考步骤，实际要求请查看官方指南。</p><ol class="guide-steps">${g.steps.map((s,i)=>`<li><span class="step-circle">${i+1}</span><span>${esc(s)}</span></li>`).join('')}</ol><button type="button" class="primary" data-official="${official}">前往官方服务入口 ${ico('external')}</button><p class="sheet-legal">这里提供信息导办；办理申请请使用政府指定渠道。</p>`}
+    modalRoot.innerHTML=`<div class="overlay ${state.modal==='task'?'task-overlay':''}" data-dismiss="modal"><section class="sheet ${state.modal==='task'?'task-sheet':''}" role="dialog" aria-modal="true" aria-label="${state.modal==='task'?'我的导办清单':state.modal.startsWith('guide:')?'办事指南':'设置'}"><div class="drag-handle"></div>${body}</section></div>`;
   }
   const barMarkup=()=>'<span></span>'.repeat(5);
   function renderAssistant(){document.body.classList.toggle('sheet-open',!!state.modal||!!state.assistant);if(!state.assistant){aiRoot.innerHTML='';return;}
@@ -118,7 +165,7 @@
       const help=state.voiceMessage||(state.voice==='listening'?'请对着麦克风说话，声纹会随声音起伏':'点击左侧麦克风说话，或直接输入文字');
       aiRoot.innerHTML=`<div class="ai-overlay compact" data-dismiss="assistant"><section class="ai-compact-stage" role="dialog" aria-modal="true" aria-label="吉小知快捷语音输入"><button type="button" class="close-ai" data-action="ai-close" aria-label="返回页面">${ico('close')}</button><div class="voice-visual"><div class="voice-orb">${liquid()}</div><strong class="voice-status-title" id="voiceVisualStatus">${esc(text)}</strong><div class="voice-status-sub" id="voiceVisualSub">可以直接说，也可以输入文字</div></div><div class="compact-dock"><span class="dock-caption">吉小知 · 智能政务导办</span><form class="voice-capsule" id="voiceForm"><button type="button" class="mic-trigger ${['requesting','listening','meter'].includes(state.voice)?'active':''}" data-action="voice" aria-label="${state.voice==='idle'?'开始语音输入':'停止语音输入'}">${ico('mic')}</button><input id="compactInput" class="voice-input" name="question" maxlength="140" autocomplete="off" placeholder="输入问题或点击麦克风" aria-label="请输入政务问题"/><span class="voice-meter ${state.voice==='idle'?'idle':''}" aria-hidden="true">${barMarkup()}</span><button type="button" class="expand-ai" data-action="ai-full" aria-label="展开完整对话">${ico('plus')}</button></form><div class="voice-inline-message" id="voiceInlineMessage" aria-live="polite">${esc(help)}</div><div class="compact-help"><button type="button" data-action="ai-close">返回</button><button type="button" data-action="voice-help">语音帮助</button><button type="button" data-action="ai-full">完整对话 ↗</button></div></div></section></div>`;
     } else {
-      markup=`<div class="ai-overlay" data-dismiss="assistant"><section class="ai-full-panel" role="dialog" aria-modal="true" aria-label="吉小知智能导办对话"><div class="drag-handle"></div><header class="ai-full-head"><span class="small-liquid">${liquid()}</span><span class="head-copy"><strong>吉小知</strong><small>${esc(state.region)} · 查政策 · 带您办</small></span><button type="button" class="close-round" data-action="ai-close" aria-label="关闭对话">${ico('close')}</button></header><div class="ai-full-scroll" id="chatScroll">${state.messages.length===0?`<div class="ai-greeting"><div class="label">YOU ASK, WE GUIDE</div><h2>有问题，<br>慢慢告诉我。</h2><p>找入口、查流程、学操作。先从一个简单的问题开始。</p><span class="demo-pill">${state.aiStatus==='ready'?'在线问答已连接':state.aiStatus==='unavailable'?'连接暂时不可用':'正在连接'}</span><div class="prompts">${['养老金资格认证怎么办？','医保报销去哪里查？','身份证到期怎么换？','帮我找到办事入口'].map(x=>`<button type="button" class="prompt" data-prompt="${esc(x)}">${esc(x)} ↗</button>`).join('')}</div></div>`:''}<div class="chat-stream">${state.messages.map((x,i)=>`<div class="bubble ${x.from} ${revealJob?.index===i?'revealing':''}" data-message-index="${i}"><span class="bubble-copy">${esc(revealJob?.index===i?revealJob.pieces.slice(0,revealJob.count).join(''):x.text)}</span>${revealJob?.index===i?`<span class="reveal-caret" aria-hidden="true"></span><div class="reveal-controls"><span class="reveal-hint">正在呈现回答</span><button type="button" data-action="skip-reveal" class="reveal-skip">显示全文 ${ico('arrow')}</button></div>`:''}${x.attachmentName?`<div class="chat-attachment-label">📎 ${esc(x.attachmentName)}</div>`:''}${x.from==='assistant'?`<div class="bubble-meta">${x.actions?.length?`<div class="chat-actions">${x.actions.map(a=>`<button type="button" class="chat-action" data-answer-action="${esc(a.type)}" data-answer-value="${esc(a.value)}">${esc(a.label)} ↗</button>`).join('')}</div>`:''}<button type="button" class="chat-action" data-action="tts" style="margin-top:8px">${ico('audio')} 播报这条回复</button></div>`:''}</div>`).join('')}${state.thinking?`<div class="thinking-panel" role="status" aria-live="polite" aria-label="正在准备回答"><span class="thinking-emblem" aria-hidden="true"><span class="thinking-core"></span><span class="thinking-halo"></span></span><span class="thinking-content"><strong>吉小知正在思考<span class="thinking-ellipsis" aria-hidden="true"><i></i><i></i><i></i></span></strong><small>${esc(state.uploadProgress||'马上为您整理回答')}</small></span></div>`:''}</div></div><div class="ai-composer"><div class="attachment-strip" id="attachmentStrip" hidden></div><form class="chat-form" id="chatForm"><input id="chatFile" class="visually-hidden" type="file" accept="image/png,image/jpeg,image/webp,image/gif,.pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.md,.csv" aria-label="添加图片或文档"/><button type="button" class="chat-icon-btn attach-btn" data-action="attach" aria-label="添加图片或文件">${ico('plus')}</button><input id="chatInput" class="chat-input" name="question" placeholder="输入您的政务问题" maxlength="140" aria-label="输入政务问题"/><button type="button" class="chat-icon-btn" data-action="voice" aria-label="语音输入">${ico('mic')}</button><button type="submit" class="chat-icon-btn send" aria-label="发送问题">${ico('send')}</button></form><div class="audio-note" id="fullVoiceMessage">${esc(state.voiceMessage)}</div><div class="chat-footnote">支持 PDF / Word / PPT 最大 100 MB，图片最大 64 MiB，其他文件最大 32 MiB。请勿上传身份证、密码等敏感信息。</div></div></section></div>`;
+      markup=`<div class="ai-overlay" data-dismiss="assistant"><section class="ai-full-panel" role="dialog" aria-modal="true" aria-label="吉小知智能导办对话"><div class="drag-handle"></div><header class="ai-full-head"><span class="small-liquid">${liquid()}</span><span class="head-copy"><strong>吉小知</strong><small>${esc(state.region)} · 查政策 · 带您办</small></span><button type="button" class="close-round" data-action="ai-close" aria-label="关闭对话">${ico('close')}</button></header><div class="ai-full-scroll" id="chatScroll">${state.messages.length===0?`<div class="ai-greeting"><div class="label">CIVIC TASK AGENT</div><h2>告诉我目标，<br>我来规划下一步。</h2><p>我会检索已核对的办事资料，整理步骤并提供可点击的入口。</p><span class="demo-pill">${state.aiStatus==='ready'?'在线问答已连接':state.aiStatus==='unavailable'?'连接暂时不可用':'正在连接'}</span><div class="prompts">${['帮我规划长春的养老金资格认证','我想办医保报销，先做什么？','身份证到期，帮我安排办事步骤','找不到办事入口，帮我定位'].map(x=>`<button type="button" class="prompt" data-prompt="${esc(x)}">${esc(x)} ↗</button>`).join('')}</div></div>`:''}<div class="chat-stream">${state.messages.map((x,i)=>`<div class="bubble ${x.from} ${revealJob?.index===i?'revealing':''}" data-message-index="${i}"><span class="bubble-copy">${esc(revealJob?.index===i?revealJob.pieces.slice(0,revealJob.count).join(''):x.text)}</span>${revealJob?.index===i?`<span class="reveal-caret" aria-hidden="true"></span><div class="reveal-controls"><span class="reveal-hint">正在呈现回答</span><button type="button" data-action="skip-reveal" class="reveal-skip">显示全文 ${ico('arrow')}</button></div>`:''}${x.attachmentName?`<div class="chat-attachment-label">📎 ${esc(x.attachmentName)}</div>`:''}${x.agent?.trace?.length?`<details class="agent-trace"><summary>${ico('check')} 已执行 ${x.agent.trace.length} 项查询操作</summary><ol>${x.agent.trace.map(t=>`<li><strong>${esc(t.label)}</strong><small>${esc(t.detail)}</small></li>`).join('')}</ol></details>`:''}${x.agent?.plan?.steps?.length?`<section class="agent-plan"><div class="agent-plan-title">${ico('file')} ${esc(x.agent.plan.title)}<small>依据：本地事项索引</small></div><ol>${x.agent.plan.steps.map(s=>`<li>${esc(s)}</li>`).join('')}</ol><button type="button" class="task-save" data-save-plan="${i}">${state.task?.id===x.agent.plan.id&&state.task?.region===state.region?'更新本机清单':'保存为导办清单'} ${ico('right')}</button></section>`:''}${x.from==='assistant'?`<div class="bubble-meta">${x.actions?.length?`<div class="chat-actions">${x.actions.map(a=>`<button type="button" class="chat-action" data-answer-action="${esc(a.type)}" data-answer-value="${esc(a.value)}">${esc(a.label)} ↗</button>`).join('')}</div>`:''}<button type="button" class="chat-action" data-action="tts" style="margin-top:8px">${ico('audio')} 播报这条回复</button></div>`:''}</div>`).join('')}${state.thinking?`<div class="thinking-panel" role="status" aria-live="polite" aria-label="正在准备回答"><span class="thinking-emblem" aria-hidden="true"><span class="thinking-core"></span><span class="thinking-halo"></span></span><span class="thinking-content"><strong>吉小知正在查找办事依据<span class="thinking-ellipsis" aria-hidden="true"><i></i><i></i><i></i></span></strong><small>${esc(state.uploadProgress||'正在检索事项并整理步骤')}</small></span></div>`:''}</div></div><div class="ai-composer"><div class="attachment-strip" id="attachmentStrip" hidden></div><form class="chat-form" id="chatForm"><input id="chatFile" class="visually-hidden" type="file" accept="image/png,image/jpeg,image/webp,image/gif,.pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.md,.csv" aria-label="添加图片或文档"/><button type="button" class="chat-icon-btn attach-btn" data-action="attach" aria-label="添加图片或文件">${ico('plus')}</button><input id="chatInput" class="chat-input" name="question" placeholder="输入您的政务问题" maxlength="140" aria-label="输入政务问题"/><button type="button" class="chat-icon-btn" data-action="voice" aria-label="语音输入">${ico('mic')}</button><button type="submit" class="chat-icon-btn send" aria-label="发送问题">${ico('send')}</button></form><div class="audio-note" id="fullVoiceMessage">${esc(state.voiceMessage)}</div><div class="chat-footnote">支持 PDF / Word / PPT 最大 100 MB，图片最大 64 MiB，其他文件最大 32 MiB。请勿上传身份证、密码等敏感信息。</div></div></section></div>`;
     }
     if(state.assistant==='full'){
       if(existingFull){
@@ -281,11 +328,11 @@
     const prompt=question||(attachment?'请说明这份材料的主要内容，并给我下一步办理建议。':'');
     state.messages.push({from:'user',text:prompt,attachmentName:attachment?.name||''});state.thinking=true;state.uploadProgress='';renderAssistant();
     const ctrl=new AbortController();aiController=ctrl;
-    const timeout=setTimeout(()=>ctrl.abort(),attachment?(attachment.size>MAX_DIRECT_BYTES?720000:180000):20000);
+    const timeout=setTimeout(()=>ctrl.abort(),attachment?(attachment.size>MAX_DIRECT_BYTES?720000:180000):48000);
     let revealIndex=null;
     try{
       if(!['https:','http:'].includes(location.protocol))throw new Error('当前从本地文件打开页面。要使用云端 AI，请将工程部署到 HTTPS 地址。');
-      const payload={question:prompt,region:state.region,history,context:{tab:state.tab,guide:state.tab==='services'&&state.filter!=='all'?state.filter:null}};
+      const payload={question:prompt,region:state.region,history,mode:attachment?'chat':'agent',context:{tab:state.tab,guide:state.tab==='services'&&state.filter!=='all'?state.filter:null,task:state.task?.region===state.region?{id:state.task.id,understood:markedCount(state.task)}:null}};
       if(attachment?.size>MAX_DIRECT_BYTES)payload.attachmentToken=await uploadLargeAttachment(attachment,ctrl);
       const form=attachment&&attachment.size<=MAX_DIRECT_BYTES?new FormData():null;
       if(form){form.append('payload',JSON.stringify(payload));form.append('file',attachment,attachment.name)}
@@ -306,7 +353,10 @@
       )&&typeof a.label==='string').slice(0,4).map(a=>({type:a.type,value:a.value,label:a.label.slice(0,40)}));
       if(aiController!==ctrl)return;
       state.aiStatus='ready';
-      state.messages.push({from:'assistant',text:data.text.slice(0,2000),actions});
+      const trace=Array.isArray(data.agent?.trace)?data.agent.trace.filter(x=>x&&typeof x.label==='string'&&typeof x.detail==='string').slice(0,4).map(x=>({label:x.label.slice(0,40),detail:x.detail.slice(0,100)})):[];
+      const rawPlan=data.agent?.plan;
+      const plan=rawPlan&&allowedGuides.has(rawPlan.id)&&Array.isArray(rawPlan.steps)?{id:rawPlan.id,title:String(rawPlan.title||'办事步骤').slice(0,40),steps:rawPlan.steps.filter(x=>typeof x==='string').slice(0,3).map(x=>x.slice(0,140))}:null;
+      state.messages.push({from:'assistant',text:data.text.slice(0,2000),actions,agent:{trace,plan}});
       revealIndex=state.messages.length-1;
     }catch(err){
       if(aiController!==ctrl)return;
@@ -354,7 +404,11 @@
     const g=target.dataset.guide;if(g){state.modal='guide:'+g;renderModal();return}
     const off=target.dataset.official;if(off){openOfficial(off);return}
     const region=target.dataset.region;if(region){state.region=region;state.modal=null;persist();render();notice(`已切换到${region}`);return}
-    const p=target.dataset.prompt;if(p){ask(p);return}
+     const step=target.dataset.taskStep;
+     if(step!==undefined){const i=Number(step);if(state.task&&Number.isInteger(i)&&i>=0&&i<state.task.checked.length){state.task.checked[i]=!state.task.checked[i];persistTask();render();}return}
+     const planIndex=target.dataset.savePlan;
+     if(planIndex!==undefined){savePlan(Number(planIndex));return}
+     const p=target.dataset.prompt;if(p){ask(p);return}
     const at=target.dataset.answerAction;if(at){const val=target.dataset.answerValue;if(at==='guide'){state.modal='guide:'+val;closeAssistant();renderModal()}else if(at==='official'){openOfficial(val)}else if(at==='tab'){setTab(val)}return}
     switch(target.dataset.action){
       case 'open-ai':setAssistant('compact');break;
@@ -362,6 +416,11 @@
       case 'ai-full':state.assistant='full';renderAssistant();break;
       case 'voice':startVoice();break;
       case 'voice-help':state.modal='voice-help';stopMic();state.assistant=null;renderAssistant();renderModal();break;
+      case 'task-open':if(state.task){state.modal='task';renderModal()}break;
+      case 'task-delete':
+        if(state.task&&window.confirm('清除当前设备保存的导办清单？')){state.task=null;persistTask();state.modal=null;render();notice('本机导办清单已清除')}break;
+      case 'task-ask':
+        if(state.task){const t=state.task;state.modal=null;setAssistant('full');const input=document.getElementById('chatInput');if(input){input.value=`我在${state.region}，想继续了解${t.title}。我已标记了解 ${markedCount(t)} 步，请帮助我核对下一步。`;input.focus()}}break;
       case 'regions':state.modal='regions';renderModal();break;
       case 'alias':state.modal='alias';renderModal();break;
       case 'modal-close':state.modal=null;renderModal();break;

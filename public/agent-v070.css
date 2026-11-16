@@ -1,0 +1,57 @@
+/* Agent-first conversation: evidence and task progress are separated from prose. */
+.agent-trace { margin:14px 0 8px; background:rgba(238,244,255,.66); border:1px solid rgba(91,143,211,.18); border-radius:15px; padding:10px 12px; }
+.agent-trace summary { cursor:pointer; display:flex; align-items:center; gap:7px; font-size:12px; font-weight:650; color:#37628f; list-style:none; }
+.agent-trace summary::-webkit-details-marker{display:none}
+.agent-trace summary svg{width:15px;height:15px;flex:none}
+.agent-trace ol{margin:10px 0 1px;padding:0 0 0 19px;color:#526a85}
+.agent-trace li{padding:3px 0;font-size:12px;line-height:1.45}
+.agent-trace li strong{display:block;color:#2a547e;font-weight:600}
+.agent-trace li small{display:block;color:#667c94;font-size:11px}
+.agent-plan {margin:14px 0 4px; padding:14px 15px 12px; border-radius:18px; background:#fff; border:1px solid #d9e5f7; box-shadow:0 6px 22px rgba(40,100,164,.055);}
+.agent-plan-title {display:flex;gap:8px;align-items:center;flex-wrap:wrap;color:#20436a;font-weight:720;font-size:14px}
+.agent-plan-title svg{height:18px;width:18px;color:#3677c6}
+.agent-plan-title small{margin-left:auto;font-size:11px;font-weight:500;color:#7389a1}
+.agent-plan ol{margin:10px 0 0;padding-left:22px;color:#445a74;font-size:13px;line-height:1.8}
+.agent-plan li{padding:3px 0}
+@media(prefers-reduced-motion:reduce){.agent-plan,.agent-trace{animation:none!important;transition:none!important}}
+
+/* Saved guide state is local reading progress, never an official processing status. */
+.saved-task{margin:16px 2px 0;padding:17px 18px 16px;border:1px solid #d6e5f6;border-radius:23px;background:linear-gradient(130deg,#fff 12%,#eaf4ff 100%);box-shadow:0 10px 30px rgba(49,106,168,.07);color:#183c64}
+.saved-task-top{display:flex;justify-content:space-between;gap:10px;align-items:center}
+.saved-task-label{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:750;color:#306db3}
+.saved-task-label svg{width:16px;height:16px}
+.saved-task-top small{font-size:12px;color:#5c7592}
+.saved-task h2{font-size:19px;line-height:1.4;margin:9px 0 4px;font-weight:760}
+.saved-task p{font-size:12px;line-height:1.6;margin:0;color:#627e9d}
+.task-progress{display:flex;gap:6px;margin:13px 0 14px}
+.task-progress i{display:block;flex:1;height:6px;border-radius:100px;background:#d3e0f2}
+.task-progress i.done{background:linear-gradient(90deg,#3778ca,#73c4f1)}
+.task-resume{width:100%;display:flex;justify-content:space-between;align-items:center;background:#fff;border:1px solid #cfe0f4;border-radius:14px;color:#235b99;padding:12px 13px;font-size:14px;font-weight:700;min-height:46px}
+.task-resume svg{width:17px;height:17px}
+.profile-task{margin-bottom:17px}
+.profile-task .saved-task{margin:0}
+.agent-plan .task-save{margin-top:11px;min-height:42px;width:100%;border:1px solid #cde0f6;border-radius:13px;background:#f0f7ff;display:flex;justify-content:space-between;align-items:center;color:#245d9f;font-weight:700;padding:10px 12px;font-size:13px}
+.agent-plan .task-save svg{width:17px;height:17px}
+.task-step-list{display:grid;gap:10px;margin:14px 0 12px}
+.task-step{width:100%;min-height:72px;display:flex;align-items:flex-start;gap:12px;text-align:left;padding:14px;background:#fff;border:1px solid #d9e6f6;border-radius:16px;color:#294562}
+.task-step.checked{background:#edf6ff;border-color:#8cbee9}
+.task-step-index{display:flex;align-items:center;justify-content:center;width:28px;height:28px;flex:none;border-radius:50%;background:#e1edf9;color:#366eaf;font-size:13px;font-weight:760}
+.task-step.checked .task-step-index{background:#3678c5;color:#fff}
+.task-step-index svg{width:16px;height:16px}
+.task-step-text{font-size:14px;line-height:1.6;font-weight:600;flex:1}
+.task-step-text small{display:block;color:#6c85a0;font-weight:400;font-size:12px;margin-top:4px}
+.task-region-alert{border:1px solid #f4daa1;border-radius:13px;background:#fff7e8;color:#8b631c;font-size:13px;padding:12px;line-height:1.5}
+.task-fineprint{font-size:12px;line-height:1.6;color:#657d94}
+.task-sheet-actions{display:grid;gap:9px;padding:5px 0 10px}
+.task-sheet-actions .primary{width:100%}
+.task-secondary,.task-delete{min-height:46px;width:100%;border-radius:13px;background:#f1f6fd;border:1px solid #d6e5f7;color:#2b5d91;font-size:14px;font-weight:600}
+.task-secondary svg{height:17px;width:17px;vertical-align:middle}
+.task-delete{background:transparent;color:#677c92;border-color:transparent;font-weight:500}
+@media (max-width:350px){.saved-task{padding:15px}.task-step{padding:12px}}
+@media (prefers-reduced-motion:reduce){.task-resume,.task-step,.task-save{transition:none!important}}
+
+.task-overlay{backdrop-filter:none!important;-webkit-backdrop-filter:none!important;background:rgba(29,53,89,.25)!important}
+.task-sheet{max-height:calc(100dvh - 65px);overflow-y:auto;overscroll-behavior:contain}
+.task-secondary{display:flex;align-items:center;justify-content:center;gap:8px}
+.elder .task-step-text{font-size:17px}
+.elder .task-fineprint,.elder .saved-task p,.elder .task-step-text small{font-size:14px}
