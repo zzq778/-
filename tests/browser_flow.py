@@ -59,6 +59,18 @@ with sync_playwright() as p:
    assert page.locator('.bubble.assistant').count()>=1
    page.locator('[data-action="ai-close"]').click()
    assert not page.locator('.ai-overlay').count()
+   # 政策解读：服务页 → 政策类目 → 列表 → 详情 → 返回
+   page.locator('[data-tab="services"]').click();page.wait_for_timeout(200)
+   page.locator('[data-guide="policy"]').click();page.wait_for_timeout(250)
+   rows=page.locator('[data-policy]')
+   assert rows.count()==6,rows.count()
+   rows.first.click();page.wait_for_timeout(250)
+   assert page.locator('[data-policy-url]').count()>=1
+   assert page.locator('[data-action="policy-back"]').count()==1
+   page.locator('[data-action="policy-back"]').click();page.wait_for_timeout(200)
+   assert page.locator('[data-policy]').count()==6
+   page.locator('[data-action="modal-close"]').click();page.wait_for_timeout(150)
+   assert not page.locator('[data-policy]').count()
   page.close()
  # Reduced-motion users receive full content without reveal animation.
  page=browser.new_page(viewport={'width':390,'height':844},reduced_motion='reduce')
