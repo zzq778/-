@@ -145,3 +145,12 @@ test('actual front script sends wenlv request, renders, stores, restores and pre
  assert.match(outcome.innerHTML,/雾凇岛/);
  click('forget');assert.equal(store['jzzx-travel-plan-v1'],undefined);
 });
+
+test('empty matching set is a clear no-match response and does not call model',async()=>{
+ let calls=0;
+ const out=await answerWenlv({question:'辽源市三天，不去辽源矿工墓陈列馆',invoke:async()=>{calls++;throw Error('must not invoke');}});
+ assert.equal(calls,0);
+ assert.equal(out.reason,'no-match');
+ assert.ok(out.itinerary.plan.every(d=>d.nodes.length===0));
+ assert.match(out.answer,/没有同时满足/);
+});
