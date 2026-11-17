@@ -70,3 +70,12 @@
 .travel-voice-row span{color:#5d766b;font-size:11px;line-height:1.5}
 .app:has(.travel-home) .bottom-nav .tab.active{color:#176e64!important}
 .app:has(.travel-home) .bottom-nav .tab.active .tab-icon{color:#176e64!important}
+
+.travel-planning{margin:13px 0;padding:7px 12px;border:1px solid #dbe6dc;border-radius:13px;background:#f6faf7;color:#2b6352}
+.travel-planning summary{cursor:pointer;font-weight:750;font-size:13px;min-height:40px;display:flex;align-items:center;gap:6px}
+.travel-planning summary:before{content:"＋";font-size:15px}.travel-planning[open] summary:before{content:"−"}
+.travel-planning ol{margin:7px 0 6px;padding-left:20px}.travel-planning li{padding:3px 0 8px}.travel-planning li strong{font-size:13px}.travel-planning p{font-size:12px;line-height:1.6;color:#4b6c5b;margin:4px 0}
+.travel-result-actions{flex-wrap:wrap}.travel-result-actions button{min-width:78px;white-space:normal}
+.travel-share-text{width:100%;min-height:105px;border:1px solid #d6e5d9;border-radius:10px;background:#f7faf7;padding:10px;color:#244b3c;box-sizing:border-box;margin-top:6px;font-size:13px}
+.travel-risk{font-size:12px;line-height:1.65;color:#775923;background:#fff7e6;border-left:3px solid #bf9560;border-radius:5px 10px 10px 5px;padding:9px 11px;margin:12px 0}
+.travel-more{margin-top:11px}.travel-more summary{cursor:pointer;font-size:13px;color:#246c5a;font-weight:700;min-height:42px;line-height:42px}.travel-more .travel-route-grid{margin-top:3px}
