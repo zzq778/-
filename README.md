@@ -20,6 +20,7 @@
 - `src/wenlv/attractions.mjs` 40 个景点/场馆，9 个市州全覆盖；`routes.mjs` 12 条线路；`calendar.mjs` 12 条时令窗口；`entries.mjs` 8 个官方入口。
 - `npm run build:data` 由上面四个模块生成 `public/wenlv-data.js`（`window.WENLV`），配套 `public/wenlv-ui.js` 渲染；`public/wenlv-preview.html` 是独立预览页（不接 `app.js`）。
 - 规范文档：`docs/WENLV_SCHEMA.md`（字段与测试映射）、`docs/WENLV_DATA_SOURCES.md`（来源与合规红线）、`docs/UX_FLOW.md`（体验流程与演示脚本）。
+- **行程卡片（第 1 步，静态版）**：`public/itinerary.js` + `public/itinerary.css`，首页「文旅行程」入口 → 全屏 sheet，两天时间轴（上午/午后）+ 建议停留 + 行前清单；数据暂时写死在 `SAMPLE`，不读知识库、不调模型、不写票价与开放时间。
 - 票价、开放时间、预约名额一律不写死：数据里为 `null`，界面显示「以官方为准」。
 
 ## 本地检查

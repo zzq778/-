@@ -1,0 +1,55 @@
+/* 文旅行程卡片（静态版） · 只服务 public/itinerary.js + 首页入口
+   不改动既有 .sheet / .service-row 等类，所有选择器都带 iti- 前缀，避免影响原页面。 */
+
+/* ── 首页入口卡 ───────────────────────────────────────────── */
+.home-itinerary{margin:22px 0 0;padding:0 2px}
+.iti-badge{font-size:10px;font-weight:800;letter-spacing:.6px;color:#3b69cc;background:#eaf1ff;border-radius:6px;padding:3px 7px}
+.iti-entry{display:block;width:100%;text-align:left;border:1px solid #dfe8f5;border-radius:20px;background:linear-gradient(135deg,#eef5ff,#fff 62%);padding:16px 17px;box-shadow:0 10px 26px rgba(46,84,145,.06);transition:transform .22s,border-color .22s}
+.iti-entry:active{transform:scale(.987)}
+.iti-entry:hover{border-color:#c9dcf6}
+.iti-entry-kicker{display:block;font-size:10.5px;font-weight:750;letter-spacing:.4px;color:#6d87ab}
+.iti-entry strong{display:block;margin:7px 0 5px;font-size:16px;letter-spacing:-.4px;color:#1d3355}
+.iti-entry-meta{display:block;font-size:11.5px;color:#8397b0}
+.iti-entry-cta{display:inline-block;margin-top:12px;font-size:12px;font-weight:780;color:#2b5fc4}
+
+/* ── 行程卡片 sheet ──────────────────────────────────────── */
+.sheet.itinerary-sheet{max-height:94dvh;padding-bottom:calc(18px + env(safe-area-inset-bottom))}
+.iti-head strong{font-size:19px;line-height:1.4}
+.iti-meta{display:flex;flex-wrap:wrap;gap:7px;margin:10px 0 12px}
+.iti-chip{font-size:10.5px;font-weight:750;color:#4b6a96;background:#eef4fd;border:1px solid #e0eaf7;border-radius:100px;padding:5px 10px}
+.iti-summary{margin:0 0 16px;font-size:12.5px;line-height:1.75;color:#4a5f79;background:#f6f9fe;border-left:3px solid #b7cff2;border-radius:0 10px 10px 0;padding:10px 12px}
+.iti-days{display:grid;gap:18px}
+.iti-day-head{display:flex;align-items:center;gap:9px;margin:0 0 10px;font-size:13px;font-weight:780;color:#22395c}
+.iti-day-num{font-size:10px;font-weight:800;letter-spacing:.8px;color:#fff;background:#2b5fc4;border-radius:6px;padding:3px 7px}
+.iti-day-title{font-size:13px;color:#3b5374}
+.iti-nodes{list-style:none;margin:0;padding:0 0 0 6px;display:grid;gap:10px;position:relative}
+.iti-nodes:before{content:"";position:absolute;left:11px;top:10px;bottom:10px;width:1px;background:#dbe6f4}
+.iti-node{position:relative;display:flex;gap:11px;padding-left:20px}
+.iti-node:before{content:"";position:absolute;left:5px;top:15px;width:7px;height:7px;border-radius:50%;background:#fff;border:2px solid #5f8ad4;box-shadow:0 0 0 3px #f2f7ff}
+.iti-slot{flex-shrink:0;align-self:flex-start;margin-top:6px;font-size:10.5px;font-weight:800;color:#3f6cb5;background:#e9f1ff;border-radius:6px;padding:4px 7px}
+.iti-node-main{flex:1;min-width:0}
+.iti-node-main strong{display:block;font-size:13.5px;color:#20364f;letter-spacing:-.2px}
+.iti-why{margin:4px 0 0;font-size:12px;line-height:1.65;color:#5c7089}
+.iti-stay{margin:5px 0 0;font-size:10.5px;color:#8aa0bb}
+.iti-check{margin-top:18px;border-top:1px dashed #e3eaf4;padding-top:14px}
+.iti-check h3{margin:0 0 9px;font-size:12px;font-weight:800;letter-spacing:.3px;color:#33496b}
+.iti-check ul{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.iti-check li{display:flex;gap:8px;font-size:11.5px;line-height:1.65;color:#5b708b}
+.iti-check b{flex-shrink:0;min-width:34px;color:#3c659f;font-weight:780}
+.iti-actions{margin-top:16px}
+.iti-actions .secondary{width:100%}
+
+/* 长辈模式：只放大正文，保持布局不溢出 */
+.elder .iti-summary{font-size:15px}
+.elder .iti-node-main strong{font-size:16.5px}
+.elder .iti-why,.elder .iti-check li{font-size:15px}
+.elder .iti-stay,.elder .iti-slot,.elder .iti-chip{font-size:12.5px}
+.elder .iti-day-head,.elder .iti-day-title{font-size:16px}
+.elder .iti-entry strong{font-size:18px}
+.elder .iti-entry-meta{font-size:14px}
+
+@media(max-width:365px){
+  .iti-entry{padding:14px 14px}
+  .iti-node{gap:9px;padding-left:18px}
+  .iti-summary{font-size:12px}
+}
