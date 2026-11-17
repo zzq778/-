@@ -99,6 +99,9 @@ export async function answerWenlv({ question, now = new Date(), invoke = null, t
   const fallback = templateAnswer(itinerary);
 
   const base = { intent, retrieval, itinerary, mode: 'wenlv' };
+  if (!itinerary.plan.some(day => day.nodes.length)) {
+    return {...base,answer:'现有知识库中没有同时满足这些条件的景点。请放宽目的地或排除条件后重新规划。',issues:[],usedModel:false,degraded:true,reason:'no-match'};
+  }
 
   if (typeof invoke !== 'function') {
     return { ...base, answer: fallback, issues: [], usedModel: false, degraded: true, reason: 'no-model' };
