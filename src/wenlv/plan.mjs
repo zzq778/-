@@ -124,6 +124,7 @@ function dayTitle(day, nodes) {
 
 function collectWarnings(intent, nodes, days, retrieval) {
   const warnings = [];
+  if(intent?.exclusions?.length)warnings.push({type:'excluded',message:'已排除明确提出不去或不参加的对象：'+intent.exclusions.join('、')+'。可用节点不足时保留机动时间。'});
 
   if (retrieval?.fallback) {
     warnings.push({
