@@ -165,6 +165,7 @@ export async function handleApi(request,env) {
           areas: outcome.intent.areas,
           themes: outcome.intent.themes,
           companions: outcome.intent.companions,
+          exclusions: outcome.intent.exclusions,
           season: outcome.intent.season,
           fallback: outcome.retrieval.fallback,
           attractionCandidates: outcome.retrieval.attractions.length,
