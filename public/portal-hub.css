@@ -1,0 +1,19 @@
+/* 三端运营入口（本次新增）：我的 → 运营端，以及「文旅」tab 内的端页面容器 */
+.wenlv-hub{margin-top:2px}
+.wenlv-hub-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 18px;font-size:11.5px;color:#64798f;background:#fbfcff;border-top:1px solid #eef2f8;border-bottom:1px solid #eef2f8}
+.wenlv-hub-bar button{border:1px solid #d5e3f5;background:#f4f8ff;color:#2f5aa6;border-radius:100px;font-size:11px;font-weight:750;padding:7px 12px;min-height:36px}
+.wenlv-hub-bar button:active{transform:scale(.97)}
+.portal-frame{display:block;width:100%;height:calc(100dvh - 214px);min-height:540px;border:0;background:#fff}
+.wenlv-hub-note{margin:0;padding:10px 18px 84px;font-size:10.5px;color:#93a2b5;line-height:1.7}
+
+.role-list{display:grid;gap:9px;margin:14px 0 4px}
+.role-option{display:flex;align-items:center;gap:11px;text-align:left;width:100%;border:1px solid #e6ebf3;border-radius:14px;background:#fff;padding:13px 14px;min-height:64px;transition:border-color .2s,background .2s}
+.role-option.active{border-color:#7ea9ec;background:#f2f7ff;box-shadow:inset 0 0 0 1px #b9d1f4}
+.role-copy{flex:1;min-width:0}
+.role-copy strong{display:block;font-size:13.5px;color:#1f3453}
+.role-copy small{display:block;margin-top:4px;font-size:11px;color:#8496ad;line-height:1.6}
+.role-option svg{width:18px;height:18px;color:#2b5fc4}
+.elder .role-copy strong{font-size:16px}
+.elder .role-copy small{font-size:14px}
+.elder .wenlv-hub-bar{font-size:14px}
+.elder .portal-frame{height:calc(100dvh - 236px)}

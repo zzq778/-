@@ -1,0 +1,84 @@
+/* 三端门户共用样式（游客端 / 商户端 / 政府端）
+   与主应用保持同一套色板；只服务 public/portals/ 下的独立页面。 */
+:root{
+  --ink:#152034;--sub:#5d7086;--muted:#8492a5;--blue:#285cd6;--blue-ink:#1f4aa8;
+  --bg:#f4f7fb;--white:#fff;--line:#e6ebf3;--soft:#f8fafd;
+  --green:#2f7d5f;--amber:#a06b1f;--red:#a8503f;
+  font-family:Inter,-apple-system,BlinkMacSystemFont,"PingFang SC","Noto Sans CJK SC","Microsoft YaHei",sans-serif;
+  color:var(--ink);color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);-webkit-tap-highlight-color:transparent}
+button,input,select,textarea{font:inherit}
+button{cursor:pointer}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid #7cb1ff;outline-offset:2px}
+
+.p-app{max-width:540px;margin:0 auto;min-height:100dvh;background:var(--white);padding-bottom:calc(16px + env(safe-area-inset-bottom))}
+.p-header{position:sticky;top:0;z-index:5;background:rgba(255,255,255,.94);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid var(--line);padding:14px 18px 12px}
+.p-header-top{display:flex;align-items:center;gap:9px}
+.p-title{font-size:17px;font-weight:800;letter-spacing:-.4px;margin:0}
+.p-badge{font-size:10px;font-weight:800;letter-spacing:.4px;border-radius:100px;padding:4px 8px;background:#eaf1ff;color:#2c5fb7}
+.p-badge.gov{background:#eef7f1;color:#276b52}
+.p-badge.shop{background:#fff4e8;color:#955f16}
+.p-sub{margin:6px 0 0;font-size:11px;color:var(--muted);line-height:1.6}
+.p-tabs{display:flex;gap:6px;overflow:auto;scrollbar-width:none;margin-top:11px}
+.p-tabs::-webkit-scrollbar{display:none}
+.p-tab{white-space:nowrap;border:1px solid var(--line);background:#fff;color:#71849c;border-radius:100px;padding:8px 12px;font-size:12px;font-weight:700}
+.p-tab[aria-selected="true"]{background:#1f3a66;border-color:#1f3a66;color:#fff}
+.p-body{padding:15px 16px 8px;display:grid;gap:13px}
+.p-card{border:1px solid var(--line);border-radius:18px;background:var(--white);padding:15px 15px 16px;box-shadow:0 8px 22px rgba(40,66,104,.04)}
+.p-card h3{margin:0 0 3px;font-size:14px;font-weight:800;letter-spacing:-.3px}
+.p-card .p-hint{margin:0 0 11px;font-size:11px;color:var(--muted);line-height:1.65}
+.p-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.p-row{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px dashed #eef2f8}
+.p-row:last-child{border-bottom:0;padding-bottom:0}
+.p-row-main{flex:1;min-width:0}
+.p-row-main strong{display:block;font-size:12.5px;font-weight:750;line-height:1.5}
+.p-row-main small{display:block;margin-top:3px;font-size:10.5px;color:var(--muted);line-height:1.6}
+.p-pill{flex-shrink:0;font-size:10px;font-weight:800;border-radius:100px;padding:4px 8px;white-space:nowrap}
+.p-pill.missing{background:#f2f4f8;color:#7d8b9e}
+.p-pill.submitted{background:#fff6e6;color:var(--amber)}
+.p-pill.approved{background:#eaf7f0;color:var(--green)}
+.p-pill.rejected{background:#fdeeeb;color:var(--red)}
+.p-pill.pending{background:#fff6e6;color:var(--amber)}
+.p-pill.answered,.p-pill.replied{background:#eaf7f0;color:var(--green)}
+
+.p-btn{border:0;border-radius:12px;background:#234d9e;color:#fff;font-size:12.5px;font-weight:750;min-height:44px;padding:11px 14px}
+.p-btn:active{transform:scale(.985)}
+.p-btn.ghost{background:#f4f8ff;color:#2c5fb7;border:1px solid #d8e4f6}
+.p-btn.small{min-height:34px;padding:7px 11px;font-size:11.5px;border-radius:9px}
+.p-btn[disabled]{opacity:.55;cursor:not-allowed}
+
+.p-form{display:grid;gap:11px}
+.p-field{display:grid;gap:6px}
+.p-label{font-size:11px;font-weight:750;color:#48607d}
+.p-input,.p-textarea,.p-select{width:100%;border:1px solid #e0e7f1;border-radius:11px;background:#fbfcff;padding:11px 12px;font-size:13px;color:var(--ink)}
+.p-textarea{min-height:88px;resize:vertical;line-height:1.65}
+.p-input::placeholder,.p-textarea::placeholder{color:#a2b0c2}
+.p-chips{display:flex;flex-wrap:wrap;gap:7px}
+.p-chip{border:1px solid #dfe7f3;background:#fff;color:#5b7290;border-radius:100px;padding:8px 12px;font-size:11.5px;font-weight:700;min-height:38px}
+.p-chip[aria-pressed="true"]{background:#2b5fc4;border-color:#2b5fc4;color:#fff}
+
+.p-empty{margin:0;padding:14px 12px;border:1px dashed #dfe7f2;border-radius:12px;background:#fbfcfe;color:#8b99ab;font-size:11.5px;line-height:1.7;text-align:center}
+.p-note{margin:0;font-size:10.5px;color:#93a2b5;line-height:1.7}
+.p-note.warn{color:#9a6a24}
+.p-demo{display:inline-block;font-size:10px;font-weight:800;color:#955f16;background:#fff4e8;border-radius:6px;padding:2px 6px;margin-left:6px}
+
+.p-thread{display:grid;gap:8px;margin-top:8px}
+.p-msg{border-radius:12px;padding:9px 11px;font-size:12px;line-height:1.7;background:#f6f9fe;color:#41556e}
+.p-msg .who{display:block;font-size:10px;font-weight:800;color:#7b8fa9;margin-bottom:3px}
+.p-msg.merchant{background:#f2f8ff;border-left:3px solid #5b8ad6}
+.p-msg.government{background:#eef8f2;border-left:3px solid #4f9b78}
+.p-msg.tourist{background:#f7f7fb;border-left:3px solid #b9c2d3}
+.p-reply{display:flex;gap:7px;margin-top:8px}
+.p-reply input{flex:1;min-width:0}
+.p-progress{height:7px;border-radius:100px;background:#eef2f8;overflow:hidden;margin:8px 0 4px}
+.p-progress i{display:block;height:100%;background:linear-gradient(90deg,#4b83e0,#2b5fc4);border-radius:100px}
+.p-stats{display:flex;gap:8px;flex-wrap:wrap;margin-top:2px}
+.p-stat{border:1px solid var(--line);border-radius:12px;padding:9px 11px;min-width:84px;background:#fbfcff}
+.p-stat b{display:block;font-size:16px;letter-spacing:-.5px}
+.p-stat span{font-size:10px;color:var(--muted)}
+.p-code{margin:0;background:#0f1c30;color:#d7e4f7;border-radius:12px;padding:12px;font-size:11px;line-height:1.7;overflow-x:auto;white-space:pre-wrap;word-break:break-word}
+.p-footer{padding:6px 18px 14px;color:#9aa8b9;font-size:10.5px;line-height:1.7}
+@media (max-width:365px){.p-body{padding:12px 12px 6px}.p-card{padding:13px}.p-header{padding:12px 14px 10px}}

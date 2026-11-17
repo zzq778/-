@@ -11,6 +11,7 @@
 | 政务导办 | 首页「吉小知」对话 | 事项检索 → 导办步骤 → 站内按钮 + 官方门户 |
 | 政策解读 | 服务 → 政策解读 | 6 条已核对政策：一句话读懂 / 谁用得上 / 怎么做 / 易误解点，原文链接限定 `*.jl.gov.cn` |
 | 文旅行程 | 首页「文旅行程」 | 出行偏好 → 线路 → 行程卡片：依据抽屉、导出长图、语音朗读、长辈模式 |
+| 三端门户 | 我的 → 运营端 → 底部「文旅」 | 游客端 / 商户端 / 政府端三套独立页面，见下节 |
 
 ## 代码结构
 
@@ -29,6 +30,9 @@
 | `public/itinerary.js`、`itinerary.css` | 文旅行程卡片（数据、偏好、导出、朗读、无障碍） |
 | `public/policies.js` | 政务服务「政策解读」数据，核对日期 2026-11-14 |
 | `public/wenlv-data.js`、`wenlv-ui.js`、`wenlv-preview.html` | 知识库产物、独立渲染层与免部署预览页 |
+| `public/portals/shared/portal-core.js` | 三端共用数据层 + **政府端接入点**（localStorage，可换 fetch） |
+| `public/portals/{tourist,merchant,government}/` | 三端独立页面，各自 `index.html` + 自己的 js |
+| `public/portal-hub.css` | 「我的 → 运营端」与「文旅」tab 的端容器样式 |
 | `scripts/build-wenlv-data.mjs` | `npm run build:data` 生成 `window.WENLV` |
 | `scripts/wenlv-ask.mjs`、`wenlv-plan.mjs` | 排障脚本：不调模型，直接打印意图、排序与校验结果 |
 | `docs/` | `COMPETITION_AGENT_V070.md`、`WENLV_SCHEMA.md`、`WENLV_DATA_SOURCES.md`、`UX_FLOW.md`、`LXCLAW_INTEGRATION.md` |
@@ -68,6 +72,30 @@
 2. **接真数据**：读 `window.WENLV`，节点带「依据 N」→ 抽屉显示来源名、官方链接、核对日期、置信度；只放行 `OFFICIAL_DOMAINS`（与 `schema.mjs` 由测试比对），非白名单来源直接禁用。
 3. **偏好 / 导出 / 错误态**：同行人 × 节奏 × 天数从 12 条线路重排（存本机 `jzzx-iti-prefs`）；纯 canvas 导出 1080px 宽 PNG；弱匹配给 2 条替代，导出不支持 / 存储不可用 / 节点缺数据都有文字出口。
 4. **语音 / 长辈模式 / 无障碍**：每天一个「朗读」（Web Speech `zh-CN`，同按钮停止，播报稿只复述卡片内容）；长辈模式正文 19px、次要文字 `#5a6b82`、控件 46px；打开卡片接管焦点并用 `aria-live` 播报，Tab/Shift+Tab 在弹层内循环。
+
+## 三端门户（游客端 / 商户端 / 政府端）
+
+在「我的 → 运营端（文旅）」里选一个端，底部「文旅」就会加载对应的独立页面（同源 iframe，可离线）。三端各有自己的文件夹，互不 import，只共享 `portals/shared/portal-core.js`。
+
+| 端 | 页面 | 内容 |
+|---|---|---|
+| 游客端 | `portals/tourist/` | 看线路/时令（读 `window.WENLV`）+ 向商户提交反馈，能看到商户或政府的答复 |
+| 商户端 | `portals/merchant/` | 证件办理（5 类，状态记录）、提交问题（6 类）、商户档案与经营数据、答复游客反馈 |
+| 政府端 | `portals/government/` | **占位页**：接入契约 + 待办列表 + 联调用答复框；正式版由另一位同学开发 |
+
+商户提交问题的 6 类固定为：基础设施问题、交通与停车问题、景区周边环境问题、经营场地问题、政策咨询、文旅活动建议。
+
+商户档案字段：商户名称、联系人、电话、经营类型、经营地址、统一社会信用代码、营业执照编号与有效期、特色产品、相关公开资质；证件办理含营业执照、食品经营、公共卫生、消防、特种行业五类。
+
+**政府端接入点**（详见 `public/portals/README.md`）：
+
+```js
+JZZXPortal.government.inbox();                      // 读商户问题 + 游客反馈
+JZZXPortal.government.reply('issue'|'feedback', id, text); // 以政府身份答复
+JZZXPortal.onChange(refresh);                       // 三端共享的变更通知
+```
+
+本地演示边界：数据在浏览器 `localStorage`（key 前缀 `jzzx-portal-v1:`），无登录、无鉴权、不上传文件；换设备或清缓存会丢。换成真实后端时只需改 `portal-core.js` 的读写实现，三端页面不用动。
 
 ## 政务服务
 
@@ -152,3 +180,4 @@ python tests/browser_task.py
 | 2026-11-16 | 文旅知识库 D1–D2：schema、40 景点、12 线路、12 时令、8 入口、独立预览页 |
 | 2026-11-17 | D3 意图/检索、D4 编排/校验、D5 Worker 五步流水线（含 20 条幻觉探针） |
 | 2026-11-17 | 行程卡片四步：静态版 → 真数据与依据抽屉 → 偏好/导出/错误态 → 语音/长辈模式/无障碍 |
+| 2026-11-17 | 三端门户：游客端 / 商户端 / 政府端（独立文件夹），「资讯」改为「文旅」，我的新增运营端切换，政府端留接入契约 |
