@@ -113,6 +113,7 @@ async function generate(){
   const res=await root.fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({mode:'wenlv',question:q}),signal:ctrl.signal,cache:'no-store'});
   if(!res.ok)throw Error('服务暂时不可用（'+res.status+'）');
   const payload=await res.json();if(payload.mode!=='wenlv')throw Error('当前服务器尚未启用文旅接口。');
+  if(payload.reason==='no-match'){state.error='当前知识库没有同时满足这些条件的景点，请放宽出行条件。';return;}
   const p=normalizePlan(payload.itinerary,data());if(!p)throw Error('行程资料不完整或知识库版本不一致，请刷新后重试。');
   state.plan=p;state.planning=cleanPlanning(payload.planning);state.source=payload.degraded?'知识编排 · 非完整模型回复':'知识检索 · AI 辅助表达';state.answer=typeof payload.text==='string'?payload.text.slice(0,1200):'';
  }catch(e){state.error=e?.name==='AbortError'?'网络响应超时。':String(e?.message||'连接失败').slice(0,180);}
