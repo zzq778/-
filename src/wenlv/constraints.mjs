@@ -29,3 +29,20 @@ export function isExcludedEvent(event,intent){
   const terms=Array.isArray(intent?.exclusions)?intent.exclusions:[];
   return terms.some(t=>typeof t==='string'&&t&&[event.name,event.type].join(' ').includes(t));
 }
+
+/** Explicit city names are hard limits. A named tourism cluster permits areas containing that cluster. */
+export function targetAreas(intent){
+ const explicit=Array.isArray(intent?.areas)?intent.areas:[];
+ if(explicit.length)return new Set(explicit);
+ const clusters=Array.isArray(intent?.clusters)?intent.clusters:[];
+ return new Set(ATTRACTIONS.filter(a=>clusters.includes(a.cluster)).map(a=>a.area));
+}
+export function withinArea(entry,intent){
+ const allowed=targetAreas(intent);
+ return !allowed.size||allowed.has(entry.area);
+}
+export function routeWithinArea(route,intent){
+ const allowed=targetAreas(intent);
+ if(!allowed.size)return true;
+ return (route.nodes||[]).every(n=>{const a=ATTRACTIONS.find(x=>x.id===n.attractionId);return a&&allowed.has(a.area);});
+}
