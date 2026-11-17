@@ -443,6 +443,7 @@
     const g=target.dataset.guide;if(g){state.modal=(g==='policy'&&policies.length)?'policy-list':'guide:'+g;renderModal();return}
     const pid=target.dataset.policy;if(pid){if(policyById.has(pid)){state.modal='policy:'+pid;renderModal()}return}
     const purl=target.dataset.policyUrl;if(purl){openPolicyUrl(purl);return}
+    if(target.dataset.itiSource!==undefined||target.hasAttribute('data-iti-close')||target.dataset.itiUrl){if(window.JZZX_ITINERARY&&window.JZZX_ITINERARY.handle(target))return}
     const off=target.dataset.official;if(off){openOfficial(off);return}
     const region=target.dataset.region;if(region){state.region=region;state.modal=null;persist();render();notice(`已切换到${region}`);return}
      const step=target.dataset.taskStep;
