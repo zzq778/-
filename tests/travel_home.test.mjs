@@ -74,3 +74,74 @@ test('home loads knowledge before planner and application; service worker caches
   assert.match(sw,/'\.\/travel-home\.css'/);
   assert.match(app,/JZZX_TRAVEL_HOME\.render\(state\.region\)/);
 });
+
+test('hard constraints avoid explicit exclusion and unrequested cities', async()=>{
+ const {api,catalog}=build();
+ const cases=[
+ ['冬天到吉林市看雾凇两天，不想滑雪','吉林市','滑雪'],
+ ['长春市亲子一天，避免博物馆','长春市','博物馆'],
+ ['延边两天，不要去中国朝鲜族民俗园','延边州','中国朝鲜族民俗园'],
+ ['长春一日游，不去净月潭','长春市','净月潭']
+ ];
+ for(const [question,area,term] of cases){
+  const out=await answerWenlv({question,now:new Date('2026-11-18T12:00:00Z'),invoke:null});
+  assert.ok(out.intent.exclusions.includes(term),question);
+  const plan=api.normalizePlan(out.itinerary,catalog);
+  assert.ok(plan);
+  for(const n of plan.plan.flatMap(d=>d.nodes)){
+   const entry=catalog.attractions.find(a=>a.id===n.attractionId);
+   assert.equal(n.area,area,question);
+   assert.equal([entry.name,...entry.aliases,...entry.tags].join(' ').includes(term),false,question);
+  }
+ }
+ const thin=await answerWenlv({question:'辽源市三天',invoke:null});
+ assert.ok(thin.itinerary.plan.flatMap(d=>d.nodes).every(n=>n.area==='辽源市'));
+ assert.ok(thin.itinerary.warnings.some(w=>w.type==='thin-plan'));
+});
+test('front end suppresses malformed planning data and shares actual route only',()=>{
+ const {api,catalog}=build();
+ const invalid=api.cleanPlanning({days:99,modelUsed:false,modelReplyAccepted:true,attractionCandidates:-1});
+ assert.equal(invalid.days,null);
+ assert.equal(invalid.modelReplyAccepted,false);
+ assert.equal(invalid.attractionCandidates,null);
+ const plan=api.fromRoute(catalog.routes[0],catalog);
+ const text=api.shareText(plan);
+ for(const n of plan.plan.flatMap(d=>d.nodes))assert.match(text,new RegExp(n.name));
+ assert.match(text,/出发前请核实/);
+});
+test('actual front script sends wenlv request, renders, stores, restores and preserves prior result on failure',async()=>{
+ const store={},handlers={};
+ const outcome={innerHTML:'',querySelector(){return null}};
+ const q={value:'冬天看雾凇两天',focus(){}};
+ const button={disabled:false,innerHTML:''};
+ let request,fail=false;
+ const doc={addEventListener(k,v){handlers[k]=v;},getElementById(k){return k==='travelOutcome'?outcome:k==='travelQuestion'?q:null;},querySelector(k){return k==='#travelPlanForm button[type=submit]'?button:null;}};
+ const box=createContext({document:doc,setTimeout:()=>1,clearTimeout:()=>{},AbortController,localStorage:{getItem:k=>store[k]??null,setItem:(k,v)=>{store[k]=v;},removeItem:k=>{delete store[k];}}});
+ box.window=box;
+ runInContext(read('public/wenlv-data.js'),box);
+ const result=await answerWenlv({question:q.value,invoke:null});
+ box.fetch=async(url,opts)=>{
+  request={url,body:JSON.parse(opts.body)};
+  if(fail)throw Error('网络不可用');
+  return {ok:true,json:async()=>({mode:'wenlv',text:result.answer,itinerary:result.itinerary,degraded:true,planning:{days:2,areas:['吉林市'],themes:['雾凇'],season:'winter',sourceRouteId:result.itinerary.sourceRouteId,modelUsed:false}})};
+ };
+ runInContext(read('public/travel-home.js'),box);
+ box.JZZX_TRAVEL_HOME.render('长春市');
+ const submit=()=>handlers.submit({target:{id:'travelPlanForm'},preventDefault(){}});
+ const click=action=>{const target={dataset:{travelAction:action},closest:()=>true,remove(){}};handlers.click({target:{closest:()=>target}});};
+ const settle=async()=>{for(let i=0;i<15;i++)await Promise.resolve();};
+ submit();await settle();
+ assert.equal(request.url,'/api/chat');
+ assert.equal(request.body.mode,'wenlv');
+ assert.equal(request.body.question,q.value);
+ assert.match(outcome.innerHTML,/雾凇岛/);
+ assert.match(outcome.innerHTML,/为什么这样安排/);
+ click('save');assert.ok(store['jzzx-travel-plan-v1']);
+ assert.ok(!store['jzzx-travel-plan-v1'].includes(q.value));
+ click('new');assert.match(outcome.innerHTML,/继续查看/);
+ click('restore');assert.match(outcome.innerHTML,/雾凇岛/);
+ fail=true;submit();await settle();
+ assert.match(outcome.innerHTML,/暂时无法生成行程/);
+ assert.match(outcome.innerHTML,/雾凇岛/);
+ click('forget');assert.equal(store['jzzx-travel-plan-v1'],undefined);
+});
