@@ -43,7 +43,7 @@ function composeTravelQuestion(text,prefs){
 }
 function cleanPlanning(p){
   if(!p||typeof p!=='object')return null;
-  const fields=['areas','themes','companions'];
+  const fields=['areas','themes','companions','exclusions'];
   const safe={};
   for(const f of fields)safe[f]=Array.isArray(p[f])?p[f].filter(v=>typeof v==='string').map(v=>v.slice(0,32)).slice(0,8):[];
   safe.days=Number.isInteger(p.days)&&p.days>=1&&p.days<=3?p.days:null;
@@ -70,7 +70,7 @@ function planningMarkup(){
  const p=state.planning;if(!p)return '';
  const conditions=[p.days?p.days+'天':'',...p.areas,...p.companions,...p.themes,p.season].filter(Boolean);
  const route=(data().routes||[]).find(r=>r.id===p.sourceRouteId);
- return '<details class="travel-planning"><summary>为什么这样安排？</summary><ol><li><strong>理解出行需求</strong><p>'+esc(conditions.join(' · ')||'条件较少，建议补充城市、天数或主题。')+'</p></li><li><strong>检索文旅知识库</strong><p>'+esc(p.attractionCandidates===null?'已完成本地检索':'返回 '+p.attractionCandidates+' 个景点候选')+' · '+esc(p.routeCandidates===null?'':p.routeCandidates+' 条线路候选')+(p.fallback?' · 广泛推荐':'')+'</p></li><li><strong>编排行程</strong><p>'+esc(route?'采用线路骨架：'+route.name:'根据检索结果编排；不是实时路线导航。')+'</p></li><li><strong>整理与校验</strong><p>'+esc(p.modelReplyAccepted?'模型参与表述，已通过当前规则校验。':p.modelUsed?'模型回复未完整采用，行程由知识库编排。':'直接采用知识库模板，没有调用模型。')+'</p></li></ol>'+(p.daysClamped?'<p>当前最多支持 3 天；您提出的 '+esc(p.daysRequested||'更多')+' 天需求仅显示前 3 天，请继续分段规划。</p>':'')+'</details>';
+ return '<details class="travel-planning"><summary>为什么这样安排？</summary><ol><li><strong>理解出行需求</strong><p>'+esc((conditions.join(' · ')||'条件较少，建议补充城市、天数或主题。')+(p.exclusions.length?' · 排除 '+p.exclusions.join('、'):''))+'</p></li><li><strong>检索文旅知识库</strong><p>'+esc(p.attractionCandidates===null?'已完成本地检索':'返回 '+p.attractionCandidates+' 个景点候选')+' · '+esc(p.routeCandidates===null?'':p.routeCandidates+' 条线路候选')+(p.fallback?' · 广泛推荐':'')+'</p></li><li><strong>编排行程</strong><p>'+esc(route?'采用线路骨架：'+route.name:'根据检索结果编排；不是实时路线导航。')+'</p></li><li><strong>整理与校验</strong><p>'+esc(p.modelReplyAccepted?'模型参与表述，已通过当前规则校验。':p.modelUsed?'模型回复未完整采用，行程由知识库编排。':'直接采用知识库模板，没有调用模型。')+'</p></li></ol>'+(p.daysClamped?'<p>当前最多支持 3 天；您提出的 '+esc(p.daysRequested||'更多')+' 天需求仅显示前 3 天，请继续分段规划。</p>':'')+'</details>';
 }
 function resultMarkup(){
  if(state.busy)return '<section class="travel-result travel-wait" role="status"><span class="travel-spinner" aria-hidden="true"></span><div><strong>正在规划您的行程</strong><p>检索资料并编排候选路线。</p></div></section>';
