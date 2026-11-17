@@ -66,6 +66,14 @@
     return new Date().toISOString();
   }
 
+  // 允许调用方回填更早的时间（演示数据、导入历史记录用）；格式不合法就退回当前时间。
+  function stamp(value) {
+    if (typeof value !== 'string' || !value) return nowISO();
+    var t = Date.parse(value);
+    if (!isFinite(t)) return nowISO();
+    return new Date(t).toISOString();
+  }
+
   function uid(prefix) {
     return prefix + '-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 6);
   }
@@ -212,7 +220,7 @@
       detail: String(payload.detail || '').trim().slice(0, 600),
       location: String(payload.location || '').trim().slice(0, 80),
       status: 'pending',
-      createdAt: nowISO(),
+      createdAt: stamp(payload.createdAt),
       messages: []
     };
     var list = loadIssues();
@@ -243,7 +251,7 @@
       text: String(payload.text || '').trim().slice(0, 500),
       fromName: String(payload.fromName || '').trim().slice(0, 20) || '匿名游客',
       status: 'pending',
-      createdAt: nowISO(),
+      createdAt: stamp(payload.createdAt),
       messages: []
     };
     var list = loadFeedback();

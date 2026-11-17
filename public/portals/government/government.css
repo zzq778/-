@@ -1,0 +1,37 @@
+/* 政府端专用样式（只服务 public/portals/government/）
+   共用色板与 .p-* 基础类在 shared/portal.css，这里只补政府端新增的组件。 */
+.g-filters{display:grid;gap:10px}
+.g-filters .p-chips{gap:6px}
+.g-filters .p-chip i{font-style:normal;font-weight:800;opacity:.72;margin-left:4px;font-size:10px}
+.g-cats{max-height:96px;overflow:auto;padding-bottom:2px;scrollbar-width:none}
+.g-cats::-webkit-scrollbar{display:none}
+.g-search{display:grid;gap:5px;margin-top:2px}
+.g-list{display:grid;gap:11px}
+.g-item{display:grid;gap:6px}
+.g-item.overdue{border-color:#f2d6cf;box-shadow:0 8px 22px rgba(168,80,63,.07)}
+.g-item.done{opacity:.92}
+.g-wait{margin:2px 0 0;font-size:10.5px;color:#8492a5;font-weight:700;letter-spacing:.2px}
+.g-item.overdue .g-wait{color:#a8503f}
+.g-drafts{display:flex;flex-wrap:wrap;gap:6px;margin-top:2px}
+.g-reply-field{display:grid;gap:5px;flex:1;min-width:0}
+.p-reply{align-items:flex-start}
+.p-reply .p-btn{min-height:44px;flex-shrink:0}
+.g-doc-actions{display:flex;gap:6px;flex-shrink:0}
+.g-doc-actions .p-btn{min-height:32px;padding:6px 10px;font-size:11px}
+.g-bars{display:grid;gap:9px;margin-top:4px}
+.g-bar{display:grid;grid-template-columns:minmax(88px,34%) 1fr auto;align-items:center;gap:9px}
+.g-bar-label{font-size:11.5px;font-weight:700;color:#48607d;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.g-bar-track{height:9px;border-radius:100px;background:#eef2f8;overflow:hidden}
+.g-bar-track i{display:block;height:100%;border-radius:100px;background:linear-gradient(90deg,#5b8ad6,#2b5fc4)}
+.g-bar-value{font-size:11px;font-weight:800;color:#5d7086;min-width:20px;text-align:right}
+.g-actions{display:flex;gap:8px;flex-wrap:wrap;margin:2px 0 8px}
+.g-list-plain{margin:0;padding-left:18px;display:grid;gap:6px;font-size:11.5px;line-height:1.7;color:#41556e}
+.g-seed{margin-top:10px}
+.g-toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:20;max-width:88%;background:#152034;color:#fff;border-radius:12px;padding:10px 14px;font-size:12px;font-weight:700;line-height:1.6;box-shadow:0 12px 28px rgba(15,28,48,.28)}
+@media (max-width:365px){.g-bar{grid-template-columns:minmax(76px,38%) 1fr auto}.p-reply{flex-direction:column}.p-reply .p-btn{width:100%}}
+
+/* 四个统计格在窄屏排成 2×2，避免最后一个孤零零占一行 */
+.g-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.g-stats .p-stat{min-width:0}
+.g-stats b{display:block;font-size:22px;line-height:1.2;font-weight:800;color:#22314a}
+

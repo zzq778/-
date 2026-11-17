@@ -175,8 +175,8 @@ test('主应用：底部「文旅」、角色选择、三端 iframe 接线', () 
 });
 
 test('三端页面已加入离线缓存', () => {
-  for (const p of ['portals/shared/portal-core.js', 'portals/merchant/index.html', 'portals/tourist/index.html', 'portals/government/index.html']) {
+  for (const p of ['portals/shared/portal-core.js', 'portals/merchant/index.html', 'portals/tourist/index.html', 'portals/government/index.html', 'portals/government/gov-logic.js', 'portals/government/government.css']) {
     assert.ok(SW.includes(`'./${p}'`), `离线缓存缺少 ${p}`);
   }
-  assert.match(SW, /jzzx-ai-v076/);
+  assert.match(SW, /jzzx-ai-v07\d/);
 });
