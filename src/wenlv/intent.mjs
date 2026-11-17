@@ -1,3 +1,4 @@
+import { parseExclusions } from './constraints.mjs';
 /**
  * 意图解析（wenlv-v1，D3 A 线）
  *
@@ -129,50 +130,52 @@ function parseMonth(text) {
  */
 export function parseIntent(text, options = {}) {
   const raw = normalize(text);
+  const {exclusions,positive}=parseExclusions(raw);
   const now = options.now instanceof Date ? options.now : new Date();
-  const month = parseMonth(raw) ?? (Number.isInteger(options.month) ? options.month : now.getMonth() + 1);
+  const month = parseMonth(positive) ?? (Number.isInteger(options.month) ? options.month : now.getMonth() + 1);
 
-  const { days, raw: rawDays } = parseDays(raw);
+  const { days, raw: rawDays } = parseDays(positive);
 
   const themes = [];
   const themeWords = [];
   for (const [theme, words] of Object.entries(THEME_WORDS)) {
-    const hit = hitsOf(raw, words);
+    const hit = hitsOf(positive, words);
     if (hit.length) { themes.push(theme); themeWords.push(...hit); }
   }
 
   const companions = [];
   for (const [who, words] of Object.entries(COMPANION_WORDS)) {
-    if (hitsOf(raw, words).length) companions.push(who);
+    if (hitsOf(positive, words).length) companions.push(who);
   }
 
   const areas = [];
   for (const [area, words] of Object.entries(AREA_WORDS)) {
-    if (hitsOf(raw, words).length) areas.push(area);
+    if (hitsOf(positive, words).length) areas.push(area);
   }
 
   const clusters = [];
   for (const [cluster, words] of Object.entries(CLUSTER_WORDS)) {
-    if (hitsOf(raw, words).length) clusters.push(cluster);
+    if (hitsOf(positive, words).length) clusters.push(cluster);
   }
 
   let season = null;
   for (const [s, words] of Object.entries(SEASON_WORDS)) {
-    if (hitsOf(raw, words).length) { season = s; break; }
+    if (hitsOf(positive, words).length) { season = s; break; }
   }
   if (!season) season = SEASON_BY_MONTH[month] ?? null;
 
-  const provinceWide = /吉林(?!市)/.test(raw) && areas.length === 0;
+  const provinceWide = /吉林(?!市)/.test(positive) && areas.length === 0;
 
-  let signals = 0;
+  let signals = exclusions.length;
   if (days) signals += 1;
   signals += companions.length + themes.length + areas.length + clusters.length;
-  if (hitsOf(raw, SEASON_WORDS.winter.concat(SEASON_WORDS.spring, SEASON_WORDS.summer, SEASON_WORDS.autumn)).length) signals += 1;
+  if (hitsOf(positive, SEASON_WORDS.winter.concat(SEASON_WORDS.spring, SEASON_WORDS.summer, SEASON_WORDS.autumn)).length) signals += 1;
 
   const confidence = clusters.length || areas.length ? 'high' : themes.length || days ? 'medium' : 'low';
 
   return {
     text: raw,
+    exclusions,
     days,
     daysRequested: rawDays,
     daysClamped: rawDays !== null && rawDays > MAX_DAYS,
