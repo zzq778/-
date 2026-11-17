@@ -150,7 +150,7 @@ export function parseIntent(text, options = {}) {
 
   const areas = [];
   for (const [area, words] of Object.entries(AREA_WORDS)) {
-    if (hitsOf(positive, words).length) areas.push(area);
+    if (hitsOf(area==='白山市'?positive.replace(/长白山/g,''):positive, words).length) areas.push(area);
   }
 
   const clusters = [];
