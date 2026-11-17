@@ -67,6 +67,8 @@
   };
 
   var lastTrigger = null;
+  var lastFocused = null;
+  var speakingDay = null;
   var overrideRoute = null;
   var pendingPrefs = null;
   var storageWarned = false;
@@ -314,7 +316,9 @@
     }).join('');
     return '<section class="iti-day" aria-labelledby="' + id + '">' +
       '<h3 class="iti-day-head" id="' + id + '"><span class="iti-day-num">Day ' + day + '</span>' +
-      '<span class="iti-day-title">' + esc(title) + '</span></h3>' +
+      '<span class="iti-day-title">' + esc(title) + '</span>' +
+      '<button type="button" class="iti-read-btn" data-iti-action="speak" data-iti-day="' + day +
+      '" aria-label="朗读第 ' + day + ' 天行程" aria-pressed="false">朗读</button></h3>' +
       '<ol class="iti-nodes">' + items + '</ol></section>';
   }
 
@@ -401,6 +405,8 @@
       drawerShell() +
       '<div class="iti-actions"><button type="button" class="primary" data-iti-action="export">导出长图（PNG · 1080px 宽）</button>' +
       '<button type="button" class="secondary" data-action="modal-close">关闭行程</button></div>' +
+      '<p class="iti-speech-hint" id="iti-speech-hint" aria-live="polite"></p>' +
+      '<p class="iti-sr" id="iti-live" role="status" aria-live="polite"></p>' +
       '<p class="iti-hint" id="iti-export-hint" aria-live="polite"></p>' +
       '<p class="sheet-legal">节点顺序与建议停留来自知识库编排，停留时长是行程建议、不是景区开放时长；票价、开放时间与预约名额以官方公告为准。</p>';
   }
@@ -523,6 +529,7 @@
     overrideRoute = null;
     pendingPrefs = null;
     refresh();
+    announce('已按偏好重排：' + partyLabel(prefs.party) + ' · ' + paceLabel(prefs.pace) + ' · ' + prefs.days + ' 天，当前为 ' + model().itinerary.title);
     var hint = document.getElementById('iti-export-hint');
     if (hint) hint.textContent = stored ? '' : '本机存储不可用，偏好只在本次会话内有效。';
     return true;
@@ -536,6 +543,139 @@
     var panel = document.getElementById('iti-prefs');
     if (panel) panel.innerHTML = prefPanelMarkup();
     return true;
+  }
+
+  /* ── 语音导览与无障碍 ─────────────────────────────────── */
+
+  function announce(text) {
+    if (typeof document === 'undefined') return;
+    var live = document.getElementById('iti-live');
+    if (live) live.textContent = text;
+  }
+
+  /** 朗读文稿：只复述卡片上已有的内容，不额外发明事实。 */
+  function speechText(it, day) {
+    var list = day ? it.nodes.filter(function (n) { return n.day === Number(day); }) : it.nodes;
+    var parts = [it.title + '。'];
+    if (day) parts.push('第 ' + day + ' 天。');
+    list.forEach(function (n) {
+      parts.push(n.slot + '，' + n.name + '。' + n.why + '。');
+    });
+    parts.push('票价、开放时间与预约方式以官方公告为准。');
+    return parts.join('');
+  }
+
+  function speechSupported() {
+    return typeof global.speechSynthesis !== 'undefined' && typeof global.SpeechSynthesisUtterance !== 'undefined';
+  }
+
+  function setReadState(day) {
+    if (typeof document === 'undefined') return;
+    var buttons = document.querySelectorAll('[data-iti-action="speak"]');
+    Array.prototype.forEach.call(buttons, function (btn) {
+      var on = day && Number(btn.getAttribute('data-iti-day')) === day;
+      btn.textContent = on ? '停止' : '朗读';
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+  }
+
+  /**
+   * 朗读某一天的行程（day 为空时读全篇）。
+   * 不支持语音时返回 {ok:false}，界面给文字出口，不假装支持。
+   */
+  function speak(day, trigger) {
+    var hint = typeof document === 'undefined' ? null : document.getElementById('iti-speech-hint');
+    var d = Number(day) || 0;
+    if (!speechSupported()) {
+      if (hint) hint.textContent = '当前浏览器不支持语音朗读，可以打开系统读屏，或直接看文字。';
+      announce('当前浏览器不支持语音朗读');
+      return { ok: false, reason: 'unsupported' };
+    }
+    stopSpeak();
+    var it = model().itinerary;
+    var text = speechText(it, d);
+    try {
+      var utter = new global.SpeechSynthesisUtterance(text);
+      utter.lang = 'zh-CN';
+      utter.rate = 1;
+      utter.pitch = 1;
+      utter.onend = function () { speakingDay = null; setReadState(null); if (hint) hint.textContent = '朗读结束。'; announce('朗读结束'); };
+      utter.onerror = function () { speakingDay = null; setReadState(null); if (hint) hint.textContent = '朗读被打断，可以再点一次。'; };
+      global.speechSynthesis.speak(utter);
+    } catch (e) {
+      if (hint) hint.textContent = '朗读启动失败，可以再试一次或直接看文字。';
+      return { ok: false, reason: 'speak-failed' };
+    }
+    speakingDay = d;
+    setReadState(d);
+    if (hint) hint.textContent = '正在朗读第 ' + (d || 1) + ' 天，点同一按钮可停止。';
+    announce('开始朗读第 ' + (d || 1) + ' 天行程，共 ' + text.length + ' 字');
+    return { ok: true, day: d, length: text.length, text: text };
+  }
+
+  function stopSpeak() {
+    var had = speakingDay !== null;
+    if (speechSupported()) {
+      try { global.speechSynthesis.cancel(); } catch (e) { /* 忽略：有的浏览器未实现 */ }
+    }
+    speakingDay = null;
+    setReadState(null);
+    return had;
+  }
+
+  function focusables(root) {
+    var nodes = root.querySelectorAll('button,[href],input,select,textarea,[tabindex]:not([tabindex="-1"])');
+    return Array.prototype.filter.call(nodes, function (el) {
+      return !el.disabled && el.offsetParent !== null;
+    });
+  }
+
+  /** Tab 循环：弹层里 Tab 到底回到第一个，Shift+Tab 从头回到最后一个。 */
+  function trapTab(event, root) {
+    if (event.key !== 'Tab') return;
+    var list = focusables(root);
+    if (!list.length) return;
+    var first = list[0];
+    var last = list[list.length - 1];
+    var active = document.activeElement;
+    if (event.shiftKey && (active === first || !root.contains(active))) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && (active === last || !root.contains(active))) {
+      event.preventDefault();
+      first.focus();
+    }
+  }
+
+  /** 行程卡片挂载时：接管焦点、播报一次、绑定 Tab 循环。 */
+  function attachSheet() {
+    var sheetEl = document.querySelector('.sheet.itinerary-sheet');
+    if (!sheetEl || sheetEl.dataset.itiA11y === '1') return false;
+    sheetEl.dataset.itiA11y = '1';
+    if (!lastFocused) lastFocused = document.activeElement;
+    sheetEl.setAttribute('tabindex', '-1');
+    sheetEl.addEventListener('keydown', function (event) { trapTab(event, sheetEl); });
+    try { sheetEl.focus({ preventScroll: true }); } catch (e) { sheetEl.focus(); }
+    var it = model().itinerary;
+    announce('已打开行程：' + it.title + '，共 ' + it.days + ' 天 ' + it.nodes.length + ' 个节点');
+    return true;
+  }
+
+  /** 监听弹层出现 / 关闭：出现时接管焦点，关闭时停止朗读并把焦点还给入口。 */
+  function watchModal() {
+    if (typeof MutationObserver === 'undefined' || typeof document === 'undefined') return;
+    var root = document.getElementById('modalRoot');
+    if (!root) return;
+    var observer = new MutationObserver(function () {
+      var sheetEl = document.querySelector('.sheet.itinerary-sheet');
+      if (sheetEl) { attachSheet(); return; }
+      if (speakingDay !== null) stopSpeak();
+      if (lastFocused && lastFocused.focus) {
+        try { lastFocused.focus(); } catch (e) { /* 入口可能已被移除 */ }
+      }
+      lastFocused = null;
+    });
+    observer.observe(root, { childList: true, subtree: true });
   }
 
   /* ── 导出长图 ──────────────────────────────────────────── */
@@ -677,6 +817,13 @@
     if (action === 'pref-select') return selectPref(button.getAttribute('data-iti-key'), button.getAttribute('data-iti-value'));
     if (action === 'use-route') { overrideRoute = button.getAttribute('data-iti-route'); refresh(); return true; }
     if (action === 'export') { exportPng(); return true; }
+    if (action === 'speak') {
+      var day = Number(button.getAttribute('data-iti-day')) || 0;
+      if (speakingDay === day) { stopSpeak(); announce('已停止朗读'); return true; }
+      speak(day, button);
+      return true;
+    }
+    if (action === 'stop-speak') { stopSpeak(); announce('已停止朗读'); return true; }
     return false;
   }
 
@@ -689,6 +836,8 @@
       if (panel && !panel.hasAttribute('hidden')) { closePrefs(); event.stopPropagation(); }
     }, true);
   }
+
+  watchModal();
 
   global.JZZX_ITINERARY = {
     SAMPLE: SAMPLE,
@@ -711,6 +860,10 @@
     openSource: openSource,
     closeSource: closeSource,
     exportPng: exportPng,
+    speechText: speechText,
+    speak: speak,
+    stopSpeak: stopSpeak,
+    announce: announce,
     exportBlocks: exportBlocks,
     layoutExport: layoutExport
   };

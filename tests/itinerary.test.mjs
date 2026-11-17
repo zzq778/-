@@ -14,6 +14,7 @@ const DATA = read('wenlv-data.js');
 const APP = read('app.js');
 const HTML = read('index.html');
 const SW = read('sw.js');
+const CSS = read('itinerary.css');
 
 /** 建一个带 URL 的沙箱；withData=true 时先执行知识库脚本。 */
 function load({ withData = true } = {}) {
@@ -225,4 +226,70 @@ test('弱匹配提示会写进卡片（含替代线路按钮）', () => {
   // 直接检查模板里的替代按钮文案（sheet 依赖全局 prefs，这里只验证 alt 数据可用于按钮）
   assert.equal(it.alternatives.length, 2);
   assert.ok(it.alternatives.every(r => typeof r.name === 'string' && r.days >= 1));
+});
+
+/* ── 第 4 步：语音导览 / 长辈模式 / 无障碍 ───────────────── */
+
+test('朗读文稿只复述卡片内容，按天筛选', () => {
+  const it = IT.model().itinerary;
+  const day1 = IT.speechText(it, 1);
+  const all = IT.speechText(it, 0);
+  const day1Nodes = it.nodes.filter(n => n.day === 1);
+  const day2Nodes = it.nodes.filter(n => n.day === 2);
+  for (const n of day1Nodes) assert.ok(day1.includes(n.name), `第 1 天缺 ${n.name}`);
+  for (const n of day2Nodes) assert.ok(!day1.includes(n.name), `第 1 天串入第 2 天节点 ${n.name}`);
+  assert.ok(all.includes(day1Nodes[0].name) && all.includes(day2Nodes[0].name));
+  assert.match(all, /以官方公告为准/);
+  assert.doesNotMatch(all, /\d+\s*元/, '朗读稿里出现具体票价');
+});
+
+test('朗读接口齐全，且不支持时如实返回失败', () => {
+  for (const key of ['speechText', 'speak', 'stopSpeak', 'announce']) {
+    assert.equal(typeof IT[key], 'function', `缺少 ${key}`);
+  }
+  // node 沙箱没有 speechSynthesis，应返回 ok:false 而不是抛错
+  const res = IT.speak(1);
+  assert.equal(res.ok, false);
+  assert.equal(res.reason, 'unsupported');
+});
+
+test('卡片里每天都有朗读按钮与 aria-live 播报区', () => {
+  const html = IT.sheet('');
+  const buttons = html.match(/data-iti-action="speak"[^>]*/g) || [];
+  assert.equal(buttons.length, IT.model().itinerary.days);
+  assert.match(html, /aria-label="朗读第 1 天行程"/);
+  assert.match(html, /aria-pressed="false"/);
+  assert.match(html, /id="iti-live"[^>]*aria-live="polite"/);
+  assert.match(html, /id="iti-speech-hint"[^>]*aria-live="polite"/);
+});
+
+test('依据按钮声明为弹出对话框（读屏可感知）', () => {
+  const html = IT.sheet('');
+  assert.match(html, /data-iti-source="0"[^>]*aria-haspopup="dialog"/);
+  assert.match(html, /id="iti-drawer"[^>]*>/);
+});
+
+test('长辈模式样式：正文 19px、触控 44px、次要文字加深', () => {
+  assert.match(CSS, /\.elder \.iti-why[^{]*\{[^}]*font-size:19px/);
+  assert.match(CSS, /\.elder \.iti-node-main strong\{[^}]*font-size:19px/);
+  assert.match(CSS, /\.elder \.iti-src-btn[^{]*\{[^}]*min-height:46px/);
+  assert.match(CSS, /\.elder \.iti-pref-chip[^{]*\{[^}]*min-height:46px/);
+  assert.match(CSS, /\.elder \.iti-drawer-close\{[^}]*width:46px/);
+  // 次要文字用更深的颜色（#5a6b82 在白底上约 5.6:1）
+  assert.match(CSS, /\.elder \.iti-facts[^{]*\{[^}]*color:#5a6b82/);
+});
+
+test('无障碍：读屏专用类、焦点可见、减少动效', () => {
+  assert.match(CSS, /\.iti-sr\{[^}]*clip:rect\(0 0 0 0\)/);
+  assert.match(CSS, /focus-visible\{[^}]*outline:3px solid/);
+  assert.match(CSS, /@media\(prefers-reduced-motion:reduce\)/);
+  assert.match(CSS, /\.motion-off \.iti-drawer-panel/);
+  assert.match(CSS, /\.elder \.iti-drawer-panel[^{]*\{[^}]*animation:none/);
+});
+
+test('弹层焦点接管与 Tab 循环的代码在位（静态检查）', () => {
+  assert.match(CODE, /MutationObserver/);
+  assert.match(CODE, /trapTab/);
+  assert.match(CODE, /focus\(\{ preventScroll: true \}\)/);
+  assert.match(CODE, /已打开行程：/);
 });

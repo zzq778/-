@@ -120,3 +120,40 @@
 .elder .iti-notice,.elder .iti-notice strong{font-size:15px}
 .elder .iti-alt{font-size:14px;min-height:44px}
 .elder .iti-hint{font-size:13px}
+
+/* ── 第 4 步：语音导览 / 长辈模式细化 / 无障碍 ─────────────── */
+.iti-read-btn{margin-left:auto;flex-shrink:0;min-height:40px;padding:9px 13px;border:1px solid #cfe0f7;background:#f2f7ff;color:#2c5fb7;border-radius:100px;font-size:11.5px;font-weight:780}
+.iti-read-btn[aria-pressed="true"]{background:#2b5fc4;border-color:#2b5fc4;color:#fff}
+.iti-read-btn:active{transform:scale(.97)}
+.iti-speech-hint{margin:8px 0 0;min-height:16px;font-size:11px;color:#7f92ab}
+/* 只给读屏看的播报区 */
+.iti-sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+
+/* 触控目标：卡片内主要控件不小于 40px，长辈模式统一 44px */
+.iti-src-btn{min-height:40px;padding:9px 12px}
+.iti-pref-chip{min-height:40px}
+.iti-pref-btn{min-height:40px}
+.iti-drawer-close{width:40px;height:40px;min-height:40px}
+.iti-src-open{min-height:40px}
+
+/* 键盘焦点可见（覆盖既有 focus-visible 之外的组件） */
+.iti-entry:focus-visible,.iti-src-btn:focus-visible,.iti-pref-chip:focus-visible,.iti-pref-btn:focus-visible,
+.iti-read-btn:focus-visible,.iti-alt:focus-visible,.iti-src-open:focus-visible,.iti-drawer-close:focus-visible,
+.iti-drawer-scrim:focus-visible{outline:3px solid #7cb1ff;outline-offset:2px}
+
+.elder .iti-read-btn,.elder .iti-pref-btn,.elder .iti-src-btn,.elder .iti-pref-chip{min-height:46px;padding:12px 15px;font-size:14px}
+.elder .iti-drawer-close{width:46px;height:46px;min-height:46px}
+.elder .iti-src-open{min-height:46px;font-size:15px}
+.elder .iti-why,.elder .iti-check li,.elder .iti-summary{font-size:19px;line-height:1.75}
+.elder .iti-node-main strong{font-size:19px}
+.elder .iti-facts,.elder .iti-stay,.elder .iti-source-line,.elder .iti-speech-hint,.elder .iti-hint{font-size:14px;color:#5a6b82}
+.elder .iti-day-head,.elder .iti-day-title{font-size:18px}
+.elder .iti-src-url{font-size:12px;color:#5f7189}
+/* 长辈模式不做装饰动效，只保留状态变化 */
+.elder .iti-drawer-panel,.elder .iti-drawer-scrim,.elder .iti-prefs,.elder .iti-notice{animation:none}
+
+/* 系统「减少动态效果」与应用的动态开关都要生效 */
+@media(prefers-reduced-motion:reduce){
+  .iti-drawer-panel,.iti-drawer-scrim,.iti-entry,.iti-pref-chip,.iti-read-btn{animation:none!important;transition:none!important}
+}
+.motion-off .iti-drawer-panel,.motion-off .iti-drawer-scrim{animation:none!important}
