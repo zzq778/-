@@ -476,6 +476,7 @@
       case 'policy-list':state.modal='policy-list';renderModal();break;
       case 'policy-back':state.modal=policies.length?'policy-list':null;renderModal();break;
       case 'itinerary':state.modal='itinerary';renderModal();break;
+      case 'travel-tourist':setPortalRole('tourist');setTab('news');break;
       case 'roles':state.modal='role-select';renderModal();break;
       case 'elder':state.elder=!state.elder;persist();render();notice(state.elder?'已开启长辈模式':'已退出长辈模式');break;
       case 'motion':state.motion=!state.motion;persist();render();notice(state.motion?'已开启动态效果':'已减少动态效果');break;
