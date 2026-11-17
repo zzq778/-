@@ -64,3 +64,9 @@
 @media(max-width:350px){.travel-brand small{font-size:10px}.travel-region{padding:8px}.travel-top{padding:14px 12px}.travel-hero{margin:0 8px}.travel-main{padding:0 8px}.travel-planner{padding:15px 12px}.travel-chips{gap:5px}.travel-chips button{padding:7px 9px}.travel-route-info strong{font-size:13px}}
 @media(prefers-reduced-motion:reduce){.travel-orb img,.travel-spinner{animation:none!important}}
 .motion-off .travel-orb img,.motion-off .travel-spinner{animation:none!important}
+
+.travel-voice-row{display:flex;align-items:center;gap:9px;margin:5px 0 9px;min-height:36px}
+.travel-voice-row button{background:none;border:0;color:#216e5d;padding:5px 1px;min-height:40px;font-weight:700;font-size:12px;flex:none}
+.travel-voice-row span{color:#5d766b;font-size:11px;line-height:1.5}
+.app:has(.travel-home) .bottom-nav .tab.active{color:#176e64!important}
+.app:has(.travel-home) .bottom-nav .tab.active .tab-icon{color:#176e64!important}
