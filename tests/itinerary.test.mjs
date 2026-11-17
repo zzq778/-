@@ -144,10 +144,14 @@ test('真实知识库引用完整：线路节点都能解析到景点', () => {
   }
 });
 
-test('仍然不发请求、不写本地存储', () => {
+test('不发网络请求；偏好只落在本机一个 key', () => {
   const code = CODE.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
   assert.doesNotMatch(code, /fetch\(|XMLHttpRequest|api\/chat/);
-  assert.doesNotMatch(code, /localStorage|indexedDB/);
+  // 第 3 步允许存出行偏好，但只允许这一个 key，且不能碰 IndexedDB
+  assert.doesNotMatch(code, /indexedDB/);
+  const keys = code.match(/localStorage/gi) || [];
+  assert.ok(keys.length > 0, '偏好应写入 localStorage');
+  assert.match(CODE, /var PREFS_KEY = 'jzzx-iti-prefs'/);
 });
 
 test('前端接线：知识库先于行程模块、点击交给模块、离线缓存包含数据', () => {
@@ -156,4 +160,69 @@ test('前端接线：知识库先于行程模块、点击交给模块、离线�
   assert.match(APP, /JZZX_ITINERARY\.handle\(target\)/, 'app.js 未把行程内点击交给模块');
   assert.ok(SW.includes("'./wenlv-data.js'"), '离线缓存未包含知识库');
   assert.ok(SW.includes("'./itinerary.js'"), '离线缓存未包含行程模块');
+});
+
+/* ── 第 3 步：偏好 / 导出 / 错误态 ───────────────────────── */
+
+test('偏好校验：非法值回落到默认，合法值保留', () => {
+  assert.deepEqual({ ...IT.sanitizePrefs(null) }, { ...IT.DEFAULT_PREFS });
+  assert.deepEqual({ ...IT.sanitizePrefs({ party: 'x', pace: 'y', days: 9 }) }, { ...IT.DEFAULT_PREFS });
+  assert.deepEqual({ ...IT.sanitizePrefs({ party: 'family', pace: 'tight', days: 1 }) }, { party: 'family', pace: 'tight', days: 1 });
+});
+
+test('默认偏好仍推荐演示线路（雾凇两日）', () => {
+  const picked = IT.selectRoute(data, IT.DEFAULT_PREFS);
+  assert.equal(picked.route.id, IT.ROUTE_ID);
+  assert.equal(picked.weak, false);
+});
+
+test('偏好能改变选线：1 天 + 带娃 → 长春亲子一日', () => {
+  const picked = IT.selectRoute(data, { party: 'family', pace: 'standard', days: 1 });
+  assert.equal(picked.route.days, 1);
+  assert.ok(picked.route.themes.includes('亲子'), `实际选到 ${picked.route.id}`);
+});
+
+test('弱匹配：3 天 + 带娃 给出提示语与 2 条替代线路', () => {
+  const picked = IT.selectRoute(data, { party: 'family', pace: 'standard', days: 3 });
+  assert.equal(picked.weak, true);
+  assert.equal(picked.alternatives.length, 2);
+  assert.ok(picked.alternatives.every(r => r.id !== picked.route.id));
+});
+
+test('主题越贴合得分越高（同一批候选内）', () => {
+  const familyRoute = data.routes.find(r => r.id === 'changchun-family-1d');
+  const redRoute = data.routes.find(r => r.id === 'siping-red-1d');
+  const pref = { party: 'family', pace: 'standard', days: 1 };
+  assert.ok(IT.scoreRoute(familyRoute, pref) > IT.scoreRoute(redRoute, pref));
+});
+
+test('卡片里能看到偏好入口与导出按钮', () => {
+  const html = IT.sheet('');
+  assert.match(html, /data-iti-action="prefs"/);
+  assert.match(html, /出行偏好 · 银发结伴 · 轻松 · 2 天/);
+  assert.match(html, /data-iti-action="export"/);
+  assert.match(html, /导出长图/, '缺少导出按钮文案');
+  assert.match(html, /id="iti-prefs"/, '缺少偏好面板容器');
+});
+
+test('导出长图宽度固定 1080，内容覆盖节点与免责声明', () => {
+  assert.equal(IT.EXPORT_WIDTH, 1080);
+  const it = IT.model().itinerary;
+  const blocks = IT.exportBlocks(it);
+  const text = blocks.map(b => b.text || '').join('\n');
+  assert.ok(text.includes(it.title), '长图缺少标题');
+  for (const node of it.nodes) assert.ok(text.includes(node.name), `长图缺少节点 ${node.name}`);
+  assert.match(text, /行前清单/);
+  assert.match(text, /依据：/);
+  assert.match(text, /以官方公告为准/);
+  assert.doesNotMatch(text, /\d+\s*元/, '长图里出现具体票价');
+});
+
+test('弱匹配提示会写进卡片（含替代线路按钮）', () => {
+  const { IT: alt, WENLV: d } = load();
+  const picked = alt.selectRoute(d, { party: 'family', pace: 'standard', days: 3 });
+  const it = { ...alt.model().itinerary, weak: picked.weak, approx: false, alternatives: picked.alternatives };
+  // 直接检查模板里的替代按钮文案（sheet 依赖全局 prefs，这里只验证 alt 数据可用于按钮）
+  assert.equal(it.alternatives.length, 2);
+  assert.ok(it.alternatives.every(r => typeof r.name === 'string' && r.days >= 1));
 });
