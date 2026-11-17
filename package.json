@@ -7,6 +7,8 @@
     "dev": "wrangler dev --remote",
     "deploy": "wrangler deploy",
     "build:data": "node scripts/build-wenlv-data.mjs",
+    "facts": "node scripts/wenlv-facts.mjs",
+    "facts:write": "node scripts/wenlv-facts.mjs --write",
     "test": "node --test tests/*.test.mjs"
   },
   "devDependencies": {

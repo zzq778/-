@@ -2,7 +2,7 @@
 
 用户说出目标（「养老认证怎么查」「两天冬天带孩子去哪」），应用去检索**已人工核对**的知识库，把步骤或行程排出来，并给出站内可点的指南与官方入口。服务目录是辅助入口，不是产品主轴。
 
-**当前状态**：`npm test` **194 项全绿**（16 个测试文件，模型与 Worker 都是模拟调用）；浏览器脚本需要 Playwright + Chromium；**尚未用 Cloudflare 账号部署并验证真实推理**。
+**当前状态**：`npm test` **241 项全绿**（19 个测试文件，模型与 Worker 都是模拟调用）；浏览器脚本需要 Playwright + Chromium；**尚未用 Cloudflare 账号部署并验证真实推理**。
 
 ## 三条产品线
 
@@ -44,6 +44,8 @@
 - 40 个景点/场馆覆盖 9 个市州，10 个片区；12 条线路、12 个时令窗口、8 个官方入口。
 - **票价、开放时间、预约名额一律不写死**：数据里是 `null`，界面显示「以官方为准」。
 - `npm run build:data` 把源模块生成 `public/wenlv-data.js`；`wenlv-preview.html` 是独立预览页（不接 `app.js`）。
+- **事实层（C1）**：开放时间/票价/预约方式单独一层，`null` 表示未核对；已核的才允许模型说出口（`facts.mjs` + `guard.buildFacts`）。`npm run facts` 看覆盖率，`docs/WENLV_FACTS_QUEUE.md` 是待核队列。当前：净月潭三项已核，其余 39 条待补。
+- **视觉锚点与纠错（C2/C3）**：10 个片区各有字形与主色（纯装饰）；每张卡片有「信息有误？」→ 写进政府端同一份本地待办队列，形成「发现 → 处理」闭环。
 
 ### D3 意图解析与检索
 
@@ -137,9 +139,11 @@ POST /api/chat
 ## 本地检查
 
 ```bash
-npm test                            # 194 项，无需 npm install，也不需要 Cloudflare 账号
+npm test                            # 241 项，无需 npm install，也不需要 Cloudflare 账号
 node scripts/wenlv-ask.mjs "两天冬天带孩子去哪"
 node scripts/wenlv-plan.mjs "两天冬天带孩子去哪" --check
+npm run facts                       # 事实覆盖率：开放时间/票价/预约方式各核了多少条
+npm run facts:write                 # 同时刷新 docs/WENLV_FACTS_QUEUE.md 待核队列
 npm run build:data                  # 改过 src/wenlv/*.mjs 后重新生成前端数据
 ```
 

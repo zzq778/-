@@ -31,10 +31,13 @@ export const ATTRACTIONS = Object.freeze([
     id: 'jingyuetan', name: '净月潭', aliases: ['净月潭国家森林公园', '净月潭景区'],
     area: '长春市', cluster: 'changchun', kind: '自然', level: '5A',
     tags: ['森林', '环潭步道', '四季'], season: { best: ['spring', 'summer', 'autumn', 'winter'], note: '冬季有冰雪活动' },
-    hours: null, ticket: null, booking: '官方小程序购票',
-    sources: [S('净月潭景区', 'http://www.ijingyuetan.com/', 'official'), CC],
-    verifiedAt: '2026-11-16', confidence: 'high',
-    caveat: '门票、观光车与季节性活动价格以景区官方公布为准。'
+    hours: '正门 06:00 开园、19:00 停止入园；游客中心 8:30 开园、16:30 停止入园',
+    ticket: '成人全价票 30 元/人，优惠半价 15 元/人；65 周岁以上等凭有效证件免票',
+    booking: '官方小程序、美团/携程等 OTA，或游客中心售票窗口',
+    sources: [S('净月潭景区', 'http://www.ijingyuetan.com/', 'official'),
+      S('净月潭票务信息', 'http://www.ijingyuetan.com/about/piaowuxinxi', 'official'), CC],
+    verifiedAt: '2026-11-17', confidence: 'high',
+    caveat: '观光车、自驾车与季节性活动另行收费，以景区当日公布为准。'
   },
   {
     id: 'changying-jiuzhi', name: '长影旧址博物馆', aliases: ['长影博物馆', '长影洗印车间旧址'],

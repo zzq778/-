@@ -12,6 +12,7 @@
 import { byId } from './attractions.mjs';
 import { ROUTES } from './routes.mjs';
 import { CLUSTER_LABELS, ROUTE_SLOTS } from './schema.mjs';
+import { factsOf } from './facts.mjs';
 import { describeIntent } from './intent.mjs';
 
 export const MAX_DAYS = 3;
@@ -30,16 +31,27 @@ function clampDays(n, fallback = 2) {
   return Math.min(MAX_DAYS, Math.max(1, Math.round(d)));
 }
 
-/** 挑一条线路当骨架：天数对得上优先，否则用分数最高的。 */
+/**
+ * 挑一条线路当骨架：天数对得上优先，其次同片区。
+ *
+ * 有明确片区、却没有该片区同天数的线路时，宁可返回 null 让检索自己拼节点，
+ * 也不要跨片区硬凑——「长春两日」被排成吉林市松花湖，比没有线路更糟。
+ */
 export function pickRoute(intent, retrieval) {
   const routes = (retrieval?.routes || []).filter((r) => r.score > 0);
   if (!routes.length) return null;
+  const primaries = intent?.clusters || [];
   const days = clampDays(intent?.days, null);
+
   if (days) {
-    const fit = routes.find((r) => r.days === days);
-    if (fit) return fit;
+    const fit = routes.filter((r) => r.days === days);
+    if (!fit.length) return null;
+    if (!primaries.length) return fit[0];
+    return fit.find((r) => primaries.includes(r.cluster)) || null;
   }
-  return routes[0];
+
+  const near = routes.find((r) => primaries.includes(r.cluster));
+  return near || routes[0];
 }
 
 /** 把线路节点展开成“带景点详情”的行程节点。 */
@@ -57,7 +69,10 @@ function nodesFromRoute(route) {
       level: entry.level,
       why: node.why,
       caveat: entry.caveat,
+      hours: entry.hours,
+      ticket: entry.ticket,
       booking: entry.booking,
+      facts: factsOf(entry),
       sources: entry.sources
     };
   });
@@ -93,7 +108,10 @@ function nodesFromSearch(intent, retrieval, days) {
     level: a.entry.level,
     why: a.reasons?.length ? a.reasons.join('；') : '片区代表',
     caveat: a.entry.caveat,
+    hours: a.entry.hours,
+    ticket: a.entry.ticket,
     booking: a.entry.booking,
+    facts: factsOf(a.entry),
     sources: a.entry.sources
   }));
 }

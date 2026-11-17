@@ -12,6 +12,7 @@
  * 根治办法在 D4 的上游：结构由代码给（plan.mjs），模型只写措辞。
  */
 import { isOfficialUrl } from './schema.mjs';
+import { factNumbers, factTimes } from './facts.mjs';
 
 export const ISSUE = Object.freeze({
   PRICE: 'unsupported-price',
@@ -59,15 +60,22 @@ const uniq = (list) => [...new Set(list)];
 
 /**
  * 从行程结构里抽出“允许出现”的事实集合。
+ *
+ * `numbers` / `times` 来自节点的事实层（facts.mjs）：只有景区官方渠道公布、
+ * 并且写进库里的票价与时刻才算数。库里没有的，模型说了照样会被拦。
  * @param {object} itinerary buildItinerary 的产物
  */
 export function buildFacts(itinerary) {
   const nodes = (itinerary?.plan || []).flatMap((d) => d.nodes || []);
+  const nodeFacts = nodes.map((n) => n.facts || n);
   return {
     names: uniq(nodes.map((n) => n.name).filter(Boolean)),
-    urls: uniq((itinerary?.sources || []).map((s) => s.url).filter(Boolean)),
-    numbers: [],
-    times: []
+    urls: uniq([
+      ...(itinerary?.sources || []).map((s) => s.url).filter(Boolean),
+      ...nodes.flatMap((n) => (n.sources || []).map((s) => s.url)).filter(Boolean)
+    ]),
+    numbers: uniq(nodeFacts.flatMap((f) => factNumbers(f))),
+    times: uniq(nodeFacts.flatMap((f) => factTimes(f)))
   };
 }
 
