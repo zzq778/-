@@ -134,6 +134,7 @@
     <p class="agent-location">${ico('pin')} 根据您选择的${esc(state.region)}提供导办建议</p>
   </section>
   ${taskCard()}
+  <section class="home-itinerary reveal" aria-label="文旅行程卡片示例"><div class="home-section-head"><h2>文旅行程</h2><span class="iti-badge">示例</span></div><button type="button" class="iti-entry" data-action="itinerary"><span class="iti-entry-kicker">吉林雾凇两日 · 2 天 4 站 · 吉林市</span><strong>湖、古镇与雾凇的清晨</strong><span class="iti-entry-meta">先看湖再进古镇，第二天赶日出后的雾凇，顺路上雪场</span><span class="iti-entry-cta">查看行程卡片 →</span></button></section>
   <section class="home-services reveal"><div class="home-section-head"><h2>常用服务</h2><button type="button" data-tab="services">全部服务 ${ico('right')}</button></div><div class="home-service-grid">${['pension','medical','cert','policy','nearby','work'].map((id,i)=>{const [_,n,sub,icon]=kinds.find(x=>x[0]===id);return `<button type="button" class="home-service" data-kind="${id}"><span class="home-service-icon">${ico(icon)}</span><strong>${esc(n)}</strong><small>${esc(sub)}</small></button>`}).join('')}</div></section>
   <section class="home-news reveal"><div class="home-section-head"><h2>政务资讯</h2><button type="button" data-tab="news">更多 ${ico('right')}</button></div><button type="button" class="news-feature" data-official="government"><img src="./assets/city-news.webp" alt="政务信息栏目配图" loading="lazy"/><span><strong>吉林省人民政府 · 政务要闻</strong><small>官方新闻、政策发布与通知公告</small></span>${ico('right')}</button><button class="news-link-row" type="button" data-official="hall"><span>吉林省网上办事大厅</span><span>办事入口 ${ico('right')}</span></button><button class="news-link-row" type="button" data-official="personal"><span>个人办事与事项指南</span><span>官方查询 ${ico('right')}</span></button></section>
   <p class="home-legal">吉政知行提供信息导办，不是政府官方应用。办理要求以官方渠道为准。</p></div>`}
@@ -187,10 +188,11 @@
     else if(state.modal==='voice-help')body=`<div class="sheet-header"><strong>语音为什么不能用？</strong>${close}</div><p class="sheet-desc">你当前可能从 <code>content://downloads</code> 或本地文件打开页面。这种环境无法保证麦克风和在线语音识别。</p><ol class="guide-steps"><li><span class="step-circle">1</span><span>将 PWA 工程部署到 HTTPS（GitHub Pages 或 Cloudflare Pages），用 Chrome 访问。</span></li><li><span class="step-circle">2</span><span>允许浏览器访问麦克风，并确保系统存在中文语音识别服务。</span></li><li><span class="step-circle">3</span><span>浏览器仍不支持转写时，可以使用手机输入法自带的语音输入。</span></li></ol><p class="sheet-legal">声纹在授权后会跟随声音变化；语音转文字还需要浏览器支持。</p>`;
      else if(state.modal==='policy-list')body=policyListSheet(close);
     else if(state.modal.startsWith('policy:')){const p=policyById.get(state.modal.split(':')[1]);if(!p){state.modal='policy-list';body=policyListSheet(close)}else body=policySheet(p,close)}
+    else if(state.modal==='itinerary')body=window.JZZX_ITINERARY?window.JZZX_ITINERARY.sheet(close):`<div class="sheet-header"><strong>行程卡片</strong>${close}</div><p class="sheet-desc">行程卡片模块未加载，请刷新页面后重试。</p>`;
     else if(state.modal==='task')body=taskSheet();
     else if(state.modal==='personal')body=window.JZZX_PROFILE?window.JZZX_PROFILE.sheet():`<div class="sheet-header"><strong>个人信息</strong>${close}</div><p class="sheet-desc">个人信息模块未加载，请刷新页面后重试。</p>`;
      else if(state.modal.startsWith('guide:')){const key=state.modal.split(':')[1],g=guide[key];if(!g){state.modal=null;modalRoot.innerHTML='';return;}const official=Object.keys(URLS).find(k=>URLS[k]===g.url);body=`<div class="sheet-header"><strong>${esc(g.title)}</strong>${close}</div><p class="sheet-desc">${esc(state.region)} · 办事参考步骤，实际要求请查看官方指南。</p><ol class="guide-steps">${g.steps.map((s,i)=>`<li><span class="step-circle">${i+1}</span><span>${esc(s)}</span></li>`).join('')}</ol><button type="button" class="primary" data-official="${official}">前往官方服务入口 ${ico('external')}</button><p class="sheet-legal">这里提供信息导办；办理申请请使用政府指定渠道。</p>`}
-    modalRoot.innerHTML=`<div class="overlay ${state.modal==='task'?'task-overlay':''}" data-dismiss="modal"><section class="sheet ${state.modal==='task'?'task-sheet':''}" role="dialog" aria-modal="true" aria-label="${state.modal==='task'?'我的导办清单':(state.modal==='policy-list'||state.modal.startsWith('policy:'))?'政策解读':state.modal.startsWith('guide:')?'办事指南':'设置'}"><div class="drag-handle"></div>${body}</section></div>`;
+    modalRoot.innerHTML=`<div class="overlay ${state.modal==='task'?'task-overlay':''}" data-dismiss="modal"><section class="sheet ${state.modal==='task'?'task-sheet':state.modal==='itinerary'?'itinerary-sheet':''}" role="dialog" aria-modal="true" aria-label="${state.modal==='task'?'我的导办清单':state.modal==='itinerary'?'行程卡片':(state.modal==='policy-list'||state.modal.startsWith('policy:'))?'政策解读':state.modal.startsWith('guide:')?'办事指南':'设置'}"><div class="drag-handle"></div>${body}</section></div>`;
     if(state.modal==='personal'&&window.JZZX_PROFILE)window.JZZX_PROFILE.enhance(modalRoot);
   }
   const barMarkup=()=>'<span></span>'.repeat(5);
@@ -441,6 +443,7 @@
     const g=target.dataset.guide;if(g){state.modal=(g==='policy'&&policies.length)?'policy-list':'guide:'+g;renderModal();return}
     const pid=target.dataset.policy;if(pid){if(policyById.has(pid)){state.modal='policy:'+pid;renderModal()}return}
     const purl=target.dataset.policyUrl;if(purl){openPolicyUrl(purl);return}
+    if(target.dataset.itiSource!==undefined||target.hasAttribute('data-iti-close')||target.dataset.itiUrl||target.dataset.itiAction!==undefined){if(window.JZZX_ITINERARY&&window.JZZX_ITINERARY.handle(target))return}
     const off=target.dataset.official;if(off){openOfficial(off);return}
     const region=target.dataset.region;if(region){state.region=region;state.modal=null;persist();render();notice(`已切换到${region}`);return}
      const step=target.dataset.taskStep;
@@ -466,6 +469,7 @@
       case 'modal-close':state.modal=null;renderModal();break;
       case 'policy-list':state.modal='policy-list';renderModal();break;
       case 'policy-back':state.modal=policies.length?'policy-list':null;renderModal();break;
+      case 'itinerary':state.modal='itinerary';renderModal();break;
       case 'elder':state.elder=!state.elder;persist();render();notice(state.elder?'已开启长辈模式':'已退出长辈模式');break;
       case 'motion':state.motion=!state.motion;persist();render();notice(state.motion?'已开启动态效果':'已减少动态效果');break;
       case 'skip-reveal':finishReveal();break;

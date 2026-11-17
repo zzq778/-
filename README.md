@@ -20,6 +20,9 @@
 - `src/wenlv/attractions.mjs` 40 个景点/场馆，9 个市州全覆盖；`routes.mjs` 12 条线路；`calendar.mjs` 12 条时令窗口；`entries.mjs` 8 个官方入口。
 - `npm run build:data` 由上面四个模块生成 `public/wenlv-data.js`（`window.WENLV`），配套 `public/wenlv-ui.js` 渲染；`public/wenlv-preview.html` 是独立预览页（不接 `app.js`）。
 - 规范文档：`docs/WENLV_SCHEMA.md`（字段与测试映射）、`docs/WENLV_DATA_SOURCES.md`（来源与合规红线）、`docs/UX_FLOW.md`（体验流程与演示脚本）。
+- **行程卡片（第 4 步，语音/长辈模式/无障碍）**：每天一个「朗读」按钮（Web Speech `zh-CN`，同一按钮切换停止，不支持时给文字出口并提示用系统读屏），朗读稿只复述卡片已有内容；长辈模式正文 19px、次要文字加深到 `#5a6b82`、主要控件 46px 触控区、去掉装饰动效；无障碍补齐：打开卡片自动接管焦点并 `aria-live` 播报「已打开行程…」、Tab/Shift+Tab 在弹层内循环、依据按钮 `aria-haspopup="dialog"`、`prefers-reduced-motion` 与 `.motion-off` 都生效。
+- **行程卡片（第 3 步，偏好/导出/错误态）**：在真数据与依据抽屉之上，加了「同行人 / 节奏 / 天数」三组偏好（存本机 `localStorage`，key `jzzx-iti-prefs`），按主题权重 + 节奏适配从 12 条线路里重排，同分优先默认演示线路；没有匹配时给最接近的一条 + 2 条替代线路。`导出长图` 用纯 canvas 画 1080px 宽 PNG（不引第三方库），失败时给文字出口。错误态覆盖：知识库未加载（回退示例）、弱匹配（提示 + 替代）、节点缺数据、导出不支持、存储不可用。
+- **行程卡片（第 2 步，接真数据）**：`public/itinerary.js` + `public/itinerary.css`，首页「文旅行程」入口 → 全屏 sheet，数据取自 `window.WENLV`（默认线路 `jilin-wusong-2d`），每个节点带「依据 N」按钮 → 抽屉显示来源名、官方链接、核对日期与置信度；只放行 `OFFICIAL_DOMAINS` 白名单（与 `src/wenlv/schema.mjs` 由测试比对），知识库缺失时回退内置 `SAMPLE` 并标注。仍不写票价与开放时间，不调模型、不发请求。
 - 票价、开放时间、预约名额一律不写死：数据里为 `null`，界面显示「以官方为准」。
 
 ### 意图解析与检索（D3 A 线）
