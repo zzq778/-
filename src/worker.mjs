@@ -1,6 +1,7 @@
 import { REGIONS, relevantTopics, actionBundle, buildSystemPrompt } from './knowledge.mjs';
 import { DIRECT_BYTES, filePolicy, handleUploadApi, openLargeFile, streamMultipartFile } from './uploads.mjs';
 import { runCivicAgent } from './agent.mjs';
+import { answerWenlv } from './wenlv/pipeline.mjs';
 
 const MODEL = '@cf/zai-org/glm-4.7-flash';
 const FILE_MODEL = 'deepseek-flash';
@@ -116,7 +117,7 @@ export async function handleApi(request,env) {
   const question=clamp(payload?.question,300), region=REGIONS.includes(payload?.region)?payload.region:'长春市';
   const finalQuestion=question || (attachment||largeFile ? '请帮我理解这份材料，提炼关键内容，并说明与办理政务事项有关的下一步。' : '');
   if (!finalQuestion) return reply({error:'EMPTY',message:'请输入政务问题'},400);
-  if (!attachment&&!largeFile&&!env.AI) return reply({error:'NO_AI',message:'云端 AI 尚未启用，请先部署 Cloudflare AI 绑定'},503);
+  if (!attachment&&!largeFile&&!env.AI&&payload?.mode!=='wenlv') return reply({error:'NO_AI',message:'云端 AI 尚未启用，请先部署 Cloudflare AI 绑定'},503);
   if(env.LIMITER){
     const ip=request.headers.get('cf-connecting-ip')||'unknown';
     const limit=await env.LIMITER.limit({key:ip});
@@ -138,6 +139,33 @@ export async function handleApi(request,env) {
   const pageContext = `\n应用上下文：用户当前位于${pageName}${guideName?'，正在浏览'+guideName:''}。${taskContext}可以建议应用内现有导办入口，但不得声称已在政府网站替用户操作。`;
   const messages = [ {role:'system',content:buildSystemPrompt(region,topics)+pageContext}, ...history, {role:'user',content:finalQuestion} ];
   try {
+    if (payload?.mode === 'wenlv') {
+      // 五步流水线：结构由代码给，模型只写措辞，展示前过校验。
+      const outcome = await answerWenlv({
+        question: finalQuestion,
+        invoke: env.AI
+          ? (messages) => env.AI.run(MODEL, {
+              messages,
+              max_completion_tokens: 400,
+              temperature: 0.3,
+              chat_template_kwargs: { enable_thinking: false }
+            })
+          : null
+      });
+      return reply({
+        text: outcome.answer,
+        mode: 'wenlv',
+        region,
+        model: outcome.usedModel ? MODEL : 'wenlv-template',
+        itinerary: outcome.itinerary,
+        issues: outcome.issues,
+        degraded: outcome.degraded,
+        reason: outcome.reason || null,
+        actions: [{ type: 'itinerary', value: 'current' }, { type: 'official', value: 'whhlyt' }],
+        sources: outcome.itinerary.sources,
+        disclaimer: '非政府官方应用；票价与开放时间以景区官方公告为准。'
+      });
+    }
     let text,usedModel=MODEL;
     let agentResult=null;
     if(attachment||largeFile){
