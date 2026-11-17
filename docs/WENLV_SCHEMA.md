@@ -315,3 +315,62 @@ parseIntent → retrieve → buildItinerary（本步）→ 模型只写措辞（
 node scripts/wenlv-plan.mjs "两天冬天带孩子去哪"           # 看结构
 node scripts/wenlv-plan.mjs "12月去查干湖看冬捕" --check   # 顺手跑一遍校验
 ```
+
+## 十一、Worker 五步流水线（D5 A 线）
+
+### 一次请求发生了什么
+
+```
+POST /api/chat { question, mode: "wenlv" }
+   ├─ 校验：content-type / origin / 体积 / 空问题 / 限流   （原有逻辑，未改）
+   ├─ parseIntent   规则解析天数、同行人、片区、主题、季节
+   ├─ retrieve      景点/线路/时令打分，带理由
+   ├─ buildItinerary 结构化行程（线路优先，否则拼接）
+   ├─ 模型          只复述结构、不新增事实（无绑定/超时/跑题则跳过）
+   └─ guardAnswer   价格、时刻、外链、绝对化措辞、PII 全过一遍
+ → { text, mode, model, itinerary, issues, degraded, reason, actions, sources }
+```
+
+### 响应字段
+
+| 字段 | 说明 |
+|---|---|
+| `text` | 可直接展示的中文答案（模板或模型润色后过校验的版本） |
+| `mode` | `wenlv` |
+| `model` | 实际用了模型时为模型名，否则 `wenlv-template` |
+| `itinerary` | 结构化行程（`plan.mjs` 的完整输出，第 1 天到第 N 天） |
+| `issues` | 校验发现的问题（`[]` 表示干净） |
+| `degraded` | 是否降级过（模板兜底或清洗过模型措辞） |
+| `reason` | `no-model` / `empty` / `timeout` / `model-error` / `off-topic` / `sanitized` / `patched` / `null` |
+| `actions` | `itinerary`（打开行程卡片）+ `official`（官方入口） |
+| `sources` | 行程用到的官方来源 |
+
+### 降级矩阵
+
+| 情况 | 结果 | 用户看到 |
+|---|---|---|
+| 没有 `AI` 绑定 | 模板答案，`degraded:true`，`reason:no-model` | 完整行程 + 提醒 |
+| 模型返回空 | 模板答案，`reason:empty` | 完整行程 |
+| 模型超时（>9s） | 模板答案，`reason:timeout` | 完整行程 |
+| 模型报错 | 模板答案，`reason:model-error` | 完整行程 |
+| 模型没提到任何行程景点 | 模板答案，`reason:off-topic` | 完整行程 |
+| 模型编了价格/时刻 | 整段退回模板，问题记录在 `issues`，`reason:sanitized` | 完整模板行程（不展示改了一半的句子） |
+| 模型只用了绝对化措辞 | 软化措辞后照用，`reason:patched` | 行程 + 软化后的说法 |
+
+**关键取舍**：文旅模式下没有 AI 也返回 200，因为结构来自本地知识库，不需要模型。旧模式没有 AI 仍然 503——契约不因新功能而放宽。
+
+### 提示词边界
+
+`WENLV_SYSTEM_PROMPT` 只允许模型做三件事：复述景点、复述顺序与理由、加一句提醒。它被明确禁止：新增景点、写票价/开放时间/车程/名额、使用绝对化措辞、输出网址与 Markdown。
+
+模型输出的兜底检查还有一条：答案里必须出现行程中的至少一个景点名，否则判为跑题——这条挡住“模型开始自由发挥”的常见开头。
+
+### 测试映射
+
+| 关注点 | 用例 |
+|---|---|
+| 契约不变 | `原有模式不受影响：无 AI 仍返回 503 NO_AI`、`/api/status 语义未变`、`非 JSON 请求体依旧 415` |
+| 文旅可用 | `mode=wenlv 返回行程结构与可读答案`、`没有 AI 绑定时文旅仍能回答` |
+| 模型不靠谱时站得住 | `模型返回空`、`模型超时`、`模型抛错`、`模型跑题` |
+| 不编事实 | `模型编了票价`、`模型给了外部链接`、`提示词把规则写给模型` |
+| 可复现 | `同样的输入与同样的模型输出得到同样的答案` |
