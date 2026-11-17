@@ -75,7 +75,7 @@ function planningMarkup(){
 function resultMarkup(){
  if(state.busy)return '<section class="travel-result travel-wait" role="status"><span class="travel-spinner" aria-hidden="true"></span><div><strong>正在规划您的行程</strong><p>检索资料并编排候选路线。</p></div></section>';
  const errorCard=state.error?'<section class="travel-result travel-error" role="alert"><h2>暂时无法生成行程</h2><p>'+esc(state.error)+'</p><button type="button" data-travel-action="retry" class="travel-secondary">重试</button><p class="travel-subtle">下方精选线路可以离线查看。</p></section>':'';
- if(!state.plan)return errorCard||(state.saved?'<section class="travel-resume"><div><small>我的旅行计划</small><strong>'+esc(state.saved.title)+'</strong></div><button type="button" data-travel-action="restore">继续查看 →</button></section>':'');
+ if(!state.plan)return errorCard+(state.saved?'<section class="travel-resume"><div><small>我的旅行计划</small><strong>'+esc(state.saved.title)+'</strong></div><button type="button" data-travel-action="restore">继续查看 →</button></section>':'');
  const p=state.plan;
  return errorCard+'<section class="travel-result" id="travelResult"><div class="travel-result-head"><div><span class="travel-kicker">'+esc(state.source)+'</span><h2 id="travelResultTitle" tabindex="-1">'+esc(p.title)+'</h2></div><button type="button" class="travel-secondary" data-travel-action="save">☆ 保存</button></div>'+
  (state.answer?'<p class="travel-answer">'+esc(state.answer)+'</p>':'')+planningMarkup()+'<p class="travel-risk">建议游览顺序，不是导航路线。开放、预约及转场可行性须出行前核实。</p>'+
