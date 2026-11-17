@@ -32,13 +32,22 @@ function fromRoute(route,catalog){
 function planForStorage(plan){
   return {days:plan.days,plan:plan.plan.map(d=>({day:d.day,nodes:d.nodes.map(n=>({attractionId:n.attractionId,slot:n.slot}))}))};
 }
+function composeTravelQuestion(text,prefs){
+  const q=String(text||'').trim().slice(0,100);
+  const tail=[];
+  if(prefs.destination&&prefs.destination!=='全省')tail.push(prefs.destination);
+  if([1,2,3].includes(prefs.days))tail.push(prefs.days+'天');
+  if(prefs.companion&&prefs.companion!=='不限'&&prefs.companion!=='自由行')tail.push(prefs.companion);
+  if(prefs.season&&prefs.season!=='不限')tail.push(prefs.season+'季');
+  return [q,...tail].filter(Boolean).join('，').slice(0,140);
+}
 const KEY='jzzx-travel-plan-v1';
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const data=()=>root.WENLV||{attractions:[],routes:[],calendar:[],entries:[]};
 const readSaved=()=>{try{return normalizePlan(JSON.parse(root.localStorage.getItem(KEY)||'null'),data())}catch{return null}};
-const state={query:'',days:2,destination:'全省',companion:'自由行',season:'不限',plan:null,source:'',answer:'',error:'',busy:false,saved:null,notice:'',initialized:false};
+const state={query:'',days:0,destination:'全省',companion:'不限',season:'不限',plan:null,source:'',answer:'',error:'',busy:false,saved:null,notice:'',initialized:false};
 function landscape(){return '<svg class="travel-landscape" viewBox="0 0 520 290" fill="none" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><circle cx="410" cy="60" r="38" fill="#ffe6a9" opacity=".9"/><path d="M0 219 81 93 115 144 180 43 222 113 280 67 350 156 413 109 520 236V290H0Z" fill="#a7c8c5" opacity=".58"/><path d="M98 168 180 43 222 113 252 88 280 67 320 116 300 110 282 125 267 107 221 137 197 106 178 89 160 121 140 130Z" fill="#eaf4f1" opacity=".92"/><path d="M0 245 85 162 135 193 202 132 260 185 332 119 397 188 464 153 520 216V290H0Z" fill="#75b5aa"/><path d="M0 248Q120 204 218 235T520 220V290H0Z" fill="#326d68"/><path d="M0 266Q160 234 309 261T520 246V290H0Z" fill="#244e56"/><g fill="#e2f3ef" opacity=".5"><path d="m25 211 14-31 14 31h-8l11 21H22l11-21z"/><path d="m455 208 16-38 16 38h-9l12 25h-38l12-25z"/><path d="m480 223 11-26 11 26h-6l8 16h-26l8-16z"/></g><path d="M250 261Q300 252 352 263M316 274q45-6 79 1" stroke="#b6e1db" stroke-width="2" stroke-linecap="round" opacity=".6"/></svg>'}
-function choices(key,items){return '<div class="travel-chips" role="group" aria-label="'+({days:'旅行天数',companion:'同行人',season:'旅行季节'}[key])+'">'+items.map(v=>'<button type="button" data-travel-choice="'+key+'" data-value="'+esc(v)+'" aria-pressed="'+(String(state[key])===String(v))+'">'+esc(key==='days'?v+' 天':v)+'</button>').join('')+'</div>'}
+function choices(key,items){return '<div class="travel-chips" role="group" aria-label="'+({days:'旅行天数',companion:'同行人',season:'旅行季节'}[key])+'">'+items.map(v=>'<button type="button" data-travel-choice="'+key+'" data-value="'+esc(v)+'" aria-pressed="'+(String(state[key])===String(v))+'">'+esc(key==='days'?(v===0?'不限':v+' 天'):v)+'</button>').join('')+'</div>'}
 function sourceLinks(n){return n.sources.length?n.sources.map(s=>'<a class="travel-source" href="'+esc(s.url)+'" target="_blank" rel="noopener noreferrer">'+esc(s.label)+' ↗</a>').join(''):'<p class="travel-subtle">暂无可靠入口，请向景区核实。</p>'}
 function resultMarkup(){
  if(state.busy)return '<section class="travel-result travel-wait" role="status"><span class="travel-spinner" aria-hidden="true"></span><div><strong>正在规划您的行程</strong><p>检索资料并编排候选路线。</p></div></section>';
@@ -59,10 +68,10 @@ function render(region){
  if(!state.initialized){state.saved=readSaved();state.initialized=true;}
  const d=data(),areas=['全省',...new Set((d.attractions||[]).map(a=>a.area))];
  return '<div class="travel-home" id="travelHome"><header class="travel-top"><div class="travel-brand"><span class="travel-brandmark" aria-hidden="true">吉</span><div><strong>吉政知行</strong><small>吉林文旅 · 智能旅行助手</small></div></div><button type="button" class="travel-region" data-action="regions">⌖ '+esc(region||'吉林省')+' ▾</button></header>'+
- '<section class="travel-hero">'+landscape()+'<div class="travel-hero-content"><span class="travel-eyebrow">JILIN · 四季皆可游</span><h1>山海之外，<br>遇见吉林。</h1><p>把想去的地方告诉吉小知。</p></div><span class="travel-hero-caption">长白山意象 · 插画</span></section>'+
- '<div class="travel-main"><section class="travel-planner" aria-label="吉小知智能行程规划"><div class="travel-planner-head"><span class="travel-orb"><img src="./assets/pearl-orb.webp" alt=""></span><div><span class="travel-kicker">吉小知 · 旅行 Agent</span><h2>今天想去哪里？</h2></div></div><form id="travelPlanForm"><label for="travelQuestion" class="travel-label">说说您的旅行想法</label><textarea id="travelQuestion" maxlength="140" rows="2" placeholder="比如：想看雾凇，带家人轻松玩两天">'+esc(state.query)+'</textarea><div class="travel-preferences"><label class="travel-label" for="travelDestination">目的地区</label><select id="travelDestination">'+areas.map(a=>'<option '+(a===state.destination?'selected':'')+'>'+esc(a)+'</option>').join('')+'</select><span class="travel-label">计划天数</span>'+choices('days',[1,2,3])+'<span class="travel-label">与谁同行</span>'+choices('companion',['自由行','亲子','长辈','朋友'])+'<span class="travel-label">旅行季节</span>'+choices('season',['不限','春','夏','秋','冬'])+'</div><button class="travel-primary" type="submit" '+(state.busy?'disabled':'')+'>✦ '+(state.busy?'正在规划…':'为我规划行程')+' <span>→</span></button></form><p class="travel-trust">依据本地文旅资料生成 · 不虚构实时票价</p></section><div id="travelOutcome" aria-live="polite">'+resultMarkup()+'</div>'+
+ '<section class="travel-hero">'+landscape()+'<div class="travel-hero-content"><span class="travel-eyebrow">JILIN · 四季皆可游</span><h1>山河之间，<br>遇见吉林。</h1><p>把想去的地方告诉吉小知。</p></div><span class="travel-hero-caption">长白山意象 · 插画</span></section>'+
+ '<div class="travel-main"><section class="travel-planner" aria-label="吉小知智能行程规划"><div class="travel-planner-head"><span class="travel-orb"><img src="./assets/pearl-orb.webp" alt=""></span><div><span class="travel-kicker">吉小知 · 旅行 Agent</span><h2>今天想去哪里？</h2></div></div><form id="travelPlanForm"><label for="travelQuestion" class="travel-label">说说您的旅行想法（请勿填写个人敏感信息）</label><textarea id="travelQuestion" maxlength="100" rows="2" placeholder="比如：想看雾凇，带家人轻松玩两天">'+esc(state.query)+'</textarea><div class="travel-voice-row"><button type="button" data-travel-action="voice">◎ 语音输入</button><span id="travelVoiceStatus" role="status"></span></div><div class="travel-preferences"><label class="travel-label" for="travelDestination">目的地区</label><select id="travelDestination">'+areas.map(a=>'<option '+(a===state.destination?'selected':'')+'>'+esc(a)+'</option>').join('')+'</select><span class="travel-label">计划天数</span>'+choices('days',[0,1,2,3])+'<span class="travel-label">与谁同行</span>'+choices('companion',['不限','亲子','长辈','朋友'])+'<span class="travel-label">旅行季节</span>'+choices('season',['不限','春','夏','秋','冬'])+'</div><button class="travel-primary" type="submit" '+(state.busy?'disabled':'')+'>✦ '+(state.busy?'正在规划…':'为我规划行程')+' <span>→</span></button></form><p class="travel-trust">依据本地文旅资料生成 · 不虚构实时票价</p></section><div id="travelOutcome" aria-live="polite">'+resultMarkup()+'</div>'+
  '<section class="travel-discover"><div class="travel-section-head"><div><span class="travel-kicker">DISCOVER</span><h2>吉林，值得慢慢走</h2></div><button type="button" data-tab="news">更多线路 →</button></div><div class="travel-route-grid">'+routeCards()+'</div></section>'+
- '<section class="travel-connect"><h2>出游服务</h2><div><button type="button" data-tab="news"><strong>游客反馈</strong><small>线路与问题反馈 →</small></button><button type="button" data-action="roles"><strong>文旅协作</strong><small>游客 / 商户 / 管理演示 →</small></button><button type="button" data-tab="services"><strong>便民服务</strong><small>政务资料与指南 →</small></button></div></section>'+
+ '<section class="travel-connect"><h2>出游服务</h2><div><button type="button" data-tab="news"><strong>游客反馈</strong><small>本机反馈与答复 →</small></button><button type="button" data-action="roles"><strong>文旅协作</strong><small>游客 / 商户 / 管理演示 →</small></button><button type="button" data-tab="services"><strong>便民服务</strong><small>政务资料与指南 →</small></button></div></section>'+
  '<footer class="travel-footer"><span>'+ (d.attractions||[]).length +' 处景点 · '+(d.routes||[]).length+' 条线路 · 本地知识库</span><p>非政府官方应用。行程为参考，出发前请向景区核实；三端协作当前为本机联动。</p></footer></div></div>';
 }
 function refreshOutcome(focus){
@@ -73,7 +82,8 @@ function setNotice(message){state.notice=message;const el=document.querySelector
 async function generate(){
  if(state.busy)return;
  const input=document.getElementById('travelQuestion');if(input)state.query=input.value.trim().slice(0,100);
- const q=[state.query,state.destination==='全省'?'':state.destination,state.days+'天',state.companion==='自由行'?'':state.companion,state.season==='不限'?'':state.season+'季'].filter(Boolean).join('，').slice(0,140);
+ const q=composeTravelQuestion(state.query,state);
+ if(!q){state.error='请描述旅行想法，或选择至少一个出行偏好。';refreshOutcome(false);return;}
  state.busy=true;state.error='';state.answer='';state.notice='';refreshOutcome(false);
  const ctrl=new AbortController(),timeout=setTimeout(()=>ctrl.abort(),18000);
  try{
@@ -93,12 +103,26 @@ function readAloud(){
  const text=state.plan.title+'。'+state.plan.plan.map(d=>'第'+d.day+'天。'+d.nodes.map(n=>n.slot+'，'+n.name).join('。')).join('。')+'。开放及预约请向景区确认。';
  const u=new root.SpeechSynthesisUtterance(text);u.lang='zh-CN';u.rate=.9;u.onerror=()=>setNotice('朗读不可用，可使用系统读屏。');u.onend=()=>setNotice('朗读结束。');root.speechSynthesis.speak(u);setNotice('正在朗读，再次点击可停止。');
 }
+let voice=null;
+function voiceStatus(t){const el=document.getElementById('travelVoiceStatus');if(el)el.textContent=t;}
+function startTravelVoice(){
+ const Speech=root.SpeechRecognition||root.webkitSpeechRecognition;
+ if(!Speech){voiceStatus('当前浏览器不支持语音输入，请使用键盘。');return;}
+ if(voice){voice.stop();return;}
+ try{voice=new Speech();voice.lang='zh-CN';voice.interimResults=false;voice.maxAlternatives=1;
+ voice.onstart=()=>voiceStatus('正在听，点击语音按钮停止。');
+ voice.onresult=e=>{const text=String(e.results?.[0]?.[0]?.transcript||'').slice(0,100);const input=document.getElementById('travelQuestion');if(input&&text){input.value=text;state.query=text;}voiceStatus('已识别，请确认文字后再规划。');};
+ voice.onerror=e=>voiceStatus(e.error==='not-allowed'?'麦克风权限未开启，请使用键盘。':'未能识别，请重试或输入文字。');
+ voice.onend=()=>{voice=null;};voice.start();
+ }catch{voice=null;voiceStatus('无法打开语音输入，请使用键盘。');}
+}
 if(typeof document!=='undefined'){
  document.addEventListener('click',e=>{
   const el=e.target.closest?.('[data-travel-choice],[data-travel-action],[data-travel-route]');if(!el||!el.closest('#travelHome'))return;
-  if(el.dataset.travelChoice){const k=el.dataset.travelChoice,v=el.dataset.value,allowed={days:['1','2','3'],companion:['自由行','亲子','长辈','朋友'],season:['不限','春','夏','秋','冬']};if(!allowed[k]?.includes(v)||state.busy)return;state[k]=k==='days'?Number(v):v;el.parentElement.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b===el)));return;}
+  if(el.dataset.travelChoice){const k=el.dataset.travelChoice,v=el.dataset.value,allowed={days:['0','1','2','3'],companion:['不限','亲子','长辈','朋友'],season:['不限','春','夏','秋','冬']};if(!allowed[k]?.includes(v)||state.busy)return;state[k]=k==='days'?Number(v):v;el.parentElement.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b===el)));return;}
   if(el.dataset.travelRoute){chooseRoute(el.dataset.travelRoute);return;}
   switch(el.dataset.travelAction){
+   case 'voice':startTravelVoice();break;
    case 'retry':generate();break;
    case 'save':if(state.plan){try{root.localStorage.setItem(KEY,JSON.stringify(planForStorage(state.plan)));state.saved=state.plan;state.notice='已保存到本机，不含您的问句。';refreshOutcome(false)}catch{setNotice('当前设备不能保存，请保持此页面打开。')}}break;
    case 'restore':state.saved=readSaved();state.plan=state.saved;state.answer='';state.source='本机保存的行程 · 非实时信息';state.error=state.saved?'':'保存的行程已失效，请重新规划。';refreshOutcome(true);break;
@@ -111,5 +135,5 @@ if(typeof document!=='undefined'){
  document.addEventListener('change',e=>{if(e.target.id==='travelDestination')state.destination=e.target.value;});
  document.addEventListener('input',e=>{if(e.target.id==='travelQuestion')state.query=e.target.value.slice(0,140);});
 }
-root.JZZX_TRAVEL_HOME=Object.freeze({render,normalizePlan,fromRoute,planForStorage,safeTravelUrl});
+root.JZZX_TRAVEL_HOME=Object.freeze({render,normalizePlan,fromRoute,planForStorage,safeTravelUrl,composeTravelQuestion});
 })(globalThis);
