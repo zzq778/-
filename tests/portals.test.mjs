@@ -19,7 +19,7 @@ const HTML = read('index.html');
 const SW = read('sw.js');
 
 /** 建一个只带 localStorage 的沙箱，加载共享数据层。 */
-function loadCore() {
+function loadCore(failWrites=false) {
   const store = new Map();
   const sandbox = {
     console,
@@ -28,7 +28,7 @@ function loadCore() {
     Date,
     localStorage: {
       getItem: (k) => (store.has(k) ? store.get(k) : null),
-      setItem: (k, v) => { store.set(k, String(v)); },
+      setItem: (k, v) => { if(failWrites)throw Error('quota');store.set(k, String(v)); },
       removeItem: (k) => { store.delete(k); }
     },
     addEventListener: () => {},
@@ -180,3 +180,5 @@ test('三端页面已加入离线缓存', () => {
   }
   assert.match(SW, /jzzx-(?:ai|travel)-v\d{3}/);
 });
+
+test('failed storage does not report a saved feedback, profile, document or issue',()=>{const {P,store}=loadCore(true);assert.equal(P.feedback.add({category:'其他',text:'问题'}),null);assert.equal(P.issues.add({category:'infra',title:'问题'}),null);assert.equal(P.merchant.save({name:'bad'}),null);assert.equal(P.docs.setStatus('license','submitted'),false);assert.equal(store.size,0);});

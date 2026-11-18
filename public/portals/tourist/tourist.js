@@ -115,7 +115,7 @@
     var text = String(data.get('text') || '').trim();
     if (!text) return;
     var saved=P.feedback.add({ category: state.category, text: text, fromName: data.get('fromName') });
-    if(!saved){state.flash='无法保存，请检查设备存储。';render();return;}state.draft=null;
+    if(!saved){state.draft=text;state.flash='无法保存，请检查设备存储。';var msg=document.getElementById('fbMsg');if(msg)msg.textContent=state.flash;return;}state.draft=null;
     state.flash = '已保存至本机工作台。';
     state.tab = 'feedback';
     render();

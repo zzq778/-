@@ -332,7 +332,7 @@
     var answered = P.issues.add({ category: 'policy', title: '冬季营业补贴怎么申请', detail: '想了解今年冬季营业的补贴口径与材料清单', location: '吉林市龙潭区', createdAt: ago(26) });
     P.feedback.add({ category: '价格与收费', text: '同一项目现场价格和线上展示不一致', fromName: '游客 A', createdAt: ago(2) });
     P.feedback.add({ category: '设施与环境', text: '休息区座椅偏少，老人排队时没有地方坐', fromName: '游客 B', createdAt: ago(50) });
-    P.government.reply('issue', answered.id, L.draft(answered));
+    if(answered)P.government.reply('issue', answered.id, L.draft(answered));
     toast('已载入 5 条示例待办');
     render();
   }

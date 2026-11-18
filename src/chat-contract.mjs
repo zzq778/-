@@ -53,6 +53,299 @@ export const CHAT_CONTRACT={
           }
         }
       }
+    },
+    "/api/v1/portal/status": {
+      "get": {
+        "operationId": "portalStatus",
+        "description": "业务服务配置状态",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "成功"
+          },
+          "400": {
+            "description": "无效输入"
+          },
+          "401": {
+            "description": "无有效身份"
+          },
+          "403": {
+            "description": "没有权限"
+          },
+          "404": {
+            "description": "资源不可访问"
+          },
+          "409": {
+            "description": "请求 ID 与原始内容冲突"
+          },
+          "429": {
+            "description": "限流"
+          },
+          "503": {
+            "description": "业务服务不可用"
+          }
+        }
+      }
+    },
+    "/api/v1/portal/me": {
+      "get": {
+        "operationId": "portalMe",
+        "description": "服务端识别当前角色",
+        "security": [
+          {
+            "portalAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功"
+          },
+          "400": {
+            "description": "无效输入"
+          },
+          "401": {
+            "description": "无有效身份"
+          },
+          "403": {
+            "description": "没有权限"
+          },
+          "404": {
+            "description": "资源不可访问"
+          },
+          "409": {
+            "description": "请求 ID 与原始内容冲突"
+          },
+          "429": {
+            "description": "限流"
+          },
+          "503": {
+            "description": "业务服务不可用"
+          }
+        }
+      }
+    },
+    "/api/v1/portal/merchants": {
+      "get": {
+        "operationId": "portalMerchants",
+        "description": "游客所在地区已开放商户",
+        "security": [
+          {
+            "portalAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功"
+          },
+          "400": {
+            "description": "无效输入"
+          },
+          "401": {
+            "description": "无有效身份"
+          },
+          "403": {
+            "description": "没有权限"
+          },
+          "404": {
+            "description": "资源不可访问"
+          },
+          "409": {
+            "description": "请求 ID 与原始内容冲突"
+          },
+          "429": {
+            "description": "限流"
+          },
+          "503": {
+            "description": "业务服务不可用"
+          }
+        }
+      }
+    },
+    "/api/v1/portal/feedback": {
+      "get": {
+        "operationId": "listFeedback",
+        "description": "读取当前凭证授权的数据",
+        "security": [
+          {
+            "portalAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功"
+          },
+          "400": {
+            "description": "无效输入"
+          },
+          "401": {
+            "description": "无有效身份"
+          },
+          "403": {
+            "description": "没有权限"
+          },
+          "404": {
+            "description": "资源不可访问"
+          },
+          "409": {
+            "description": "请求 ID 与原始内容冲突"
+          },
+          "429": {
+            "description": "限流"
+          },
+          "503": {
+            "description": "业务服务不可用"
+          }
+        }
+      },
+      "post": {
+        "operationId": "submitFeedback",
+        "description": "仅游客；确认后写入反馈，requestId 幂等",
+        "security": [
+          {
+            "portalAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "merchantId": {
+                    "type": "string"
+                  },
+                  "category": {
+                    "type": "string",
+                    "enum": [
+                      "服务态度",
+                      "设施与环境",
+                      "价格与收费",
+                      "安全问题",
+                      "其他"
+                    ]
+                  },
+                  "text": {
+                    "type": "string",
+                    "maxLength": 500
+                  },
+                  "requestId": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "merchantId",
+                  "category",
+                  "text",
+                  "requestId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功"
+          },
+          "201": {
+            "description": "已写入"
+          },
+          "400": {
+            "description": "无效输入"
+          },
+          "401": {
+            "description": "无有效身份"
+          },
+          "403": {
+            "description": "没有权限"
+          },
+          "404": {
+            "description": "资源不可访问"
+          },
+          "409": {
+            "description": "请求 ID 与原始内容冲突"
+          },
+          "429": {
+            "description": "限流"
+          },
+          "503": {
+            "description": "业务服务不可用"
+          }
+        }
+      }
+    },
+    "/api/v1/portal/feedback/{id}/replies": {
+      "post": {
+        "operationId": "replyFeedback",
+        "description": "仅授权商户或管理人员；确认后答复",
+        "security": [
+          {
+            "portalAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "text": {
+                    "type": "string",
+                    "maxLength": 400
+                  },
+                  "requestId": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "text",
+                  "requestId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功"
+          },
+          "201": {
+            "description": "已写入"
+          },
+          "400": {
+            "description": "无效输入"
+          },
+          "401": {
+            "description": "无有效身份"
+          },
+          "403": {
+            "description": "没有权限"
+          },
+          "404": {
+            "description": "资源不可访问"
+          },
+          "409": {
+            "description": "请求 ID 与原始内容冲突"
+          },
+          "429": {
+            "description": "限流"
+          },
+          "503": {
+            "description": "业务服务不可用"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
     }
   },
   "components": {
@@ -60,6 +353,11 @@ export const CHAT_CONTRACT={
       "bearerAuth": {
         "type": "http",
         "scheme": "bearer"
+      },
+      "portalAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "独立、按角色签发的业务凭证，不是聊天访问码"
       }
     },
     "schemas": {
@@ -199,6 +497,29 @@ export const CHAT_CONTRACT={
                     }
                   }
                 }
+              }
+            }
+          },
+          "feedbackDraft": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "description": "仅准备草稿，未提交",
+            "properties": {
+              "category": {
+                "type": "string",
+                "enum": [
+                  "服务态度",
+                  "设施与环境",
+                  "价格与收费",
+                  "安全问题",
+                  "其他"
+                ]
+              },
+              "text": {
+                "type": "string",
+                "maxLength": 400
               }
             }
           }
