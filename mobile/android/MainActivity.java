@@ -12,6 +12,9 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.speech.tts.TextToSpeech;
+import android.speech.RecognizerIntent;
+import org.json.JSONObject;
+import java.util.ArrayList;
 import android.widget.Toast;
 import android.util.Base64;
 import java.io.InputStream;
@@ -25,11 +28,13 @@ import java.util.Locale;
 public final class MainActivity extends Activity {
   private static final String HOST="jizhengzhixing-mobile.zedi-li070614.workers.dev";
   private static final int SAVE_DOCUMENT=701;
+  private static final int RECOGNIZE_VOICE=702;
   private static final int MAX_FILE_BYTES=3*1024*1024;
   private WebView web;
   private volatile TextToSpeech tts;
   private volatile boolean speechReady=false;
   private byte[] pendingFile;
+  private int voiceRequest=0;
   @Override public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     getWindow().setStatusBarColor(Color.rgb(250,249,245));
@@ -51,6 +56,7 @@ public final class MainActivity extends Activity {
     s.setAllowUniversalAccessFromFileURLs(false);
     web.addJavascriptInterface(new NativeFiles(),"JZZXNativeFiles");
     web.addJavascriptInterface(new NativeSpeech(),"JZZXNativeSpeech");
+    web.addJavascriptInterface(new NativeVoice(),"JZZXNativeVoice");
     tts=new TextToSpeech(this,status->{
       TextToSpeech current=tts;
       if(status==TextToSpeech.SUCCESS&&current!=null){
@@ -123,8 +129,35 @@ public final class MainActivity extends Activity {
       });
     }
   }
+  private void voiceResult(int id,String text,String error){
+    if(web!=null&&!isFinishing())web.evaluateJavascript("typeof window.onJzzxVoiceResult === 'function' && window.onJzzxVoiceResult("+id+","+JSONObject.quote(text)+","+JSONObject.quote(error)+")",null);
+  }
+  private final class NativeVoice {
+    @JavascriptInterface public void start(int id){
+      if(id<=0)return;
+      runOnUiThread(()->{
+        if(isFinishing()||web==null)return;
+        if(voiceRequest!=0){voiceResult(id,"","请先结束当前语音输入。");return;}
+        Intent intent=new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE,"zh-CN");
+        intent.putExtra(RecognizerIntent.EXTRA_PROMPT,"请说出想咨询的问题");
+        intent.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS,1);
+        voiceRequest=id;
+        try{startActivityForResult(intent,RECOGNIZE_VOICE);}
+        catch(Exception e){voiceRequest=0;voiceResult(id,"","手机未安装可用的语音识别服务，请使用输入法语音输入。");}
+      });
+    }
+  }
   @Override protected void onActivityResult(int request,int result,Intent data){
     super.onActivityResult(request,result,data);
+    if(request==RECOGNIZE_VOICE){
+      int id=voiceRequest;voiceRequest=0;if(id<=0)return;
+      ArrayList<String> results=data==null?null:data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
+      String text=result==RESULT_OK&&results!=null&&!results.isEmpty()?results.get(0):"";
+      if(text==null)text="";
+      voiceResult(id,text.substring(0,Math.min(text.length(),600)),text.isEmpty()?"语音输入已结束，未识别到内容。":"");return;
+    }
     if(request!=SAVE_DOCUMENT)return;
     byte[] bytes=pendingFile;pendingFile=null;
     if(result!=RESULT_OK||data==null||data.getData()==null||bytes==null){toast("未保存文件");return;}
@@ -155,7 +188,7 @@ public final class MainActivity extends Activity {
   @Override protected void onDestroy(){
     speechReady=false;TextToSpeech current=tts;tts=null;if(current!=null){current.stop();current.shutdown();}
     pendingFile=null;
-    if(web!=null){web.removeJavascriptInterface("JZZXNativeFiles");web.removeJavascriptInterface("JZZXNativeSpeech");web.destroy();web=null;}
+    if(web!=null){web.removeJavascriptInterface("JZZXNativeFiles");web.removeJavascriptInterface("JZZXNativeSpeech");web.removeJavascriptInterface("JZZXNativeVoice");web.destroy();web=null;}
     super.onDestroy();
   }
 }
