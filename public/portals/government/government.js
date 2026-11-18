@@ -121,7 +121,7 @@
       '<p class="g-wait">' + U.esc(wait) + '</p>' +
       '<div class="g-drafts">' + draftBtns + '</div>' +
       '<form class="p-reply" data-reply="' + item.type + '" data-id="' + U.esc(item.id) + '">' +
-      '<label class="g-reply-field"><span class="p-label">答复（政府身份）</span>' +
+      '<label class="g-reply-field"><span class="p-label">答复（本机管理工作台）</span>' +
       '<textarea class="p-textarea" name="text" rows="2" maxlength="400" required placeholder="可先点上面的草稿，再按实际情况修改">' + '</textarea></label>' +
       '<button class="p-btn" type="submit">答复</button></form></article>';
   }
@@ -176,7 +176,7 @@
       '<div class="p-progress" role="img" aria-label="档案完整度 ' + completion.percent + '%"><i style="width:' + completion.percent + '%"></i></div>' +
       '<p class="p-note">档案完整度 ' + completion.percent + '%（' + completion.filled + '/' + completion.total + ' 项）· 证件待审 ' + q.pending + ' 件 · 已通过 ' + q.counts.approved + ' 件</p></section>' +
       '<section class="p-card"><h3>证件审核</h3>' +
-      '<p class="p-hint">商户端提交的 5 类证件在这里审核；通过或退回会立刻写回同一份数据，商户端刷新即可看到状态。</p>' +
+      '<p class="p-hint">在本机检查商户的证件记录；商户工作台会同步显示通过或退回状态。</p>' +
       (q.items.length ? rows : '<p class="p-empty">暂无证件记录。先在商户端「证件办理」里提交。</p>') +
       '</section>' +
       '<p class="p-note warn">证件只记录类型与状态，不上传文件；真实许可仍以主管部门核发为准，本页不构成审批结论。</p>' +

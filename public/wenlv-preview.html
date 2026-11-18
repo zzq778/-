@@ -7,7 +7,7 @@
   <meta name="theme-color" content="#f5f7fb" />
   <title>吉林旅行 · 景点与路线目录</title>
   <style>
-    :root { --ink:#0f1c2e; --sub:#5b6b7f; --line:#e3e9f2; --brand:#2c5cf6; --bg:#f5f7fb; }
+    :root { --ink:#243a2f; --sub:#57675d; --line:#dce3db; --brand:#235b43; --bg:#faf9f5; }
     * { box-sizing: border-box; }
     body { margin:0; background:var(--bg); color:var(--ink);
       font:16px/1.6 "PingFang SC","Microsoft YaHei","Noto Sans SC",system-ui,sans-serif; }
@@ -15,13 +15,13 @@
     .back { display:inline-flex; gap:6px; align-items:center; color:var(--sub); text-decoration:none;
       font-size:14px; margin-bottom: 12px; }
     .back:hover { color: var(--brand); }
-    .hero { background: linear-gradient(135deg,#2c5cf6,#4f8bff 55%,#7fb4ff); color:#fff;
-      border-radius: 22px; padding: 26px 22px; box-shadow: 0 14px 34px rgba(44,92,246,.22); }
+    .hero { background:#e9efe5; color:var(--ink);
+      border-radius:12px; padding:22px 18px; border:1px solid var(--line); }
     .hero h1 { margin:0 0 6px; font-size: 26px; letter-spacing:.5px; }
     .hero p { margin:0; opacity:.92; font-size: 14.5px; }
     .stats { display:flex; gap:10px; margin-top:18px; flex-wrap:wrap; }
-    .stat { background: rgba(255,255,255,.16); border:1px solid rgba(255,255,255,.28);
-      border-radius: 14px; padding: 8px 14px; min-width: 84px; text-align:center; }
+    .stat { background:#fff; border:1px solid var(--line);
+      border-radius:8px; padding:8px 12px; min-width: 84px; text-align:center; }
     .stat b { display:block; font-size: 22px; line-height:1.2; }
     .stat span { font-size: 12px; opacity:.9; }
     section { margin-top: 30px; }
@@ -36,7 +36,7 @@
     .chip.on small { color: rgba(255,255,255,.8); }
     .grid { display:grid; grid-template-columns: repeat(auto-fill,minmax(260px,1fr)); gap:12px; }
     .card { background:#fff; border:1px solid var(--line); border-left:3px solid var(--accent,#dfe6f1);
-      border-radius:16px; padding:14px 15px; }
+      border-radius:10px; padding:14px 15px; }
     .card header { display:flex; align-items:flex-start; gap:8px; }
     .card header h3 { flex:1; }
     .card h3 { margin:0; font-size:16.5px; line-height:1.35; }
@@ -84,7 +84,7 @@
     .slot { color:var(--sub); font-size:13px; }
     .nodes .why { grid-column: 3; color:var(--sub); font-size:12.5px; }
     .empty { color:var(--sub); }
-    .glyph { font-size:18px; line-height:1.2; }
+    .glyph { display:none; }
     .facts { margin:8px 0; border-top:1px dashed var(--line); }
     .fact { display:grid; grid-template-columns:62px 1fr; gap:6px; padding:4px 0; font-size:13px;
       border-bottom:1px dashed var(--line); }

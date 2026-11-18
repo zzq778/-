@@ -93,3 +93,6 @@
 .fab-spot svg,.voice-orb svg,.small-liquid svg{width:24px;height:24px;max-width:65%;max-height:65%}
 .fab-spot:before,.fab-spot:after,.voice-orb:before,.voice-orb:after,.small-liquid:before,.small-liquid:after{content:none!important}
 @media(prefers-reduced-motion:reduce){.travel-spinner{animation:none!important}}
+
+/* Product-wide details: no glowing assistant symbols or simulated reasoning display. */
+.service-loader{width:20px;height:20px;flex:none;border:2px solid #d2dfd5;border-top-color:#235b43;border-radius:50%;animation:travel-spin .8s linear infinite}.thinking-panel{background:#f5f7f3!important;border:1px solid #dbe4dc!important;box-shadow:none!important;border-radius:9px!important}.thinking-content strong{color:#254a37!important}.travel-home .saved-task{margin:0 20px 20px;box-shadow:none;border:1px solid #dbe4dc;border-radius:10px;background:#fff}.role-option.active{border-color:#7aa48c;background:#f2f6ef;box-shadow:none}.ai-greeting,.bubble.assistant,.chat-form,.service-card,.profile-card{box-shadow:none!important}.voice-visual:before{background:none!important}.bubble.user{background:#235b43!important;box-shadow:none!important}.ai-full-head .small-liquid,.voice-orb{border-radius:8px!important}@media(prefers-reduced-motion:reduce){.service-loader{animation:none}}.motion-off .service-loader{animation:none}

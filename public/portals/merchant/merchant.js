@@ -50,7 +50,7 @@
         '<span class="p-pill ' + d.status + '">' + U.esc(P.DOC_STATUS[d.status]) + '</span>' + action + '</div>';
     }).join('');
     return '<section class="p-card"><div class="p-card-head"><div><h3>证件办理</h3>' +
-      '<p class="p-hint">提交后状态为「待审核」；审核结果由政府端写回同一份数据，商户端只负责提交与撤回。</p></div></div>' +
+      '<p class="p-hint">提交后显示为待审核，可随时查看本机管理工作台记录的结果。</p></div></div>' +
       rows + '<p class="p-note">这里只记录证件类型与状态。正式办证请前往政务服务平台提交材料。</p></section>';
   }
 
