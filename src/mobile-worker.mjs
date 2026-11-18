@@ -1,3 +1,4 @@
+import { runtimeTools,runtimeStatus } from './runtime-tools.mjs';
 import { cleanChatPayload, runProductAgent } from './product-agent.mjs';
 import { CHAT_CONTRACT } from './chat-contract.mjs';
 import { runTravelAgent, PROMPT_VERSION } from './wenlv/travel-agent.mjs';
@@ -20,7 +21,7 @@ const configured=s=>typeof s==='string'&&s.length>=16&&s.length<=160;
 export async function handleMobile(request,env){
  const url=new URL(request.url);
  const ready=!!env.AI&&!!env.LIMITER&&typeof env.TRAVEL_PREVIEW_CODE==='string'&&env.TRAVEL_PREVIEW_CODE.length>=16&&env.TRAVEL_PREVIEW_CODE.length<=160;
- if(url.pathname==='/api/status'&&request.method==='GET')return json({service:'jzzx-mobile',version:'0.9.7',ready,model:MOBILE_MODEL,promptVersion:PROMPT_VERSION});
+ if(url.pathname==='/api/status'&&request.method==='GET')return json({service:'jzzx-mobile',version:'0.9.7',ready,model:MOBILE_MODEL,promptVersion:PROMPT_VERSION,runtime:runtimeStatus(env)});
  if(url.pathname==='/api/v1/openapi.json'&&request.method==='GET')return json({...CHAT_CONTRACT,servers:[{url:url.origin}]});
  if(!url.pathname.startsWith('/api/'))return env.ASSETS.fetch(request);
  const chat=url.pathname==='/api/v1/chat';
@@ -36,7 +37,7 @@ export async function handleMobile(request,env){
   if(chat){
    const payload=cleanChatPayload(await readPayload(request,65536));if(!payload)return json({error:'INVALID_CHAT'},400);
    const invoke=(messages,tools)=>env.AI.run(MOBILE_MODEL,{messages,tools,tool_choice:'required',parallel_tool_calls:false,max_completion_tokens:850,temperature:.2,chat_template_kwargs:{enable_thinking:false}});
-   const outcome=await runProductAgent({...payload,invoke});return json(outcome,outcome.status==='unavailable'?503:200);
+   const outcome=await runProductAgent({...payload,invoke,runtime:runtimeTools(env)});return json(outcome,outcome.status==='unavailable'?503:200);
   }
   const payload=await readPayload(request);const question=typeof payload?.question==='string'?payload.question.trim():'';if(!question||question.length>300)return json({error:'INVALID_QUESTION'},400);
   const invoke=(messages,tools)=>env.AI.run(MOBILE_MODEL,{messages,tools,tool_choice:'required',parallel_tool_calls:false,max_completion_tokens:450,temperature:.1,chat_template_kwargs:{enable_thinking:false}});

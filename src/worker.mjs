@@ -1,5 +1,6 @@
 import { REGIONS, relevantTopics, actionBundle, buildSystemPrompt } from './knowledge.mjs';
 import { DIRECT_BYTES, filePolicy, handleUploadApi, openLargeFile, streamMultipartFile } from './uploads.mjs';
+import { runtimeTools,runtimeStatus } from './runtime-tools.mjs';
 import { cleanChatPayload,runProductAgent } from './product-agent.mjs';
 import { runCivicAgent } from './agent.mjs';
 import { answerWenlv } from './wenlv/pipeline.mjs';
@@ -84,7 +85,7 @@ async function askWithFile(env, file, question, messages, largeFile=null) {
 export async function handleApi(request,env) {
   const url = new URL(request.url);
   if (url.pathname === '/api/status' && request.method==='GET') {
-    return reply({ ready:!!env.AI, provider:'Cloudflare Workers AI', mode:env.AI?'live':'unconfigured', model:MODEL, travelAgent:PROMPT_VERSION });
+    return reply({ ready:!!env.AI, provider:'Cloudflare Workers AI', mode:env.AI?'live':'unconfigured', model:MODEL, travelAgent:PROMPT_VERSION,runtime:runtimeStatus(env) });
   }
   if (url.pathname.startsWith('/api/upload/')) return handleUploadApi(request,env);
   if (url.pathname !== '/api/chat') return reply({ error:'NOT_FOUND',message:'接口不存在' },404);
@@ -148,7 +149,7 @@ export async function handleApi(request,env) {
       const clean=cleanChatPayload(payload);
       if(!clean)return reply({error:'INVALID_CHAT',message:'问题或对话历史格式不正确。'},400);
       const invoke=(messages,tools)=>env.AI.run(MODEL,{messages,tools,tool_choice:'required',parallel_tool_calls:false,max_completion_tokens:850,temperature:.2,chat_template_kwargs:{enable_thinking:false}});
-      const outcome=await runProductAgent({...clean,invoke,pageContext});
+      const outcome=await runProductAgent({...clean,invoke,pageContext,runtime:runtimeTools(env)});
       return reply({...outcome,text:normalizeAiAnswer(outcome.text),disclaimer:'非政府官方应用。景区与办事信息请以官方公告为准。'},outcome.status==='unavailable'?503:200);
     }
     if (payload?.mode === 'wenlv-agent') {
