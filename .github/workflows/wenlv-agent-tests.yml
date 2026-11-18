@@ -1,11 +1,12 @@
 name: Wenlv Agent regression
 on:
   push:
-    branches: ['feat/wenlv-art-v094', 'feat/wenlv-product-v1']
+    branches: ['feat/wenlv-art-v094', 'feat/wenlv-product-v1', 'feat/wenlv-product-v097']
   pull_request:
     branches: [main]
     paths:
       - 'src/**'
+      - 'mobile/**'
       - 'public/**'
       - 'tests/**'
       - '.github/workflows/wenlv-agent-tests.yml'
@@ -25,3 +26,18 @@ jobs:
           node-version: '22'
       - name: Execute project test suite
         run: npm test
+
+  mobile-browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install test browser
+        run: |
+          pip install playwright
+          python -m playwright install --with-deps chromium
+      - name: Mobile UI journey and error states
+        run: python tests/browser_mobile_product.py

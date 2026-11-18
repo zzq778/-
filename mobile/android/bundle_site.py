@@ -13,7 +13,7 @@ if html.count(marker) != 1:
 html = html.replace(marker, '<style>' + (site / 'art/design.css').read_text(encoding='utf-8') + '</style>')
 # Some route artwork paths are constructed in JS. Preload the compact asset map in script.
 assets = {p.stem: 'data:image/webp;base64,' + base64.b64encode(p.read_bytes()).decode('ascii') for p in sorted((site / 'art').glob('*.webp'))}
-expected = {'chaganhu-winter-1d', 'changbaishan-north-2d', 'changbaishan-west-3d', 'changchun-city-1d', 'changchun-family-1d', 'hero', 'jian-history-2d', 'jilin-lake-2d', 'jilin-wusong-2d', 'mountain', 'orb', 'siping-red-1d', 'xianghai-birds-2d', 'yanbian-border-2d', 'yanbian-food-2d'}
+expected = {'chaganhu-winter-1d', 'changbaishan-north-2d', 'changbaishan-west-3d', 'changchun-city-1d', 'changchun-family-1d', 'hero', 'jian-history-2d', 'jilin-lake-2d', 'jilin-wusong-2d', 'mountain', 'siping-red-1d', 'xianghai-birds-2d', 'yanbian-border-2d', 'yanbian-food-2d'}
 if set(assets) != expected:
     raise SystemExit('visual assets missing or unexpected: '+str(set(assets)))
 for name, uri in assets.items():

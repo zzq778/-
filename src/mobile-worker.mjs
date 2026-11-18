@@ -18,7 +18,7 @@ async function readQuestion(request){
 export async function handleMobile(request,env){
  const url=new URL(request.url);
  const ready=!!env.AI&&!!env.LIMITER&&typeof env.TRAVEL_PREVIEW_CODE==='string'&&env.TRAVEL_PREVIEW_CODE.length>=16&&env.TRAVEL_PREVIEW_CODE.length<=160;
- if(url.pathname==='/api/status'&&request.method==='GET')return json({service:'jzzx-mobile',version:'0.9.1',ready,model:MOBILE_MODEL,promptVersion:PROMPT_VERSION});
+ if(url.pathname==='/api/status'&&request.method==='GET')return json({service:'jzzx-mobile',version:'0.9.7',ready,model:MOBILE_MODEL,promptVersion:PROMPT_VERSION});
  if(!url.pathname.startsWith('/api/'))return env.ASSETS.fetch(request);
  if(url.pathname!=='/api/travel'||request.method!=='POST')return json({error:'NOT_FOUND'},404);
  const origin=request.headers.get('origin');if(origin&&origin!==url.origin)return json({error:'ORIGIN'},403);

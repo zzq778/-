@@ -19,11 +19,13 @@ public final class MainActivity extends Activity {
   private WebView web;
   @Override public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
-    getWindow().setStatusBarColor(Color.rgb(244,247,243));
+    getWindow().setStatusBarColor(Color.rgb(250,249,245));
     getWindow().setNavigationBarColor(Color.WHITE);
-    getWindow().getDecorView().setSystemUiVisibility(android.view.View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
+    int bars=android.view.View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
+    if(android.os.Build.VERSION.SDK_INT>=26)bars|=android.view.View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
+    getWindow().getDecorView().setSystemUiVisibility(bars);
     web = new WebView(this);
-    web.setBackgroundColor(Color.rgb(244,247,243));
+    web.setBackgroundColor(Color.rgb(250,249,245));
     WebSettings s=web.getSettings();
     s.setJavaScriptEnabled(true);
     s.setDomStorageEnabled(true);
@@ -59,6 +61,12 @@ public final class MainActivity extends Activity {
     if("jizhengzhixing-mobile.zedi-li070614.workers.dev".equalsIgnoreCase(uri.getHost()))return true;
     try{startActivity(new Intent(Intent.ACTION_VIEW,uri));}catch(Exception ignored){}
     return true;
+  }
+  @Override public void onBackPressed(){
+    if(web==null){super.onBackPressed();return;}
+    web.evaluateJavascript("typeof window.onNativeBack === 'function' && window.onNativeBack()", result->{
+      if(!"true".equals(result))super.onBackPressed();
+    });
   }
   @Override protected void onDestroy(){if(web!=null){web.destroy();web=null;}super.onDestroy();}
 }

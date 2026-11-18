@@ -7,8 +7,8 @@ import {join} from 'node:path';
 import {createHash} from 'node:crypto';
 
 const site=new URL('../mobile/site/',import.meta.url);
-const names=["chaganhu-winter-1d","changbaishan-north-2d","changbaishan-west-3d","changchun-city-1d","changchun-family-1d","hero","jian-history-2d","jilin-lake-2d","jilin-wusong-2d","mountain","orb","siping-red-1d","xianghai-birds-2d","yanbian-border-2d","yanbian-food-2d"];
-test('fifteen local travel illustrations are alpha-enabled WebP assets with a bounded total size',()=>{
+const names=["chaganhu-winter-1d","changbaishan-north-2d","changbaishan-west-3d","changchun-city-1d","changchun-family-1d","hero","jian-history-2d","jilin-lake-2d","jilin-wusong-2d","mountain","siping-red-1d","xianghai-birds-2d","yanbian-border-2d","yanbian-food-2d"];
+test('fourteen local travel illustrations are alpha-enabled WebP assets with a bounded total size',()=>{
  let total=0;
  const routeHashes=new Set();
  for(const name of names){
@@ -18,7 +18,7 @@ test('fifteen local travel illustrations are alpha-enabled WebP assets with a bo
   assert.equal(b.subarray(12,16).toString(),'VP8X');
   assert.ok(b[20]&0x10,name+' alpha flag');
   total+=b.length;
-  if(!['hero','orb','mountain'].includes(name))routeHashes.add(createHash('sha256').update(b).digest('hex'));
+  if(!['hero','mountain'].includes(name))routeHashes.add(createHash('sha256').update(b).digest('hex'));
  }
  assert.equal(routeHashes.size,12,'each route has unique artwork');
  assert.ok(total<1500000);
@@ -29,7 +29,7 @@ test('mobile bundle embeds the real artwork and stylesheet with no relative refe
   const output=join(dir,'index.html');
   execFileSync('python3',[new URL('../mobile/android/bundle_site.py',import.meta.url).pathname,site.pathname,output]);
   const html=readFileSync(output,'utf8');
-  assert.match(html,/Visual layer for mobile v0\.9\.6/);
+  assert.match(html,/Visual layer for mobile v0\.9\.7/);
   assert.match(html,/id="modeBadge"/);
   assert.doesNotMatch(html,/data-bundle-art/);
   assert.doesNotMatch(html,/(?:src|href)=["']\.\/art\//);
