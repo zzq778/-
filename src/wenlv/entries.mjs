@@ -4,7 +4,6 @@
  * 只放“能查到原始说法”的入口：省级部门、市州文旅局、管委会、场馆官网。
  * 12345 热线不落库（它不是网页），由 schema.mjs 的 HELPLINE 单独提供。
  */
-import { validateEntry } from './schema.mjs';
 
 export const ENTRIES = Object.freeze([
   {
@@ -49,8 +48,7 @@ export const ENTRIES = Object.freeze([
   }
 ]);
 
-const problems = ENTRIES.flatMap(entry => validateEntry(entry).map(msg => `${entry.id}: ${msg}`));
-if (problems.length) throw new Error(`官方入口 self-check 失败：\n${problems.join('\n')}`);
+// 知识库结构与日期在构建/测试阶段校验，Worker 模块初始化不依赖运行时钟。
 
 export function entryById(id) {
   return ENTRIES.find(entry => entry.id === id) || null;
