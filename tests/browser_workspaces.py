@@ -34,11 +34,14 @@ try:
         frame.locator('[data-tab=feedback]').click()
         assert '已记录，将核对停车指引。' in frame.locator('body').inner_text()
         page.locator('[data-workspace=merchant]').click()
-        frame.locator('[data-doc][data-status=submitted]').first.click()
+        submission = frame.locator('[data-doc][data-status=submitted]').first
+        doc_id = submission.get_attribute('data-doc')
+        submission.click()
         page.locator('[data-workspace=government]').click()
         frame.locator('[data-tab=docs]').click()
-        frame.locator('[data-doc][data-status=approved]:not([disabled])').first.click()
+        frame.locator(f'[data-doc="{doc_id}"][data-status=approved]:not([disabled])').click()
         page.locator('[data-workspace=merchant]').click()
+        assert frame.locator(f'[data-doc="{doc_id}"][data-status=submitted]').count() == 0
         assert '已通过' in frame.locator('body').inner_text() or '审核通过' in frame.locator('body').inner_text()
         page.locator('[data-workspace=government]').click()
         frame.locator('[data-tab=about]').click()

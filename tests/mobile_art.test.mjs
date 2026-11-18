@@ -33,7 +33,9 @@ test('mobile bundle embeds the real artwork and stylesheet with no relative refe
   assert.match(html,/id="modeBadge"/);
   assert.doesNotMatch(html,/data-bundle-art/);
   assert.doesNotMatch(html,/(?:src|href)=["']\.\/art\//);
-  assert.ok(Buffer.byteLength(html)<2300000);
+  assert.doesNotMatch(html,/data-bundle-workspaces/);
+  assert.match(html,/window\.JZZX_WORKSPACES=/);
+  assert.ok(Buffer.byteLength(html)<2300000, 'bundle bytes: '+Buffer.byteLength(html));
   for(const name of names){
    const encoded=readFileSync(new URL('art/'+name+'.webp',site)).toString('base64');
    assert.ok(html.includes('data:image/webp;base64,'+encoded),name);

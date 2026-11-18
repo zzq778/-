@@ -70,8 +70,9 @@ test('知识库缺失时回退内置示例，并明确提示', () => {
   const m = offline.model();
   assert.equal(m.mode, 'fallback');
   const html = offline.sheet('');
-  assert.match(html, /知识库未加载/);
-  assert.match(html, /内置示例/);
+  assert.match(html, /景点资料暂不可用/);
+  assert.match(html, /参考路线/);
+  assert.match(html, /官方信息/);
   assert.doesNotMatch(html, /data-iti-source/, '回退模式不应出现「依据」按钮');
 });
 
@@ -202,7 +203,7 @@ test('卡片里能看到偏好入口与导出按钮', () => {
   assert.match(html, /data-iti-action="prefs"/);
   assert.match(html, /出行偏好 · 银发结伴 · 轻松 · 2 天/);
   assert.match(html, /data-iti-action="export"/);
-  assert.match(html, /导出长图/, '缺少导出按钮文案');
+  assert.match(html, /导出行程长图/, '缺少导出按钮文案');
   assert.match(html, /id="iti-prefs"/, '缺少偏好面板容器');
 });
 

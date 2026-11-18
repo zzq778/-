@@ -29,7 +29,7 @@ import json
 needle = './art/${art}.webp'
 if html.count(needle) != 1:
     raise SystemExit('dynamic artwork reference missing')
-html = html.replace(needle, '${(' + json.dumps(assets, separators=(',',':')) + ')[art]}')
+html = html.replace(needle, '${(' + json.dumps({k: v for k, v in assets.items() if k not in {'hero','mountain'}}, separators=(',',':')) + ')[art]}')
 if re.search(r'(?:src|href)=[\"\']\./art/', html):
     raise SystemExit('unbundled asset reference')
 output.parent.mkdir(parents=True, exist_ok=True)
