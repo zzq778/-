@@ -1,6 +1,6 @@
 {
   "name": "jizhengzhixing-mobile",
-  "main": "src/mobile-worker.mjs",
+  "main": "src/mobile-entry.mjs",
   "compatibility_date": "2026-11-13",
   "workers_dev": true,
   "ai": {
