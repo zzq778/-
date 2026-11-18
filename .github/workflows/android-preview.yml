@@ -1,15 +1,15 @@
-name: Android offline preview
+name: Android online preview
 on:
   push:
     branches: ['feat/wenlv-product-v1']
     paths:
-      - 'public/mobile-offline.html'
+      - 'mobile/site/**'
       - 'mobile/android/**'
       - '.github/workflows/android-preview.yml'
   pull_request:
     branches: [main]
     paths:
-      - 'public/mobile-offline.html'
+      - 'mobile/site/**'
       - 'mobile/android/**'
       - '.github/workflows/android-preview.yml'
 permissions:
@@ -47,11 +47,11 @@ jobs:
           fi
           echo "ANDROID_HOME=$SDK" >> "$GITHUB_ENV"
           echo "ANDROID_SDK_ROOT=$SDK" >> "$GITHUB_ENV"
-      - name: Build and verify offline APK
+      - name: Build and verify hybrid APK
         run: bash mobile/android/build.sh
       - uses: actions/upload-artifact@v4
         with:
-          name: jizheng-v090-android
-          path: dist/JiZhengZhiXing-v0.9.0-preview.apk
+          name: jizheng-v091-android
+          path: dist/JiZhengZhiXing-v0.9.1-online-preview.apk
           if-no-files-found: error
           retention-days: 7
