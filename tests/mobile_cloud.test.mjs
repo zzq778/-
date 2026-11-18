@@ -18,7 +18,7 @@ function env(){
   assert.equal(options.tool_choice,'required');
   assert.equal(options.parallel_tool_calls,false);
   assert.ok(options.max_completion_tokens<=450);
-  observed.push(options);
+  observed.push(structuredClone(options));
   const result=sequence[observed.length-1];if(!result)throw Error('too many calls');
   assert.ok(options.tools.some(t=>t.function.name===result.choices[0].message.tool_calls[0].function.name));
   return result;
