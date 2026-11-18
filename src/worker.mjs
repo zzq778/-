@@ -1,3 +1,4 @@
+import {workersModel} from './workers-model.mjs';
 import {handleMobile} from './mobile-worker.mjs';
 import {CHAT_CONTRACT} from './chat-contract.mjs';
 import {handleImage} from './image-service.mjs';
@@ -157,7 +158,7 @@ export async function handleApi(request,env) {
       if(!env.AI||!env.LIMITER)return reply({error:'NOT_READY',message:'对话暂不可用。'},503);
       const clean=cleanChatPayload(payload);
       if(!clean)return reply({error:'INVALID_CHAT',message:'问题或对话历史格式不正确。'},400);
-      const invoke=(messages,tools)=>env.AI.run(MODEL,{messages,tools,tool_choice:'required',parallel_tool_calls:false,max_completion_tokens:850,temperature:.2,chat_template_kwargs:{enable_thinking:false}});
+      const invoke=workersModel(env,MODEL,'web-chat',850,.2);
       const outcome=await runProductAgent({...clean,invoke,pageContext,runtime:runtimeTools(env)});
       return reply({...outcome,text:normalizeAiAnswer(outcome.text),disclaimer:'非政府官方应用。景区与办事信息请以官方公告为准。'},outcome.status==='unavailable'?503:200);
     }
@@ -165,7 +166,7 @@ export async function handleApi(request,env) {
       if (attachment || largeFile) return reply({error:'TRAVEL_TEXT_ONLY',message:'当前旅行规划仅接收文字。'},400);
       // An unconfigured rate limiter must not expose a paid multi-call model endpoint.
       const invoke = env.AI && env.LIMITER
-        ? (messages,tools)=>env.AI.run(MODEL,{messages,tools,tool_choice:'required',parallel_tool_calls:false,max_completion_tokens:450,temperature:0.1,chat_template_kwargs:{enable_thinking:false}})
+        ? workersModel(env,MODEL,'web-travel',450,.1)
         : null;
       const outcome=await runTravelAgent({question:finalQuestion,invoke});
       return reply({...outcome,region,model:outcome.modelCalls?MODEL:'wenlv-local',disclaimer:'非政府官方应用；线路为候选安排，实际交通、开放、预约和价格请向景区核实。'});

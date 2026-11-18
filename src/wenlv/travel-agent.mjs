@@ -72,7 +72,7 @@ function safeSummary(s,plan){
  if(r.issues.length||!nodes(plan).some(n=>r.patched.includes(n.name)))return templateAnswer(plan);
  return r.patched;
 }
-export async function runTravelAgent({question,invoke=null,now=new Date(),budgetMs=32000}){
+export async function runTravelAgent({question,invoke=null,now=new Date(),budgetMs=36000}){
  const intent=parseIntent(question,{now});
  let retrieval=null,itinerary=null,checked=null,inspected=0,modelCalls=0,modelActions=0,reason=null;
  const trace=[];
@@ -127,7 +127,7 @@ export async function runTravelAgent({question,invoke=null,now=new Date(),budget
   const remaining=deadline-Date.now();if(remaining<500)return fallback('budget');
   const names=!retrieval?['search_places',...(missing?['ask_user']:[])]:!itinerary?['draft_itinerary',...(inspected<1?['inspect_place']:[])]:!checked?['review_itinerary']:checked.ok?['finish',...(turn<MAX_TURNS-2?['draft_itinerary']:[])]:['draft_itinerary'];
   let choice;
-  try{modelCalls++;choice=toolCall(await bounded(Promise.resolve(invoke(messages,names.map(n=>CATALOG[n]))),Math.min(remaining,10000)));}catch{return fallback('model-error')}
+  try{modelCalls++;choice=toolCall(await bounded(Promise.resolve(invoke(messages,names.map(n=>CATALOG[n]))),Math.min(remaining,18000)));}catch(e){return fallback(e?.message==='model-timeout'?'model-timeout':'model-error')}
   if(!choice||!names.includes(choice.name))return fallback('invalid-tool');
   const {name,args,id}=choice;
   let value;

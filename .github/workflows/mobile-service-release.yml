@@ -30,6 +30,12 @@ jobs:
           else
             echo "ready=true" >> "$GITHUB_OUTPUT"
           fi
+      - name: Exercise real Workers AI through the actual Worker runtime
+        if: steps.access.outputs.ready == 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: '8181cde33c60feace3f3eee52ee2c207'
+        run: node scripts/smoke-mobile-runtime.mjs
       - name: Deploy existing mobile Worker only
         if: steps.access.outputs.ready == 'true'
         env:

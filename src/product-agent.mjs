@@ -53,19 +53,19 @@ export function cleanChatPayload(data){
  if(!REGIONS.includes(region))return null;
  return {question,history:history.map(({role,content})=>({role,content})),region};
 }
-export async function runProductAgent({question,history=[],region='长春市',invoke,budgetMs=28000,pageContext='',runtime=[],analysisOnly=false}){
+export async function runProductAgent({question,history=[],region='长春市',invoke,budgetMs=35000,pageContext='',runtime=[],analysisOnly=false}){
  const dynamic=runtime.map(t=>t.schema);
  const capabilities=analysisOnly?'\n本次仅允许读取已授权反馈分类统计并回答问题，不提供联网检索、其他业务工具或写入操作。':dynamic.length?'\n本次已配置额外工具：'+dynamic.map(t=>t.function.name).join('、')+'。涉及天气和检索时应使用这些实际工具，并注明来源和范围。':'\n本次未配置实时天气与公开网页检索服务。';
  const messages=[{role:'system',content:prompt+capabilities+'\n当前默认办事地区：'+region+pageContext},...history,{role:'user',content:question}];
- const sources=new Map();let itinerary=null,planText='',count=0,service=null,feedbackDraft=null,posterDraft=null;
+ const sources=new Map();let itinerary=null,planText='',count=0,service=null,feedbackDraft=null,posterDraft=null,reason='step-limit';
  const addSources=list=>{for(const s of list||[]){if(s&&typeof s.url==='string'&&/^https?:\/\//i.test(s.url)&&!sources.has(s.url)&&sources.size<12)sources.set(s.url,{label:s.label||s.name||'官方资料',url:s.url});}};
- const result=(status,text)=>({status,text,itinerary,sources:[...sources.values()],toolCount:count,version:PRODUCT_AGENT_VERSION,feedbackDraft,posterDraft,...(service?{actions:actionBundle([service]).actions,agent:{plan:visiblePlan(service)}}:{})});
+ const result=(status,text)=>({status,text,itinerary,sources:[...sources.values()],toolCount:count,...(status==='complete'?{}:{reason}),version:PRODUCT_AGENT_VERSION,feedbackDraft,posterDraft,...(service?{actions:actionBundle([service]).actions,agent:{plan:visiblePlan(service)}}:{})});
  const deadline=Date.now()+budgetMs;
  for(let step=0;step<6;step++){
-  const remaining=deadline-Date.now();if(remaining<500)break;
+  const remaining=deadline-Date.now();if(remaining<500){reason='budget';break;}
   const available=step===5?[byTool.get('reply')]:analysisOnly?[...dynamic,byTool.get('reply')]:[...tools,...dynamic];
-  let call;try{call=parseCall(await bounded(Promise.resolve(invoke(messages,available)),Math.min(remaining,10000)),available)}catch{break}
-  if(!call||!available.some(t=>t.function.name===call.name))break;
+  let call;try{call=parseCall(await bounded(Promise.resolve(invoke(messages,available)),Math.min(remaining,18000)),available)}catch(e){reason=e?.message==='timeout'?'model-timeout':'model-error';break}
+  if(!call||!available.some(t=>t.function.name===call.name)){reason='invalid-tool';break;}
   const {name,args,id}=call;
   if(name==='reply')return result('complete',args.text.trim().replace(/https?:\/\/[^\s，。；、）)\]}]+/g,'（请查看参考资料）').slice(0,1800));
   let value;
