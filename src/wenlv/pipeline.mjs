@@ -51,7 +51,7 @@ export function templateAnswer(itinerary) {
   const head = `给你排了 ${itinerary.days} 天：`;
   const days = itinerary.plan.map((day) => {
     const parts = day.nodes.map((n) => `${n.slot}去${n.name}（${n.why}）`);
-    return `${day.title.replace(/^第 \d 天 · /, '第 ' + day.day + ' 天 ')}：${parts.join('；')}。`;
+    return `${day.title.replace(/^第 \d 天 · /, '第 ' + day.day + ' 天 ')}：${parts.length?parts.join('；'):'机动休息，暂无足够匹配景点'}。`;
   });
   const warnings = itinerary.warnings
     .filter((w) => w.type !== 'fallback')
