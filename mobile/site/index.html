@@ -155,7 +155,7 @@ function cloudPlan(res){
   nodes.push(nn);slots.push(ss);
  }
  if(!seen.size)throw Error('没有找到合适的景点');
- const genuine=res.degraded===false&&Number.isInteger(res.modelActions)&&res.modelActions>=4;
+ const genuine=res.degraded===false&&Number.isInteger(res.modelActions)&&res.modelActions>=1;
  return {title:[...new Set(nodes.flat().map(id=>byId[id].city))].join(' / ')+['','一日游','两日游','三日游'][p.days],nodes,slots,source:genuine?'联网规划':'资料规划',reason:'景点与游览顺序依据出游条件及景点资料安排。',answer:typeof res.text==='string'?res.text.slice(0,1400):'',warnings:[...new Set((Array.isArray(p.warnings)?p.warnings:[]).map(travelWarning).filter(Boolean))].slice(0,10),trace:cleanTrace(res.trace)};
 }
 function cleanTrace(trace){return Array.isArray(trace)?trace.filter(t=>Object.hasOwn(toolLabels,t?.tool)&&typeof t.detail==='string').slice(0,12).map(t=>({tool:toolLabels[t.tool],detail:t.detail.slice(0,250),actor:t.actor==='model'?'model':'system'})):[];}

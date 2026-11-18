@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
   push:
     branches: ['feat/agent-native-product']
-    paths: ['.github/workflows/mobile-service-release.yml','src/mobile-entry.mjs','src/mobile-worker.mjs','src/workers-model.mjs','src/product-agent.mjs','src/wenlv/travel-agent.mjs','scripts/smoke-mobile-runtime.mjs','wrangler.mobile.jsonc']
+    paths: ['.github/workflows/mobile-service-release.yml','src/mobile-entry.mjs','src/mobile-worker.mjs','src/workers-model.mjs','src/product-agent.mjs','src/wenlv/travel-agent.mjs','scripts/smoke-mobile-runtime.mjs','wrangler.mobile.jsonc','mobile/site/index.html']
 permissions:
   contents: read
 concurrency:
