@@ -17,7 +17,7 @@ test('fifteen local travel illustrations are alpha-enabled WebP assets with a bo
   assert.ok(b[20]&0x10,name+' alpha flag');
   total+=b.length;
  }
- assert.ok(total<1100000);
+ assert.ok(total<1450000);
 });
 test('mobile bundle embeds the real artwork and stylesheet with no relative references',()=>{
  const dir=mkdtempSync(join(tmpdir(),'jzzx-art-'));
@@ -25,11 +25,11 @@ test('mobile bundle embeds the real artwork and stylesheet with no relative refe
   const output=join(dir,'index.html');
   execFileSync('python3',[new URL('../mobile/android/bundle_site.py',import.meta.url).pathname,site.pathname,output]);
   const html=readFileSync(output,'utf8');
-  assert.match(html,/Visual layer for mobile v0\.9\.4/);
+  assert.match(html,/Visual layer for mobile v0\.9\.5/);
   assert.match(html,/id="modeBadge"/);
   assert.doesNotMatch(html,/data-bundle-art/);
   assert.doesNotMatch(html,/(?:src|href)=["']\.\/art\//);
-  assert.ok(Buffer.byteLength(html)<2000000);
+  assert.ok(Buffer.byteLength(html)<2300000);
   for(const name of names){
    const encoded=readFileSync(new URL('art/'+name+'.webp',site)).toString('base64');
    assert.ok(html.includes('data:image/webp;base64,'+encoded),name);

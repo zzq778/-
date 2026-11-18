@@ -1,4 +1,4 @@
-/* Visual layer for mobile v0.9.4. Art is original thematic illustration, not documentary photography. */
+/* Visual layer for mobile v0.9.5. Art is original thematic illustration, not documentary photography. */
 :root{--paper:#f6f7f1;--ink:#183d35;--jade:#1b6b60;--muted:#59746a;--edge:#dbe6db}
 body{background:#e5ece3;color:var(--ink)}.app{background:var(--paper);padding-bottom:calc(82px + env(safe-area-inset-bottom))}
 .top{padding:18px 20px 14px}.mark{background:linear-gradient(155deg,#21786e,#145448);box-shadow:0 3px 8px #16483c20;border-radius:14px}.brand strong{font-size:19px}.mode{background:#edf3e9;color:#315e51;font-weight:700;padding:7px 10px;display:flex;align-items:center;gap:6px}.mode:before{content:'';width:6px;height:6px;background:#839d86;border-radius:50%;flex:none}.mode[data-mode-state=cloud]:before{background:#1e8c70}.mode[data-mode-state=cloud]{background:#e7f3eb;border-color:#bfdccc}
@@ -22,3 +22,6 @@ body{background:#e5ece3;color:var(--ink)}.app{background:var(--paper);padding-bo
 .route-art[data-art="yanbian-food-2d"]{background:linear-gradient(145deg,#f8ecdc,#ead8c0)}
 .route-art[data-art="xianghai-birds-2d"]{background:linear-gradient(145deg,#f7e9d5,#d9e6de)}
 .route-filters{display:flex;flex-wrap:wrap;gap:7px;margin:0 0 8px}.route-filters button{padding:8px 11px;min-height:38px;background:#fff;border:1px solid #dbe5da;border-radius:22px;color:#42675a;font-size:12px;font-weight:650}.route-filters button[aria-pressed=true]{background:#176b5b;color:#fff;border-color:#176b5b}.route-count{font-size:11px;color:#5f7b6c;margin:0 0 10px!important}.big .route-filters button{font-size:15px;min-height:44px}
+
+/* Route-to-agent handoff, no automatic billable call. */
+.route-custom{margin:12px 0;padding:13px;border:1px solid #dce7d9;border-radius:14px;background:#f1f7ee;display:flex;flex-wrap:wrap;align-items:center;gap:8px}.route-custom>div{flex:1 1 180px}.route-custom b{font-size:14px;color:#245c50}.route-custom p{font-size:12px;line-height:1.65;color:#536f60;margin:5px 0}.route-custom .secondary{min-height:42px;margin:0;color:#176b5b;background:#fff}.route-art[data-art="jilin-wusong-2d"]{background:linear-gradient(145deg,#f7eee9,#dbe5ef)}.route-art[data-art="yanbian-food-2d"]{background:linear-gradient(145deg,#f8e9e8,#eddfd0)}
