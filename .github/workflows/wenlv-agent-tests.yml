@@ -1,0 +1,25 @@
+name: Wenlv Agent regression
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'public/**'
+      - 'tests/**'
+      - '.github/workflows/wenlv-agent-tests.yml'
+permissions:
+  contents: read
+concurrency:
+  group: wenlv-tests-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Execute project test suite
+        run: npm test
