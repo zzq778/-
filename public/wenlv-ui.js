@@ -69,7 +69,7 @@
   function coverageLine() {
     var c = coverage();
     return '开放时间已核 <b>' + c.hours + '</b>、票价已核 <b>' + c.ticket + '</b>、共 <b>' + c.total +
-      '</b> 条景点（' + c.percent + '% 至少核过一项）。未核对的明确写「未核对」，不猜数字。';
+      '</b> 条景点（' + c.percent + '% 至少核过一项）。其他信息请以景区公告为准。';
   }
 
   /** 三行事实：有就原文给出，没有就写明未核对。 */
@@ -134,7 +134,7 @@
       '<button type="button" class="fix-btn" data-fix="' + esc(a.id) + '">信息有误？</button>' +
       '<form class="fix-form" data-fix-form="' + esc(a.id) + '" hidden>' +
       '<textarea name="detail" maxlength="200" rows="2" placeholder="哪里不对？例如：开放时间改了、票价不同"></textarea>' +
-      '<div class="fix-actions"><button type="submit">提交给政府端</button>' +
+      '<div class="fix-actions"><button type="submit">保存问题记录</button>' +
       '<button type="button" data-fix-cancel="' + esc(a.id) + '">取消</button></div></form></div>';
   }
 
@@ -228,7 +228,7 @@
     if (!root) return;
     var active = '';
     root.innerHTML =
-      '<section class="hero"><h1>吉林文旅知识库</h1>' +
+      '<section class="hero"><h1>吉林景点与路线</h1>' +
       '<p>10 个片区、40 个景点、12 条线路、12 个时令窗口。票价与开放时间一律以官方为准。</p>' +
       '<div class="stats">' + stats() + '</div>' +
       '<p class="coverage">' + coverageLine() + '</p></section>' +
@@ -296,7 +296,7 @@
         tip.textContent = result.reason === 'empty' ? '先写一句哪里不对' : '这台设备不允许本地保存，暂时提交不了';
         return;
       }
-      form.innerHTML = '<p class="fix-done">已记到本地待办，政府端「待办」里能看到这条纠错（演示数据，不会上传服务器）。</p>';
+      form.innerHTML = '<p class="fix-done">已保存到本机。您可在管理工作台的待办中查看记录；此记录不会发送给政府部门。</p>';
     });
   }
 

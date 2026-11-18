@@ -56,7 +56,7 @@
   function header(counts) {
     return '<header class="p-header"><div class="p-header-top">' +
       '<h1 class="p-title">文旅 · 政府端</h1>' +
-      '<span class="p-badge gov">政府</span><span class="p-demo">演示数据</span>' +
+      '<span class="p-demo">本机工作台</span>' +
       '</div>' +
       '<p class="p-sub">待处理 ' + counts.pending + ' 条 · 全部 ' + counts.total + ' 条。商户问题与游客反馈汇总在一处，答复会同步回对应端。</p>' +
       tabBar() + '</header>';
@@ -121,7 +121,7 @@
       '<p class="g-wait">' + U.esc(wait) + '</p>' +
       '<div class="g-drafts">' + draftBtns + '</div>' +
       '<form class="p-reply" data-reply="' + item.type + '" data-id="' + U.esc(item.id) + '">' +
-      '<label class="g-reply-field"><span class="p-label">答复（政府身份）</span>' +
+      '<label class="g-reply-field"><span class="p-label">答复（本机管理工作台）</span>' +
       '<textarea class="p-textarea" name="text" rows="2" maxlength="400" required placeholder="可先点上面的草稿，再按实际情况修改">' + '</textarea></label>' +
       '<button class="p-btn" type="submit">答复</button></form></article>';
   }
@@ -135,7 +135,7 @@
       ? filtered.map(itemCard).join('')
       : '<p class="p-empty">' + (items.length
         ? '当前筛选条件下没有待办，试试切到「全部」。'
-        : '暂无待办。商户端提交问题、游客端提交反馈后会出现在这里；也可以先点下方按钮生成演示数据。') + '</p>';
+        : '暂无待办。此设备上的商户问题与游客反馈将显示在这里。') + '</p>';
     return '<main class="p-body">' +
       '<section class="p-card"><div class="p-card-head"><div><h3>处理概览</h3>' +
       '<p class="p-hint">答复率 ' + s.replyRate + '% · 平均首答 ' + (s.avgReplyHours ? L.fmtDuration(s.avgReplyHours) : '暂无数据') + '</p></div></div>' +
@@ -144,10 +144,10 @@
       '<div class="p-stat"><b>' + s.done + '</b><span>已答复</span></div>' +
       '<div class="p-stat"><b>' + s.overdue + '</b><span>超 24 小时</span></div>' +
       '<div class="p-stat"><b>' + s.total + '</b><span>全部</span></div>' +
-      '</div>' + (items.length ? '' : '<button type="button" class="p-btn ghost small g-seed" data-action="seed">生成 5 条演示待办</button>') + '</section>' +
+      '</div>' + (items.length ? '' : '<button type="button" class="p-btn ghost small g-seed" data-action="seed">载入 5 条示例待办</button>') + '</section>' +
       filterBar() +
       '<section class="g-list">' + list + '</section>' +
-      '<p class="p-note warn">答复框与草稿都是演示实现：真实工单需要权限、留痕与流程审批，本机数据没有鉴权，不能当作政务系统使用。</p>' +
+      '<p class="p-note warn">答复仅在此设备的三个工作台间可见，不具有政务受理或审批效力。</p>' +
       '</main>';
   }
 
@@ -176,7 +176,7 @@
       '<div class="p-progress" role="img" aria-label="档案完整度 ' + completion.percent + '%"><i style="width:' + completion.percent + '%"></i></div>' +
       '<p class="p-note">档案完整度 ' + completion.percent + '%（' + completion.filled + '/' + completion.total + ' 项）· 证件待审 ' + q.pending + ' 件 · 已通过 ' + q.counts.approved + ' 件</p></section>' +
       '<section class="p-card"><h3>证件审核</h3>' +
-      '<p class="p-hint">商户端提交的 5 类证件在这里审核；通过或退回会立刻写回同一份数据，商户端刷新即可看到状态。</p>' +
+      '<p class="p-hint">在本机检查商户的证件记录；商户工作台会同步显示通过或退回状态。</p>' +
       (q.items.length ? rows : '<p class="p-empty">暂无证件记录。先在商户端「证件办理」里提交。</p>') +
       '</section>' +
       '<p class="p-note warn">证件只记录类型与状态，不上传文件；真实许可仍以主管部门核发为准，本页不构成审批结论。</p>' +
@@ -222,7 +222,7 @@
         return '<div class="p-row"><div class="p-row-main"><strong>' + U.esc(ev.name) + '</strong>' +
           '<small>' + U.esc(ev.window) + ' · ' + U.esc(ev.type) + '</small></div></div>';
       }).join('') : '<p class="p-empty">本月没有已收录的时令窗口。</p>') +
-      '<p class="p-note">时令只写月份与窗口，不写具体日期，避免每年日期变化导致口径错误。</p></section>' +
+      '<p class="p-note">活动日期以当年主办方公告为准。</p></section>' +
       '</main>';
   }
 
@@ -230,25 +230,12 @@
 
   function aboutView() {
     return '<main class="p-body">' +
-      '<section class="p-card"><h3>这一版做了什么</h3>' +
-      '<p class="p-hint">在 portal-core.js 预留的接入点上，补齐了政府端的处理面：</p>' +
-      '<ul class="g-list-plain">' +
-      '<li>待办：商户问题 + 游客反馈汇总，按状态 / 类型 / 类别 / 关键词筛选，超 24 小时标逾期</li>' +
-      '<li>答复：三条模板草稿（受理 / 转办 / 要求补充），人工改完再发；发出后写回同一份数据</li>' +
-      '<li>证件审核：商户端提交的 5 类证件，通过 / 退回即时回写</li>' +
-      '<li>数据概览：答复率、平均首答、类别分布、近 7 天新增、本月时令</li>' +
-      '<li>导出：待办 CSV 与摘要文本，用于汇报与复盘</li>' +
-      '</ul></section>' +
-      '<section class="p-card"><h3>接入契约（未变）</h3>' +
-      '<pre class="p-code">// 1) 读待办\nconst inbox = JZZXPortal.government.inbox();\n\n// 2) 答复（写回同一份数据）\nJZZXPortal.government.reply("issue" | "feedback", id, text);\n\n// 3) 变更通知（另外两端写入时刷新）\nJZZXPortal.onChange(refresh);</pre>' +
-      '<p class="p-note">换真实后端时只改 shared/portal-core.js 的 read / write，本页调用方式不变。</p></section>' +
-      '<section class="p-card"><h3>导出</h3>' +
+      '<section class="p-card"><h3>数据与导出</h3><p class="p-hint">保存当前待办清单或复制处理摘要。</p>' +
       '<div class="g-actions"><button type="button" class="p-btn" data-action="csv">导出待办 CSV</button>' +
       '<button type="button" class="p-btn ghost" data-action="copy">复制摘要</button></div>' +
-      '<p class="p-note">导出的文件只包含本机演示数据，不含任何证件编号或身份信息。</p></section>' +
-      '<section class="p-card"><h3>边界</h3>' +
-      '<p class="p-note warn">本地演示数据层：没有登录、没有鉴权、没有服务端校验，清缓存即丢失。这是参赛演示与联调用法，真实政务审批、实名与工单流转系统待接入；答复内容不引用未经核实的文号与时限。</p></section>' +
-      '</main>';
+      '<p class="p-note">导出内容来自此设备。请妥善保管含有问题描述的文件。</p></section>' +
+      '<section class="p-card"><h3>工作台使用范围</h3><p>查看商户问题、游客反馈、证件记录与处理统计。三个工作台共享此浏览器的数据。</p>' +
+      '<p class="p-note warn">本机记录不具备身份认证或正式审批效力，不会发送至真实政府部门。清除浏览器数据将删除记录，请勿填写敏感信息。</p></section></main>';
   }
 
   /* ── 渲染与事件 ───────────────────────────────────────── */
@@ -260,7 +247,7 @@
         : state.tab === 'about' ? aboutView()
           : inboxView();
     app.innerHTML = header(counts) + view +
-      '<footer class="p-footer">public/portals/government/ · 契约文档：public/portals/README.md</footer>' +
+      '<footer class="p-footer">吉政知行 · 本机工作台</footer>' +
       (state.toast ? '<div class="g-toast" role="status">' + U.esc(state.toast) + '</div>' : '');
     bind();
   }
@@ -346,7 +333,7 @@
     P.feedback.add({ category: '价格与收费', text: '同一项目现场价格和线上展示不一致', fromName: '游客 A', createdAt: ago(2) });
     P.feedback.add({ category: '设施与环境', text: '休息区座椅偏少，老人排队时没有地方坐', fromName: '游客 B', createdAt: ago(50) });
     P.government.reply('issue', answered.id, L.draft(answered));
-    toast('已生成 5 条演示待办');
+    toast('已载入 5 条示例待办');
     render();
   }
 

@@ -1,0 +1,9 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>吉政知行 · 行程卡片</title><link rel="stylesheet" href="./itinerary.css"><style>
+:root{font-family:system-ui,"PingFang SC","Microsoft YaHei",sans-serif;color:#253b30;background:#faf9f5;font-size:15px}*{box-sizing:border-box}body{margin:0}button{font:inherit;cursor:pointer}button:focus-visible{outline:2px solid #185946;outline-offset:3px}.sheet.itinerary-sheet{max-height:none;max-width:760px;margin:auto;padding:18px 16px 30px}.sheet-header{display:flex;align-items:center;justify-content:space-between;gap:12px}.sheet-desc,.sheet-legal{font-size:13px;line-height:1.7;color:#59655b}.close-round,.primary,.secondary{border:1px solid #d6ded6;border-radius:9px;padding:11px 15px;background:#fff;color:#254a37;font-weight:600}.primary,.iti-actions .primary{background:#235b43;color:white;border-color:#235b43}.secondary{width:100%}.iti-day-num{background:#235b43}.drag-handle{display:none}
+</style></head><body><main id="modalRoot"><section class="sheet itinerary-sheet" aria-label="行程卡片"></section></main>
+<script src="./wenlv-data.js"></script><script src="./itinerary.js"></script><script>
+const host=document.querySelector('.itinerary-sheet');
+host.innerHTML=JZZX_ITINERARY.sheet('<button type="button" class="close-round" data-action="modal-close" aria-label="返回">返回</button>');
+document.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.action==='modal-close'){JZZX_ITINERARY.stopSpeak();if(window.parent!==window)parent.postMessage({kind:'jzzx-workspace-route',role:'back'},'*');else location.href='./index.html';return;}JZZX_ITINERARY.handle(b);});
+</script></body></html>

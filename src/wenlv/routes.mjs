@@ -5,7 +5,6 @@
  * 这两样一旦写死就会过期，而行程的价值在于顺序与理由。
  * 节点用 attractionId 引用景点库，引用完整性由 tests/wenlv_routes.test.mjs 检查。
  */
-import { validateRoute } from './schema.mjs';
 
 const S = (label, url, kind = 'gov') => ({ label, url, kind });
 const HALL = S('吉林省文化和旅游厅', 'https://whhlyt.jl.gov.cn/');
@@ -166,8 +165,7 @@ export const ROUTES = Object.freeze([
   }
 ]);
 
-const problems = ROUTES.flatMap(route => validateRoute(route).map(msg => `${route.id}: ${msg}`));
-if (problems.length) throw new Error(`线路模板 self-check 失败：\n${problems.join('\n')}`);
+// 知识库结构与日期在构建/测试阶段校验，Worker 模块初始化不依赖运行时钟。
 
 export function routeById(id) {
   return ROUTES.find(route => route.id === id) || null;

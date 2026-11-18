@@ -114,7 +114,7 @@ test('页面接线：我的入口、弹层、脚本顺序、离线缓存', () =>
   assert.ok(p > 0, 'index.html 应引入 profile.js');
   assert.ok(p < index.indexOf('./app.js'), 'profile.js 必须在 app.js 之前加载');
   assert.match(sw, /'\.\/profile\.js'/);
-  assert.match(sw, /const CACHE='jzzx-ai-v\d+';/, '离线缓存名应带版本号，便于升级时淘汰旧缓存');
+  assert.match(sw, /const CACHE='jzzx-(?:ai|travel)-v\d{3}';/, '离线缓存名应带版本号，便于升级时淘汰旧缓存');
 });
 
 test('样式与滚轮步长一致：可视三行、每行 44px', () => {

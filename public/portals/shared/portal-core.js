@@ -30,7 +30,7 @@
   var ROLES = [
     { id: 'tourist', label: '游客端', dir: 'tourist', desc: '看线路、看时令，向商户反馈问题' },
     { id: 'merchant', label: '商户端', dir: 'merchant', desc: '证件、提问题、经营档案、回复反馈' },
-    { id: 'government', label: '政府端', dir: 'government', desc: '接收问题与反馈并答复（另一个人开发）' }
+    { id: 'government', label: '政府端', dir: 'government', desc: '查看问题、反馈与处理统计' }
   ];
 
   /** 商户可以提交的问题类型（用户指定的 6 类）。 */

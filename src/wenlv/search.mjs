@@ -1,3 +1,4 @@
+import { isExcludedAttraction, isExcludedRoute, isExcludedEvent, withinArea, routeWithinArea, targetAreas } from './constraints.mjs';
 /**
  * 检索与打分（wenlv-v1，D3 A 线）
  *
@@ -174,7 +175,7 @@ export function featuredAttractions() {
 }
 
 export function searchAttractions(intent, { limit = 6 } = {}) {
-  return ATTRACTIONS.map((entry) => ({ entry, ...scoreAttraction(entry, intent) }))
+  return ATTRACTIONS.filter(entry=>withinArea(entry,intent)&&!isExcludedAttraction(entry,intent)).map((entry) => ({ entry, ...scoreAttraction(entry, intent) }))
     .sort(byScore)
     .slice(0, limit)
     .map(({ entry, score, reasons }) => ({
@@ -184,7 +185,7 @@ export function searchAttractions(intent, { limit = 6 } = {}) {
 }
 
 export function searchRoutes(intent, { limit = 3 } = {}) {
-  return ROUTES.map((route) => ({ route, ...scoreRoute(route, intent) }))
+  return ROUTES.filter(route=>routeWithinArea(route,intent)&&!isExcludedRoute(route,intent)).map((route) => ({ route, ...scoreRoute(route, intent) }))
     .sort(byScore)
     .slice(0, limit)
     .map(({ route, score, reasons }) => ({
@@ -194,7 +195,7 @@ export function searchRoutes(intent, { limit = 3 } = {}) {
 }
 
 export function searchEvents(intent, { limit = 3 } = {}) {
-  return CALENDAR.map((event) => ({ event, ...scoreEvent(event, intent) }))
+  return CALENDAR.filter(event=>!isExcludedEvent(event,intent)&&(!targetAreas(intent).size||ATTRACTIONS.some(a=>a.cluster===event.cluster&&withinArea(a,intent)))).map((event) => ({ event, ...scoreEvent(event, intent) }))
     .sort(byScore)
     .slice(0, limit)
     .map(({ event, score, reasons }) => ({

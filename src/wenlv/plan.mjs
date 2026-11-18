@@ -124,11 +124,12 @@ function dayTitle(day, nodes) {
 
 function collectWarnings(intent, nodes, days, retrieval) {
   const warnings = [];
+  if(intent?.exclusions?.length)warnings.push({type:'excluded',message:'已按你的要求避开：'+intent.exclusions.join('、')+'。部分时段可留作自由活动。'});
 
   if (retrieval?.fallback) {
     warnings.push({
       type: 'fallback',
-      message: '还没抓到明确条件，先按片区代表给一版；建议追问“几天、和谁、什么季节”。'
+      message: '可以补充目的地、天数或兴趣，让行程更贴合你的想法。'
     });
   }
 
@@ -163,14 +164,14 @@ function collectWarnings(intent, nodes, days, retrieval) {
   if (unknownHours.length) {
     warnings.push({
       type: 'unsourced-facts',
-      message: '开放时间与票价没有写进库（防止过期误导），出发前请以景区官方公告为准。'
+      message: '开放时间、预约规则与票价请以景区最新官方公告为准。'
     });
   }
 
   if (nodes.length < days * 2) {
     warnings.push({
       type: 'thin-plan',
-      message: `可用节点偏少（${nodes.length} 个撑 ${days} 天），建议放宽片区或把其中一天留作机动。`
+      message: `部分时段安排较少（${days} 天共 ${nodes.length} 处景点），可留作自由活动或扩大游览范围。`
     });
   }
 

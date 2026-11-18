@@ -144,7 +144,7 @@ test('商户端包含四块内容与政府接入提示', () => {
   for (const field of ['name', 'contact', 'phone', 'type', 'address', 'licenseCode', 'licenseNumber', 'licenseValidUntil', 'specialties', 'qualifications']) {
     assert.ok(MERCHANT_JS.includes(`name="${field}"`) || MERCHANT_JS.includes(`'${field}'`), `档案缺少字段 ${field}`);
   }
-  assert.match(MERCHANT_JS, /JZZXPortal\.government\.inbox|government\.inbox/, '商户端未提到政府待办');
+  assert.match(MERCHANT_JS, /管理工作台/);
 });
 
 test('游客端能提交反馈并展示答复', () => {
@@ -178,5 +178,5 @@ test('三端页面已加入离线缓存', () => {
   for (const p of ['portals/shared/portal-core.js', 'portals/merchant/index.html', 'portals/tourist/index.html', 'portals/government/index.html', 'portals/government/gov-logic.js', 'portals/government/government.css']) {
     assert.ok(SW.includes(`'./${p}'`), `离线缓存缺少 ${p}`);
   }
-  assert.match(SW, /jzzx-ai-v07\d/);
+  assert.match(SW, /jzzx-(?:ai|travel)-v\d{3}/);
 });

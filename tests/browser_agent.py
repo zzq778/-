@@ -40,9 +40,7 @@ try:
             page.locator('.agent-plan').wait_for(timeout=4000)
             page.get_by_role('button',name='显示全文').click()
             assert page.locator('.agent-plan li').count()==3
-            assert page.locator('.agent-trace li').count()==2
-            page.locator('.agent-trace summary').click()
-            assert page.get_by_text('找到 1 个匹配方向').is_visible()
+            assert page.locator('.agent-trace').count()==0
             page.get_by_role('button',name='查看养老指南').click()
             assert page.get_by_text('养老待遇与资格认证',exact=True).is_visible()
             if width==390:
@@ -52,4 +50,4 @@ try:
 finally:
     pass
 assert not errors,errors
-print('Agent mobile smoke: 320/390/430px, actual HTTP assets, tools trace, plan, navigation: PASS')
+print('Agent mobile smoke: 320/390/430px, actual HTTP assets, plan, navigation: PASS')

@@ -1,12 +1,12 @@
 {
-  "name": "吉政知行 · 政务智能导办",
+  "name": "吉政知行 · 吉林文旅助手",
   "short_name": "吉政知行",
-  "description": "吉林省政务信息查询、智能导办和便民服务入口",
+  "description": "吉林旅行规划、文旅知识与本机协作服务",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#f2f7ff",
-  "theme_color": "#e5f2ff",
+  "background_color": "#f4f7f3",
+  "theme_color": "#176e64",
   "lang": "zh-CN",
   "icons": [
     {

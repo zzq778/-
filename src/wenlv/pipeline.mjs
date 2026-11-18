@@ -51,7 +51,7 @@ export function templateAnswer(itinerary) {
   const head = `给你排了 ${itinerary.days} 天：`;
   const days = itinerary.plan.map((day) => {
     const parts = day.nodes.map((n) => `${n.slot}去${n.name}（${n.why}）`);
-    return `${day.title.replace(/^第 \d 天 · /, '第 ' + day.day + ' 天 ')}：${parts.join('；')}。`;
+    return `${day.title.replace(/^第 \d 天 · /, '第 ' + day.day + ' 天 ')}：${parts.length?parts.join('；'):'机动休息，暂无足够匹配景点'}。`;
   });
   const warnings = itinerary.warnings
     .filter((w) => w.type !== 'fallback')
@@ -75,13 +75,16 @@ function coversPlan(answer, itinerary) {
   return names.some((name) => answer.includes(name));
 }
 
-const withTimeout = (promise, ms) => Promise.race([
-  promise,
-  new Promise((resolve) => {
-    const timer = setTimeout(() => resolve({ __timeout: true }), ms);
-    if (typeof timer?.unref === 'function') timer.unref();
-  })
-]);
+async function withTimeout(promise, ms) {
+  let timer;
+  try {
+    return await Promise.race([promise, new Promise(resolve => {
+      timer = setTimeout(() => resolve({ __timeout: true }), ms);
+    })]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
 
 /**
  * 跑完整流水线。
@@ -99,6 +102,9 @@ export async function answerWenlv({ question, now = new Date(), invoke = null, t
   const fallback = templateAnswer(itinerary);
 
   const base = { intent, retrieval, itinerary, mode: 'wenlv' };
+  if (!itinerary.plan.some(day => day.nodes.length)) {
+    return {...base,answer:'现有知识库中没有同时满足这些条件的景点。请放宽目的地或排除条件后重新规划。',issues:[],usedModel:false,degraded:true,reason:'no-match'};
+  }
 
   if (typeof invoke !== 'function') {
     return { ...base, answer: fallback, issues: [], usedModel: false, degraded: true, reason: 'no-model' };

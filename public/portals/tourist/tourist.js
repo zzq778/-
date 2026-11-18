@@ -11,7 +11,7 @@
   'use strict';
   var P = window.JZZXPortal;
   var app = document.getElementById('app');
-  if (!P || !app) { app.innerHTML = '<p class="p-empty">数据层未加载，请检查 shared/portal-core.js。</p>'; return; }
+  if (!P || !app) { app.innerHTML = '<p class="p-empty">暂时无法打开工作台，请重新进入。</p>'; return; }
   var U = P.utils;
   var W = window.WENLV || { routes: [], calendar: [], attractions: [] };
   var state = { tab: 'explore', category: P.FEEDBACK_CATEGORIES[0], flash: '' };
@@ -56,7 +56,7 @@
       '<div class="p-stat"><b>' + (W.calendar || []).length + '</b><span>个时令</span></div></div></section>' +
       routes +
       '<section class="p-card"><h3>什么时候来</h3><p class="p-hint">按月份看窗口，具体日期以官方公告为准。</p>' + calendar + '</section>' +
-      '<p class="p-note">完整预览：<a href="../../wenlv-preview.html">文旅知识库预览页</a>。</p>';
+      '<p class="p-note"><a href="../../wenlv-preview.html">查看完整景点与路线目录</a></p>';
   }
 
   function feedbackTab() {
@@ -90,8 +90,8 @@
   }
 
   function footer() {
-    return '<footer class="p-footer">本地演示：反馈只存在这台设备的浏览器里，尚未接入服务端；' +
-      '商户端与政府端读取同一份本地数据。</footer>';
+    return '<footer class="p-footer">反馈仅保存在此浏览器；' +
+      '此设备上的商户与管理工作台可查看反馈。</footer>';
   }
 
   function render() {

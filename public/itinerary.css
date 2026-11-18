@@ -157,3 +157,6 @@
   .iti-drawer-panel,.iti-drawer-scrim,.iti-entry,.iti-pref-chip,.iti-read-btn{animation:none!important;transition:none!important}
 }
 .motion-off .iti-drawer-panel,.motion-off .iti-drawer-scrim{animation:none!important}
+
+/* Consistent with the travel service workspaces. */
+.iti-entry{background:#fff;border-color:#d7dfd6;border-radius:12px;box-shadow:none}.iti-entry strong,.iti-day-head,.iti-day-title{color:#253e30}.iti-day-num,.iti-actions .primary{background:#235b43}.iti-chip,.iti-summary{color:#375344;background:#f2f5ef;border-color:#d9e1d6}.iti-drawer-panel{border-radius:14px 14px 0 0;box-shadow:0 -8px 24px #203d3020}.iti-day-num{letter-spacing:0}.iti-pref-btn,.iti-read-btn,.iti-src-btn{font-weight:600}

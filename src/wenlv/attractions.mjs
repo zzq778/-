@@ -8,7 +8,6 @@
  * 等级只在官方口径确认时才填，未确认的写 null（诚实优先于好看）。
  * 字段定义见 docs/WENLV_SCHEMA.md；来源见 docs/WENLV_DATA_SOURCES.md。
  */
-import { validateAttraction } from './schema.mjs';
 
 const S = (label, url, kind = 'gov') => ({ label, url, kind });
 const HALL = S('吉林省文化和旅游厅', 'https://whhlyt.jl.gov.cn/');
@@ -399,9 +398,7 @@ export const ATTRACTIONS = Object.freeze([
   }
 ]);
 
-/** 开发期自检：任何一条不合规都会在 import 时抛出，避免脏数据进主流程。 */
-const problems = ATTRACTIONS.flatMap(entry => validateAttraction(entry).map(msg => `${entry.id}: ${msg}`));
-if (problems.length) throw new Error(`文旅知识库 self-check 失败：\n${problems.join('\n')}`);
+// 知识库结构与日期在构建/测试阶段校验，Worker 模块初始化不依赖运行时钟。
 
 export function byId(id) {
   return ATTRACTIONS.find(entry => entry.id === id) || null;
