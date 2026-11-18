@@ -62,7 +62,7 @@ const KEY='jzzx-travel-plan-v1';
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const data=()=>root.WENLV||{attractions:[],routes:[],calendar:[],entries:[]};
 const readSaved=()=>{try{return normalizePlan(JSON.parse(root.localStorage.getItem(KEY)||'null'),data())}catch{return null}};
-const state={query:'',days:0,destination:'全省',companion:'不限',season:'不限',plan:null,planning:null,source:'',answer:'',error:'',busy:false,saved:null,notice:'',initialized:false};
+const state={query:'',days:0,destination:'全省',companion:'不限',season:'不限',plan:null,planning:null,trace:[],clarify:'',pendingQuestion:'',source:'',answer:'',error:'',busy:false,saved:null,notice:'',initialized:false};
 function landscape(){return '<svg class="travel-landscape" viewBox="0 0 520 290" fill="none" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><circle cx="410" cy="60" r="38" fill="#ffe6a9" opacity=".9"/><path d="M0 219 81 93 115 144 180 43 222 113 280 67 350 156 413 109 520 236V290H0Z" fill="#a7c8c5" opacity=".58"/><path d="M98 168 180 43 222 113 252 88 280 67 320 116 300 110 282 125 267 107 221 137 197 106 178 89 160 121 140 130Z" fill="#eaf4f1" opacity=".92"/><path d="M0 245 85 162 135 193 202 132 260 185 332 119 397 188 464 153 520 216V290H0Z" fill="#75b5aa"/><path d="M0 248Q120 204 218 235T520 220V290H0Z" fill="#326d68"/><path d="M0 266Q160 234 309 261T520 246V290H0Z" fill="#244e56"/><g fill="#e2f3ef" opacity=".5"><path d="m25 211 14-31 14 31h-8l11 21H22l11-21z"/><path d="m455 208 16-38 16 38h-9l12 25h-38l12-25z"/><path d="m480 223 11-26 11 26h-6l8 16h-26l8-16z"/></g><path d="M250 261Q300 252 352 263M316 274q45-6 79 1" stroke="#b6e1db" stroke-width="2" stroke-linecap="round" opacity=".6"/></svg>'}
 function choices(key,items){return '<div class="travel-chips" role="group" aria-label="'+({days:'旅行天数',companion:'同行人',season:'旅行季节'}[key])+'">'+items.map(v=>'<button type="button" data-travel-choice="'+key+'" data-value="'+esc(v)+'" aria-pressed="'+(String(state[key])===String(v))+'">'+esc(key==='days'?(v===0?'不限':v+' 天'):v)+'</button>').join('')+'</div>'}
 function sourceLinks(n){return n.sources.length?n.sources.map(s=>'<a class="travel-source" href="'+esc(s.url)+'" target="_blank" rel="noopener noreferrer">'+esc(s.label)+' ↗</a>').join(''):'<p class="travel-subtle">暂无可靠入口，请向景区核实。</p>'}
@@ -72,13 +72,19 @@ function planningMarkup(){
  const route=(data().routes||[]).find(r=>r.id===p.sourceRouteId);
  return '<details class="travel-planning"><summary>为什么这样安排？</summary><ol><li><strong>理解出行需求</strong><p>'+esc((conditions.join(' · ')||'条件较少，建议补充城市、天数或主题。')+(p.exclusions.length?' · 排除 '+p.exclusions.join('、'):''))+'</p></li><li><strong>检索文旅知识库</strong><p>'+esc(p.attractionCandidates===null?'已完成本地检索':'返回 '+p.attractionCandidates+' 个景点候选')+' · '+esc(p.routeCandidates===null?'':p.routeCandidates+' 条线路候选')+(p.fallback?' · 广泛推荐':'')+'</p></li><li><strong>编排行程</strong><p>'+esc(route?'采用线路骨架：'+route.name:'根据检索结果编排；不是实时路线导航。')+'</p></li><li><strong>整理与校验</strong><p>'+esc(p.modelReplyAccepted?'模型参与表述，已通过当前规则校验。':p.modelUsed?'模型回复未完整采用，行程由知识库编排。':'直接采用知识库模板，没有调用模型。')+'</p></li></ol>'+(p.daysClamped?'<p>当前最多支持 3 天；您提出的 '+esc(p.daysRequested||'更多')+' 天需求仅显示前 3 天，请继续分段规划。</p>':'')+'</details>';
 }
+function traceMarkup(){
+ if(!state.trace.length)return '';
+ const labels={search_places:'检索候选景点',inspect_place:'查阅景点资料',draft_itinerary:'编排行程',review_itinerary:'复核行程',ask_user:'确认旅行偏好',finish:'交付行程'};
+ return '<details class="travel-planning" open><summary>吉小知的执行记录</summary><ol>'+state.trace.map(t=>'<li><strong>'+esc(labels[t.tool]||'工具执行')+'</strong><p>'+esc(t.detail)+' · '+(t.actor==='model'?'模型选择':'系统执行')+'</p></li>').join('')+'</ol></details>';
+}
 function resultMarkup(){
  if(state.busy)return '<section class="travel-result travel-wait" role="status"><span class="travel-spinner" aria-hidden="true"></span><div><strong>正在规划您的行程</strong><p>检索资料并编排候选路线。</p></div></section>';
+ if(state.clarify)return '<section class="travel-result" id="travelClarify" role="status"><span class="travel-kicker">吉小知 · 补充需求</span><h2>'+esc(state.clarify)+'</h2>'+traceMarkup()+'<button type="button" class="travel-secondary" data-travel-action="clarify-input">补充旅行想法</button></section>';
  const errorCard=state.error?'<section class="travel-result travel-error" role="alert"><h2>暂时无法生成行程</h2><p>'+esc(state.error)+'</p><button type="button" data-travel-action="retry" class="travel-secondary">重试</button><p class="travel-subtle">下方精选线路可以离线查看。</p></section>':'';
  if(!state.plan)return errorCard+(state.saved?'<section class="travel-resume"><div><small>我的旅行计划</small><strong>'+esc(state.saved.title)+'</strong></div><button type="button" data-travel-action="restore">继续查看 →</button></section>':'');
  const p=state.plan;
  return errorCard+'<section class="travel-result" id="travelResult"><div class="travel-result-head"><div><span class="travel-kicker">'+esc(state.source)+'</span><h2 id="travelResultTitle" tabindex="-1">'+esc(p.title)+'</h2></div><button type="button" class="travel-secondary" data-travel-action="save">☆ 保存</button></div>'+
- (state.answer?'<p class="travel-answer">'+esc(state.answer)+'</p>':'')+planningMarkup()+'<p class="travel-risk">建议游览顺序，不是导航路线。开放、预约及转场可行性须出行前核实。</p>'+
+ (state.answer?'<p class="travel-answer">'+esc(state.answer)+'</p>':'')+traceMarkup()+planningMarkup()+'<p class="travel-risk">建议游览顺序，不是导航路线。开放、预约及转场可行性须出行前核实。</p>'+
  p.plan.map(d=>'<section class="travel-day"><h3><b>DAY '+String(d.day).padStart(2,'0')+'</b> 第 '+d.day+' 天</h3>'+(d.nodes.length?d.nodes.map(n=>'<article class="travel-node"><span class="travel-dot"></span><div><div class="travel-node-time">'+esc(n.slot)+' · '+esc(n.area)+'</div><h4>'+esc(n.name)+'</h4>'+(n.why?'<p>'+esc(n.why)+'</p>':'')+'<details><summary>行前确认与资料来源</summary><p>'+esc(n.caveat||'开放、票价和预约以景区公告为准。')+'</p><span class="travel-subtle">资料核对日期：'+esc(n.verifiedAt||'未记录')+' · 非实时公告</span>'+sourceLinks(n)+'</details></div></article>').join(''):'<p class="travel-subtle">当天留作机动，尚无可核对的推荐节点。</p>')+'</section>').join('')+
  '<details class="travel-notes"><summary>出发前请确认</summary><p>本计划不包含实时导航、交通时刻、预约或购票结果。</p>'+p.warnings.concat(p.tips).map(t=>'<p>· '+esc(t)+'</p>').join('')+'</details><div class="travel-result-actions"><button type="button" class="travel-secondary" data-travel-action="speak">朗读行程</button><button type="button" class="travel-secondary" data-travel-action="share">分享行程</button><button type="button" class="travel-secondary" data-travel-action="new">调整</button></div><p class="travel-notice" role="status">'+esc(state.notice)+'</p>'+(state.saved?'<button type="button" class="travel-linkbtn" data-travel-action="forget">清除本机保存的行程</button>':'')+'</section>';
 }
@@ -105,21 +111,29 @@ function setNotice(message){state.notice=message;const el=document.querySelector
 async function generate(){
  if(state.busy)return;
  const input=document.getElementById('travelQuestion');if(input)state.query=input.value.trim().slice(0,100);
- const q=composeTravelQuestion(state.query,state);
+ const current=composeTravelQuestion(state.query,state);
+ const q=state.pendingQuestion&&current&&state.pendingQuestion!==current?(state.pendingQuestion+'；补充：'+current).slice(0,300):current;
  if(!q){state.error='请描述旅行想法，或选择至少一个出行偏好。';refreshOutcome(false);return;}
- state.busy=true;state.error='';state.answer='';state.notice='';refreshOutcome(false);
- const ctrl=new AbortController(),timeout=setTimeout(()=>ctrl.abort(),18000);
+ state.busy=true;state.error='';state.clarify='';state.answer='';state.notice='';refreshOutcome(false);
+ const ctrl=new AbortController(),timeout=setTimeout(()=>ctrl.abort(),45000);
  try{
-  const res=await root.fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({mode:'wenlv',question:q}),signal:ctrl.signal,cache:'no-store'});
+  const res=await root.fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({mode:'wenlv-agent',question:q}),signal:ctrl.signal,cache:'no-store'});
   if(!res.ok)throw Error('服务暂时不可用（'+res.status+'）');
-  const payload=await res.json();if(payload.mode!=='wenlv')throw Error('当前服务器尚未启用文旅接口。');
-  if(payload.reason==='no-match'){state.error='当前知识库没有同时满足这些条件的景点，请放宽出行条件。';return;}
+  const payload=await res.json();if(payload.mode!=='wenlv-agent')throw Error('当前服务器尚未启用文旅接口。');
+  state.trace=Array.isArray(payload.trace)?payload.trace.filter(t=>t&&typeof t.tool==='string'&&typeof t.detail==='string').slice(0,12).map(t=>({tool:t.tool.slice(0,40),detail:t.detail.slice(0,200),actor:t.actor==='model'?'model':'system'})):[];
+  if(payload.status==='clarify'){
+    state.clarify=String(payload.text||'请补充出游偏好。').slice(0,200);state.pendingQuestion=q;
+    const field=document.getElementById('travelQuestion');state.query='';if(field)field.value='';
+    return;
+  }
+  state.pendingQuestion='';
+  if(payload.status==='no-match'||payload.reason==='no-match'){state.error='当前知识库没有同时满足这些条件的景点，请放宽出行条件。';return;}
   const p=normalizePlan(payload.itinerary,data());if(!p)throw Error('行程资料不完整或知识库版本不一致，请刷新后重试。');
-  state.plan=p;state.planning=cleanPlanning(payload.planning);state.source=payload.degraded?'知识编排 · 非完整模型回复':'知识检索 · AI 辅助表达';state.answer=typeof payload.text==='string'?payload.text.slice(0,1200):'';
+  state.plan=p;state.planning=null;state.source=payload.degraded?'知识库辅助 · 未完成模型工作流':'AI Agent · 工具执行已完成';state.answer=typeof payload.text==='string'?payload.text.slice(0,1200):'';
  }catch(e){state.error=e?.name==='AbortError'?'网络响应超时。':String(e?.message||'连接失败').slice(0,180);}
  finally{clearTimeout(timeout);state.busy=false;refreshOutcome(true);}
 }
-function chooseRoute(id){if(state.busy)return;const p=fromRoute((data().routes||[]).find(r=>r.id===id),data());state.plan=p;state.planning=null;state.error=p?'':'线路资料暂时不完整。';state.source='知识库精选线路 · 未调用 AI';state.answer='';state.notice='';refreshOutcome(true);}
+function chooseRoute(id){if(state.busy)return;const p=fromRoute((data().routes||[]).find(r=>r.id===id),data());state.plan=p;state.planning=null;state.clarify='';state.pendingQuestion='';state.trace=[];state.error=p?'':'线路资料暂时不完整。';state.source='知识库精选线路 · 未调用 AI';state.answer='';state.notice='';refreshOutcome(true);}
 function shareText(plan){
  return ['吉政知行 · '+plan.title,...plan.plan.map(d=>'第 '+d.day+' 天：'+(d.nodes.length?d.nodes.map(n=>n.slot+' '+n.name).join('；'):'机动休息')),'出发前请核实景区开放、票价、预约及实际车程。'].join('\n');
 }
@@ -157,10 +171,11 @@ if(typeof document!=='undefined'){
   switch(el.dataset.travelAction){
    case 'voice':startTravelVoice();break;
    case 'retry':generate();break;
+   case 'clarify-input':document.getElementById('travelQuestion')?.focus();break;
    case 'save':if(state.plan){try{root.localStorage.setItem(KEY,JSON.stringify(planForStorage(state.plan)));state.saved=state.plan;state.notice='已保存到本机，不含您的问句。';refreshOutcome(false)}catch{setNotice('当前设备不能保存，请保持此页面打开。')}}break;
-   case 'restore':state.saved=readSaved();state.plan=state.saved;state.planning=null;state.answer='';state.source='本机保存的行程 · 非实时信息';state.error=state.saved?'':'保存的行程已失效，请重新规划。';refreshOutcome(true);break;
+   case 'restore':state.saved=readSaved();state.plan=state.saved;state.planning=null;state.trace=[];state.clarify='';state.pendingQuestion='';state.answer='';state.source='本机保存的行程 · 非实时信息';state.error=state.saved?'':'保存的行程已失效，请重新规划。';refreshOutcome(true);break;
    case 'forget':try{root.localStorage.removeItem(KEY);state.saved=null;setNotice('已清除本机行程。');el.remove()}catch{setNotice('清除失败，请在浏览器设置中管理站点数据。')}break;
-   case 'new':state.plan=null;state.planning=null;state.answer='';state.error='';state.notice='';refreshOutcome(false);document.getElementById('travelQuestion')?.focus();break;
+   case 'new':state.plan=null;state.planning=null;state.trace=[];state.clarify='';state.pendingQuestion='';state.answer='';state.error='';state.notice='';refreshOutcome(false);document.getElementById('travelQuestion')?.focus();break;
    case 'speak':readAloud();break;
    case 'share':sharePlan();break;
   }
