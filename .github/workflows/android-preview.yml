@@ -1,0 +1,32 @@
+name: Android offline preview
+on:
+  push:
+    branches: ['feat/wenlv-product-v1']
+    paths:
+      - 'public/mobile-offline.html'
+      - 'mobile/android/**'
+      - '.github/workflows/android-preview.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'public/mobile-offline.html'
+      - 'mobile/android/**'
+      - '.github/workflows/android-preview.yml'
+permissions:
+  contents: read
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Android SDK components
+        run: sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
+      - name: Build and verify offline APK
+        run: bash mobile/android/build.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: jizheng-v090-android
+          path: dist/JiZhengZhiXing-v0.9.0-preview.apk
+          if-no-files-found: error
+          retention-days: 7
