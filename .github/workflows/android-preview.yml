@@ -1,7 +1,7 @@
 name: Android online preview
 on:
   push:
-    branches: ['feat/wenlv-product-v1']
+    branches: ['feat/wenlv-product-v1', 'feat/wenlv-art-v094']
     paths:
       - 'mobile/site/**'
       - 'mobile/android/**'
@@ -51,7 +51,7 @@ jobs:
         run: bash mobile/android/build.sh
       - uses: actions/upload-artifact@v4
         with:
-          name: jizheng-v092-android
-          path: dist/JiZhengZhiXing-v0.9.2-online-preview.apk
+          name: jizheng-v094-android
+          path: dist/JiZhengZhiXing-v0.9.4-art-preview.apk
           if-no-files-found: error
           retention-days: 7
