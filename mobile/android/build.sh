@@ -9,7 +9,7 @@ test -x "$BT/aapt2" && test -f "$PLATFORM"
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 mkdir -p "$WORK/assets" "$WORK/classes" "$WORK/dex" "$ROOT/dist"
-cp "$ROOT/mobile/site/index.html" "$WORK/assets/index.html"
+python3 "$ROOT/mobile/android/bundle_site.py" "$ROOT/mobile/site" "$WORK/assets/index.html"
 "$BT/aapt2" compile --dir "$ROOT/mobile/android/res" -o "$WORK/resources.zip"
 "$BT/aapt2" link -I "$PLATFORM" --manifest "$ROOT/mobile/android/AndroidManifest.xml" -A "$WORK/assets" -o "$WORK/base.apk" "$WORK/resources.zip"
 javac --release 8 -classpath "$PLATFORM" -d "$WORK/classes" "$ROOT/mobile/android/MainActivity.java"
@@ -18,6 +18,6 @@ javac --release 8 -classpath "$PLATFORM" -d "$WORK/classes" "$ROOT/mobile/androi
 "$BT/zipalign" -f 4 "$WORK/base.apk" "$WORK/aligned.apk"
 # Local test signature; never publish this ephemeral key or use it for production updates.
 keytool -genkeypair -keyalg RSA -keysize 2048 -validity 3650 -keystore "$WORK/debug.jks" -storepass android -keypass android -alias preview -dname "CN=JiZheng Online Preview" -noprompt
-"$BT/apksigner" sign --ks "$WORK/debug.jks" --ks-key-alias preview --ks-pass pass:android --key-pass pass:android --out "$ROOT/dist/JiZhengZhiXing-v0.9.1-online-preview.apk" "$WORK/aligned.apk"
-"$BT/apksigner" verify --verbose --print-certs "$ROOT/dist/JiZhengZhiXing-v0.9.1-online-preview.apk"
-"$BT/aapt" dump badging "$ROOT/dist/JiZhengZhiXing-v0.9.1-online-preview.apk" | head -15 || true
+"$BT/apksigner" sign --ks "$WORK/debug.jks" --ks-key-alias preview --ks-pass pass:android --key-pass pass:android --out "$ROOT/dist/JiZhengZhiXing-v0.9.2-online-preview.apk" "$WORK/aligned.apk"
+"$BT/apksigner" verify --verbose --print-certs "$ROOT/dist/JiZhengZhiXing-v0.9.2-online-preview.apk"
+"$BT/aapt" dump badging "$ROOT/dist/JiZhengZhiXing-v0.9.2-online-preview.apk" | head -15 || true
