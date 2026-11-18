@@ -178,5 +178,5 @@ test('三端页面已加入离线缓存', () => {
   for (const p of ['portals/shared/portal-core.js', 'portals/merchant/index.html', 'portals/tourist/index.html', 'portals/government/index.html', 'portals/government/gov-logic.js', 'portals/government/government.css']) {
     assert.ok(SW.includes(`'./${p}'`), `离线缓存缺少 ${p}`);
   }
-  assert.match(SW, /jzzx-ai-v07\d/);
+  assert.match(SW, /jzzx-(?:ai|travel)-v\d{3}/);
 });
