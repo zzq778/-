@@ -135,7 +135,7 @@ test('actual front script sends agent request, renders, stores, restores and pre
  assert.equal(request.body.mode,'wenlv-agent');
  assert.equal(request.body.question,q.value);
  assert.match(outcome.innerHTML,/雾凇岛/);
- assert.match(outcome.innerHTML,/吉小知的执行记录/);
+ assert.doesNotMatch(outcome.innerHTML,/吉小知的执行记录|模型选择|系统执行/);
  click('save');assert.ok(store['jzzx-travel-plan-v1']);
  assert.ok(!store['jzzx-travel-plan-v1'].includes(q.value));
  click('new');assert.match(outcome.innerHTML,/继续查看/);

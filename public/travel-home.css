@@ -79,3 +79,17 @@
 .travel-share-text{width:100%;min-height:105px;border:1px solid #d6e5d9;border-radius:10px;background:#f7faf7;padding:10px;color:#244b3c;box-sizing:border-box;margin-top:6px;font-size:13px}
 .travel-risk{font-size:12px;line-height:1.65;color:#775923;background:#fff7e6;border-left:3px solid #bf9560;border-radius:5px 10px 10px 5px;padding:9px 11px;margin:12px 0}
 .travel-more{margin-top:11px}.travel-more summary{cursor:pointer;font-size:13px;color:#246c5a;font-weight:700;min-height:42px;line-height:42px}.travel-more .travel-route-grid{margin-top:3px}
+
+/* Editorial travel interface shared with the mobile palette. */
+.travel-planner,.travel-result,.travel-connect,.travel-route{box-shadow:none;border-radius:10px}
+.travel-planner{margin:0 0 22px;padding:18px 16px}
+.travel-planner-head{gap:0}.travel-kicker,.travel-eyebrow{text-transform:none;letter-spacing:0;color:inherit}
+.travel-primary{background:#17594d;box-shadow:none;border-radius:7px}.travel-secondary{border-radius:7px}
+.travel-planner textarea{border-radius:7px;background:#fff}
+.travel-footer{color:#4e6459}.travel-hero{border-radius:10px;box-shadow:none;margin-bottom:16px}
+.travel-connect>div{display:grid;grid-template-columns:repeat(auto-fit,minmax(128px,1fr))}
+.floating-ai{background:#17594d!important;box-shadow:none!important;border-radius:8px!important}
+.fab-spot,.voice-orb,.small-liquid{background:#e9eee8!important;box-shadow:none!important;border-radius:8px!important;animation:none!important;color:#17594d!important}
+.fab-spot svg,.voice-orb svg,.small-liquid svg{width:24px;height:24px;max-width:65%;max-height:65%}
+.fab-spot:before,.fab-spot:after,.voice-orb:before,.voice-orb:after,.small-liquid:before,.small-liquid:after{content:none!important}
+@media(prefers-reduced-motion:reduce){.travel-spinner{animation:none!important}}

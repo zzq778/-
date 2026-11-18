@@ -385,11 +385,11 @@
     for (var d = 1; d <= it.days; d++) days.push(dayBlock(it, d));
     var banner;
     if (m.mode === 'fallback') {
-      banner = '<p class="iti-source-line fallback">知识库未加载，当前显示内置示例；数据接入后每个节点会带「依据」。</p>';
+      banner = '<p class="iti-source-line fallback">景点资料暂不可用。以下为参考路线，请在出发前查询官方信息。</p>';
     } else if (m.mode === 'empty') {
-      banner = '<div class="iti-notice error" role="alert"><strong>线路数据异常，暂时排不出行程。</strong><p>可以先返回首页，或稍后重试；下方仍是可用的示例行程。</p></div>';
+      banner = '<div class="iti-notice error" role="alert"><strong>暂时找不到符合条件的路线。</strong><p>您可以修改偏好，或查看以下参考路线。</p></div>';
     } else {
-      banner = '<p class="iti-source-line">数据来自文旅知识库（' + esc(it.nodes.length) + ' 个节点 · 核对于 ' +
+      banner = '<p class="iti-source-line">景点资料（' + esc(it.nodes.length) + ' 个节点 · 核对于 ' +
         esc(it.nodes.map(function (n) { return n.verifiedAt || ''; }).filter(Boolean).sort().pop() || '—') + '）</p>' + weakBanner(it);
     }
     return '<div class="sheet-header iti-head"><strong>' + esc(it.title) + '</strong>' + (close || '') + '</div>' +
@@ -403,7 +403,7 @@
       '<div class="iti-days">' + days.join('') + '</div>' +
       checklistBlock(it) +
       drawerShell() +
-      '<div class="iti-actions"><button type="button" class="primary" data-iti-action="export">导出长图（PNG · 1080px 宽）</button>' +
+      '<div class="iti-actions"><button type="button" class="primary" data-iti-action="export">导出行程长图</button>' +
       '<button type="button" class="secondary" data-action="modal-close">关闭行程</button></div>' +
       '<p class="iti-speech-hint" id="iti-speech-hint" aria-live="polite"></p>' +
       '<p class="iti-sr" id="iti-live" role="status" aria-live="polite"></p>' +
@@ -795,7 +795,7 @@
         setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
       }, 'image/png');
       lastExport = { ok: true, width: EXPORT_WIDTH, height: layout.height, name: name };
-      if (hint) hint.textContent = '已生成 1080px 宽长图，正在保存…';
+      if (hint) hint.textContent = '行程长图已准备好，请在下载中查看。';
       return lastExport;
     } catch (e) {
       return fail(e && e.message ? e.message : '未知错误');
