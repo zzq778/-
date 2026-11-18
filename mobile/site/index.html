@@ -37,7 +37,7 @@ function parse(text,prefs,db,previous=null){
  if(!areas.length&&previous?.areas)areas=previous.areas.slice();
  if(!themes.length&&previous?.themes)themes=previous.themes.slice();
  const exclusion=uniq([...(previous?.excludes||[]),...excludes]);
- return {areas,days,requested,season,themes:uniq(themes),who,excludes:exclusion,exact:uniq(exact),mountain:mountain||!!previous?.mountain,relaxed:/轻松|慢慢|少走|不赶|休闲/.test(positive)||!!previous?.relaxed};
+ return {areas,days,requested,season,themes:uniq(themes),who,excludes:exclusion,exact:uniq(exact.length?exact:(!direct.length?(previous?.exact||[]):[])),mountain:mountain||(!direct.length&&!(prefs.city&&prefs.city!=='全省')&&!!previous?.mountain),relaxed:/轻松|慢慢|少走|不赶|休闲/.test(positive)||!!previous?.relaxed};
 }
 function excluded(a,c){return c.excludes.some(term=>(a.name+' '+a.tags).includes(term))}
 function search(c,db){
@@ -129,7 +129,7 @@ async function runCloud(text,previous){
  if(running)return;
  if(location.origin!==CLOUD_ORIGIN){cloudError='云服务域名不匹配';update();return;}
  if(accessCode.length<16){cloudError='请输入至少 16 位团队访问码';update();return;}
- running=true;cloudError='';status='';showWorking(true);const old=plan;
+ running=true;cloudError='';status='';showWorking(true);const old=plan,oldContext=taskContext,oldTrace=taskTrace,oldClarification=clarification;
  const button=$('#planner button[type=submit]');if(button)button.disabled=true;
  const ctl=new AbortController(),timer=setTimeout(()=>ctl.abort(),45000);
  try{
@@ -144,7 +144,7 @@ async function runCloud(text,previous){
   if(res.status==='no-match'){plan=null;status=String(res.text||'没有匹配的景点').slice(0,240);update();return;}
   if(res.status!=='complete')throw Error('云端未返回有效行程');
   plan=cloudPlan(res);update(true);
- }catch(e){plan=old;cloudError=e?.name==='AbortError'?'云端响应超时':e instanceof TypeError?'未能连接云服务':String(e?.message||'云端服务不可用').slice(0,120);update();}
+ }catch(e){plan=old;taskContext=oldContext;taskTrace=oldTrace;clarification=oldClarification;cloudError=e?.name==='AbortError'?'云端响应超时':e?.name==='TypeError'?'未能连接云服务':String(e?.message||'云端服务不可用').slice(0,120);update();}
  finally{clearTimeout(timer);running=false;showWorking(false);const b=$('#planner button[type=submit]');if(b)b.disabled=false;}
 }
 function runAgent(text,previous=null){
