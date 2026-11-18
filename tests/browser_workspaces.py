@@ -48,6 +48,12 @@ try:
         assert '导出待办 CSV' in frame.locator('body').inner_text()
         assert '接入契约' not in frame.locator('body').inner_text()
         assert page.evaluate('document.documentElement.scrollWidth <= innerWidth+1')
+        page.locator('[data-tab=explore]').click()
+        page.locator('[data-workspace=itinerary]').click()
+        frame.locator('[data-iti-action=prefs]').click()
+        assert frame.locator('#iti-prefs').is_visible()
+        frame.locator('[data-iti-action=prefs-cancel]').click()
+        assert frame.locator('[data-iti-action=export]').is_visible()
         assert not errors, errors
         browser.close()
 finally:

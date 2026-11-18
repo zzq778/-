@@ -254,7 +254,7 @@
       approx: selection.approx,
       alternatives: selection.alternatives || [],
       checklist: [
-        { label: '预约', detail: nodes.filter(function (n) { return n.booking; }).length + ' 个节点写有预约方式，其余以景区官方公告为准。' },
+        { label: '预约', detail: nodes.filter(function (n) { return n.booking; }).length + ' 处景点附有预约资料，其余请查询景区官方公告。' },
         { label: '证件', detail: '身份证随身；有优惠证件按官方要求携带。' },
         { label: '衣物', detail: (route.season || []).indexOf('winter') >= 0 ? '冬季江边风大，准备防风外套、帽子与防滑鞋。' : '山区早晚温差大，带一件外套。' },
         { label: '天气', detail: route.caveat || '出发前查景区官方公告与当天天气。' }
@@ -304,7 +304,7 @@
     var items = nodes.map(function (n) {
       var level = n.level ? '<em class="iti-level">' + esc(n.level) + '</em>' : '';
       var facts = [n.kind, n.area].filter(Boolean).map(esc).join(' · ');
-      var partial = n.partial ? '<span class="iti-partial">该点数据未核对，仅显示占位</span>' : '';
+      var partial = n.partial ? '<span class="iti-partial">此处信息尚无法核实，请以景区公告为准</span>' : '';
       return '<li class="iti-node">' +
         '<span class="iti-slot">' + esc(n.slot) + '</span>' +
         '<div class="iti-node-main">' +
@@ -315,7 +315,7 @@
         '</div></li>';
     }).join('');
     return '<section class="iti-day" aria-labelledby="' + id + '">' +
-      '<h3 class="iti-day-head" id="' + id + '"><span class="iti-day-num">Day ' + day + '</span>' +
+      '<h3 class="iti-day-head" id="' + id + '"><span class="iti-day-num" >第 ' + day + ' 天</span>' +
       '<span class="iti-day-title">' + esc(title) + '</span>' +
       '<button type="button" class="iti-read-btn" data-iti-action="speak" data-iti-day="' + day +
       '" aria-label="朗读第 ' + day + ' 天行程" aria-pressed="false">朗读</button></h3>' +
@@ -713,7 +713,7 @@
     for (var d = 1; d <= it.days; d++) {
       var nodes = it.nodes.filter(function (n) { return n.day === d; });
       if (!nodes.length) continue;
-      blocks.push({ size: 30, weight: '700', color: '#1f3453', lh: 54, text: 'Day ' + d + '　' + (it.dayTitles[d] || '') });
+      blocks.push({ size: 30, weight: '700', color: '#1f3453', lh: 54, text: '第 ' + d + ' 天' + '　' + (it.dayTitles[d] || '') });
       nodes.forEach(function (n) {
         blocks.push({ size: 26, weight: '700', color: '#213852', lh: 44, text: n.slot + '　' + n.name + '（停留建议 ' + n.stay + '）' });
         blocks.push({ size: 23, weight: '400', color: '#4a5f79', lh: 38, text: n.why });
