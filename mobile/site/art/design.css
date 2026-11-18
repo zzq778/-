@@ -11,3 +11,11 @@
 /* Collapsed settings live below the main action, and the saved collection is a plain list. */
 [hidden]{display:none!important}.cloud-panel{margin-top:11px;border-top:0;padding-bottom:0}.cloud-panel summary{min-height:42px;font-weight:500}.cloud-panel p{margin-bottom:4px}.planner-tools[hidden]+.preferences{margin-top:14px}.trip-list{list-style:none;margin:6px 0 0;padding:0}.trip-list li{display:flex;align-items:center;gap:14px;border-top:1px solid var(--edge);padding:8px 0}.saved-trip{flex:1;min-width:0;min-height:55px;background:transparent;border:0;text-align:left;padding:6px 0}.saved-trip b,.saved-trip small{display:block;overflow-wrap:anywhere}.saved-trip small{color:var(--muted);font-size:12px;margin-top:3px}.trip-list .danger{flex:none;padding:8px 5px}.trip-advice{white-space:pre-line;overflow-wrap:anywhere}.hero{min-height:180px}.hero-copy{padding-bottom:50px}.hero-art{width:84%;right:-5%}@media(min-width:540px){.hero{min-height:220px}.hero-copy{padding-bottom:65px}}@media(max-width:350px){.hero{min-height:160px}.hero-copy{padding-bottom:38px}}
 .agent-working>span:nth-child(2){flex:1}.agent-working .text-button{font-size:12px;min-height:38px;flex:none}body.big .route-info small,body.big .result-meta,body.big .day-title small,body.big .node small,body.big summary,body.big .mode,body.big .bottom button,body.big .saved-trip small,body.big .list-heading span{font-size:14px}
+
+.workspace-entry p,.workspace-page .page-title p{font-size:14px;line-height:1.6;color:#50645a}
+.workspace-entry .secondary{width:100%;margin-top:9px}
+.workspace-tabs{display:flex;gap:6px;margin:12px 0;overflow-x:auto}
+.workspace-tabs button{min-height:44px;flex:1;white-space:nowrap;border:1px solid #c6d0c6;background:white;border-radius:7px;color:#304b40;padding:8px 10px;font:inherit}
+.workspace-tabs button[aria-pressed=true]{background:#17594d;border-color:#17594d;color:white}
+.workspace-frame{display:block;width:100%;border:1px solid #dce2da;border-radius:9px;background:#f6f5f0;height:max(520px,calc(100dvh - 240px))}
+.workspace-page{min-width:0}.big .workspace-tabs button{font-size:16px}

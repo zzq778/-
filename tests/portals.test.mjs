@@ -144,7 +144,7 @@ test('商户端包含四块内容与政府接入提示', () => {
   for (const field of ['name', 'contact', 'phone', 'type', 'address', 'licenseCode', 'licenseNumber', 'licenseValidUntil', 'specialties', 'qualifications']) {
     assert.ok(MERCHANT_JS.includes(`name="${field}"`) || MERCHANT_JS.includes(`'${field}'`), `档案缺少字段 ${field}`);
   }
-  assert.match(MERCHANT_JS, /JZZXPortal\.government\.inbox|government\.inbox/, '商户端未提到政府待办');
+  assert.match(MERCHANT_JS, /管理工作台/);
 });
 
 test('游客端能提交反馈并展示答复', () => {

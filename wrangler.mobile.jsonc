@@ -22,5 +22,8 @@
         "period": 60
       }
     }
-  ]
+  ],
+  "build": {
+    "command": "node scripts/build-mobile-workspaces.mjs"
+  }
 }
