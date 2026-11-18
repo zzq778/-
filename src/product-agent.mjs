@@ -53,7 +53,7 @@ export function cleanChatPayload(data){
  if(!REGIONS.includes(region))return null;
  return {question,history:history.map(({role,content})=>({role,content})),region};
 }
-export async function runProductAgent({question,history=[],region='长春市',invoke,budgetMs=28000,pageContext='',runtime=[]}){
+export async function runProductAgent({question,history=[],region='长春市',invoke,budgetMs=28000,pageContext='',runtime=[],analysisOnly=false}){
  const dynamic=runtime.map(t=>t.schema);
  const capabilities=dynamic.length?'\n本次已配置额外工具：'+dynamic.map(t=>t.function.name).join('、')+'。涉及天气和检索时应使用这些实际工具，并注明来源和范围。':'\n本次未配置实时天气与公开网页检索服务。';
  const messages=[{role:'system',content:prompt+capabilities+'\n当前默认办事地区：'+region+pageContext},...history,{role:'user',content:question}];
@@ -63,7 +63,7 @@ export async function runProductAgent({question,history=[],region='长春市',in
  const deadline=Date.now()+budgetMs;
  for(let step=0;step<6;step++){
   const remaining=deadline-Date.now();if(remaining<500)break;
-  const available=step===5?[byTool.get('reply')]:[...tools,...dynamic];
+  const available=step===5?[byTool.get('reply')]:analysisOnly?[...dynamic,byTool.get('reply')]:[...tools,...dynamic];
   let call;try{call=parseCall(await bounded(Promise.resolve(invoke(messages,available)),Math.min(remaining,10000)),available)}catch{break}
   if(!call||!available.some(t=>t.function.name===call.name))break;
   const {name,args,id}=call;

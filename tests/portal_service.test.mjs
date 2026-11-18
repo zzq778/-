@@ -40,7 +40,7 @@ test('feedback analysis is role scoped and sends aggregate data only',async()=>{
  assert.equal((await(await go('govA','summary')).json()).total,2);
  assert.equal((await(await go('govB','summary')).json()).total,0);
  assert.equal((await go('merchantA','analysis',{question:'优先事项',confirm:false})).status,400);
- let calls=0;e.LIMITER={limit:async()=>({success:true})};e.AI={run:async(_,p)=>{calls++;const s=JSON.stringify(p.messages);assert.ok(!s.includes('private-text')&&!s.includes('other-scope-private')&&!s.includes(key('merchantA')));const name=calls===1?'read_feedback_summary':'reply';if(calls===2)assert.ok(s.includes('"total":1'));return {tool_calls:[{id:name,function:{name,arguments:JSON.stringify(calls===1?{}:{text:'优先核对安全反馈。'})}}]}}};
+ let calls=0;e.LIMITER={limit:async()=>({success:true})};e.AI={run:async(_,p)=>{calls++;const s=JSON.stringify(p.messages);assert.ok(!s.includes('private-text')&&!s.includes('other-scope-private')&&!s.includes(key('merchantA')));const name=calls===1?'read_feedback_summary':'reply';if(calls===2)assert.equal(JSON.parse(p.messages.at(-1).content).total,1);return {tool_calls:[{id:name,function:{name,arguments:JSON.stringify(calls===1?{}:{text:'优先核对安全反馈。'})}}]}}};
  const r=await(await go('merchantA','analysis',{question:'优先事项',confirm:true})).json();assert.equal(r.status,'complete');assert.equal(r.summary.total,1);assert.equal(calls,2);
  assert.equal((await go('touristA','analysis',{question:'全部反馈',confirm:true})).status,403);
 });
