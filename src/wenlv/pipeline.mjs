@@ -75,13 +75,16 @@ function coversPlan(answer, itinerary) {
   return names.some((name) => answer.includes(name));
 }
 
-const withTimeout = (promise, ms) => Promise.race([
-  promise,
-  new Promise((resolve) => {
-    const timer = setTimeout(() => resolve({ __timeout: true }), ms);
-    if (typeof timer?.unref === 'function') timer.unref();
-  })
-]);
+async function withTimeout(promise, ms) {
+  let timer;
+  try {
+    return await Promise.race([promise, new Promise(resolve => {
+      timer = setTimeout(() => resolve({ __timeout: true }), ms);
+    })]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
 
 /**
  * 跑完整流水线。
