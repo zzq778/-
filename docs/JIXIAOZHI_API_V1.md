@@ -12,3 +12,7 @@
 - `WEATHER_ENABLED=true` 可启用 Open-Meteo 城区三日预报（非商业使用须符合供应商条款）；来源 https://open-meteo.com/en/docs 。默认关闭，正式商业服务须使用获准方案。
 - `BRAVE_SEARCH_KEY` 配置后才启用 Brave Search，密钥保存在部署环境。实际请求 https://api.search.brave.com/res/v1/web/search ，文档 https://api-dashboard.search.brave.com/api-reference/web/search/get 。只返回搜索摘要，不声称读取全文，不传敏感信息。
 - 二者真实网络调用均尚未上线验证；测试替换供应商响应、不产生实际收费。
+
+## 素材生成
+
+吉小知可调用 `prepare_poster` 整理可编辑的素材描述。用户独立确认后，通过 `POST /api/v1/images` 生成一张图；配置 `IMAGE_GENERATION_ENABLED=true` 和保密的独立 `IMAGE_ACCESS_CODE`（至少 32 字符随机凭证）才启用。使用现有 Workers AI 绑定的 FLUX.1 schnell（https://developers.cloudflare.com/workers-ai/models/flux-1-schnell/）。当服务关闭时不调用模型。模型输出为 JPEG Base64，按格式和大小拒绝无效响应。费用由部署者确认，未调用线上模型、未新增付费资源。AI 图用于宣传创意，不冒充景区照片。

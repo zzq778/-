@@ -346,6 +346,70 @@ export const CHAT_CONTRACT={
           }
         ]
       }
+    },
+    "/api/v1/images/status": {
+      "get": {
+        "operationId": "imageStatus",
+        "responses": {
+          "200": {
+            "description": "是否配置素材服务"
+          }
+        }
+      }
+    },
+    "/api/v1/images": {
+      "post": {
+        "operationId": "generateImage",
+        "description": "仅在确认且授权的环境调用单张图像生成；不自动发布",
+        "security": [
+          {
+            "imageAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "prompt",
+                  "confirm"
+                ],
+                "properties": {
+                  "prompt": {
+                    "type": "string",
+                    "maxLength": 1400
+                  },
+                  "confirm": {
+                    "const": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "真实模型返回的 JPEG 图像，MIME 与 base64 字段"
+          },
+          "400": {
+            "description": "未确认或描述无效"
+          },
+          "401": {
+            "description": "访问凭证无效"
+          },
+          "429": {
+            "description": "限流"
+          },
+          "502": {
+            "description": "模型返回非图像"
+          },
+          "503": {
+            "description": "未启用或服务不可用"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -358,6 +422,11 @@ export const CHAT_CONTRACT={
         "type": "http",
         "scheme": "bearer",
         "description": "独立、按角色签发的业务凭证，不是聊天访问码"
+      },
+      "imageAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "素材服务独立访问凭证"
       }
     },
     "schemas": {
@@ -520,6 +589,19 @@ export const CHAT_CONTRACT={
               "text": {
                 "type": "string",
                 "maxLength": 400
+              }
+            }
+          },
+          "posterDraft": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "description": "待用户确认的图像创作描述，并非已生成素材",
+            "properties": {
+              "prompt": {
+                "type": "string",
+                "maxLength": 1200
               }
             }
           }
