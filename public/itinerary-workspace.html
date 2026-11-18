@@ -5,5 +5,5 @@
 <script src="./wenlv-data.js"></script><script src="./itinerary.js"></script><script>
 const host=document.querySelector('.itinerary-sheet');
 host.innerHTML=JZZX_ITINERARY.sheet('<button type="button" class="close-round" data-action="modal-close" aria-label="返回">返回</button>');
-document.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.action==='modal-close'){JZZX_ITINERARY.stopSpeak();if(window.parent!==window)parent.postMessage({kind:'jzzx-workspace-route',role:'tourist'},'*');else location.href='./index.html';return;}JZZX_ITINERARY.handle(b);});
+document.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.action==='modal-close'){JZZX_ITINERARY.stopSpeak();if(window.parent!==window)parent.postMessage({kind:'jzzx-workspace-route',role:'back'},'*');else location.href='./index.html';return;}JZZX_ITINERARY.handle(b);});
 </script></body></html>

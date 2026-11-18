@@ -54,6 +54,12 @@ try:
         assert frame.locator('#iti-prefs').is_visible()
         frame.locator('[data-iti-action=prefs-cancel]').click()
         assert frame.locator('[data-iti-action=export]').is_visible()
+        assert page.locator('.bottom [data-tab=explore]').get_attribute('aria-current') == 'page'
+        page.locator('.workspace-page .back-link').click()
+        assert page.locator('[data-workspace=itinerary]').is_visible()
+        page.locator('[data-tab=portal]').click()
+        page.locator('[data-tab=workspaces]').click()
+        assert frame.locator('[data-tab=feedback]').is_visible()
         assert not errors, errors
         browser.close()
 finally:
