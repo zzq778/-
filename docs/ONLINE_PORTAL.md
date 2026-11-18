@@ -17,3 +17,7 @@
 - POST /api/v1/portal/feedback/:id/replies：商户或管理人员在授权范围内写入 {text,requestId}。不允许越权读取或答复；操作方身份与时间在服务器记录。相同 idempotency key 不同请求返回 409。
 - 认证头 Authorization: Bearer <独立业务凭证>；聊天预览码与外部 Agent 码无业务权限。
 - 测试以 Node SQLite 实际执行 SQL 模拟 D1 binding，覆盖跨角色、跨商户、跨地区、重试、不同 Worker 共享数据。未在实际 Cloudflare D1 实测。
+
+## 产品入口与 Agent 草稿
+
+Web 文旅页和 Android 服务页提供联网反馈入口。凭证只保存在当前页面内存，退出清空；本机端继续可用。吉小知可将自然语言整理成结构化游客反馈草稿，用户选择本机或联网表单，编辑、选商户、确认后才执行写操作。模型不能提交，不能替代角色身份。
