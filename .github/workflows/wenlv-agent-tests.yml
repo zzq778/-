@@ -1,7 +1,7 @@
 name: Wenlv Agent regression
 on:
   push:
-    branches: ['feat/wenlv-art-v094']
+    branches: ['feat/wenlv-art-v094', 'feat/wenlv-product-v1']
   pull_request:
     branches: [main]
     paths:

@@ -18,6 +18,6 @@ javac --release 8 -classpath "$PLATFORM" -d "$WORK/classes" "$ROOT/mobile/androi
 "$BT/zipalign" -f 4 "$WORK/base.apk" "$WORK/aligned.apk"
 # Local test signature; never publish this ephemeral key or use it for production updates.
 keytool -genkeypair -keyalg RSA -keysize 2048 -validity 3650 -keystore "$WORK/debug.jks" -storepass android -keypass android -alias preview -dname "CN=JiZheng Online Preview" -noprompt
-"$BT/apksigner" sign --ks "$WORK/debug.jks" --ks-key-alias preview --ks-pass pass:android --key-pass pass:android --out "$ROOT/dist/JiZhengZhiXing-v0.9.5-art-preview.apk" "$WORK/aligned.apk"
-"$BT/apksigner" verify --verbose --print-certs "$ROOT/dist/JiZhengZhiXing-v0.9.5-art-preview.apk"
-"$BT/aapt" dump badging "$ROOT/dist/JiZhengZhiXing-v0.9.5-art-preview.apk" | head -15 || true
+"$BT/apksigner" sign --ks "$WORK/debug.jks" --ks-key-alias preview --ks-pass pass:android --key-pass pass:android --out "$ROOT/dist/JiZhengZhiXing-v0.9.6-online-preview.apk" "$WORK/aligned.apk"
+"$BT/apksigner" verify --verbose --print-certs "$ROOT/dist/JiZhengZhiXing-v0.9.6-online-preview.apk"
+"$BT/aapt" dump badging "$ROOT/dist/JiZhengZhiXing-v0.9.6-online-preview.apk" | head -15 || true

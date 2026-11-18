@@ -51,7 +51,7 @@ jobs:
         run: bash mobile/android/build.sh
       - uses: actions/upload-artifact@v4
         with:
-          name: jizheng-v095-android
-          path: dist/JiZhengZhiXing-v0.9.5-art-preview.apk
+          name: jizheng-v096-android
+          path: dist/JiZhengZhiXing-v0.9.6-online-preview.apk
           if-no-files-found: error
           retention-days: 7
