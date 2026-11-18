@@ -21,6 +21,14 @@
         "limit": 3,
         "period": 60
       }
+    },
+    {
+      "name": "PORTAL_LIMITER",
+      "namespace_id": "1092",
+      "simple": {
+        "limit": 60,
+        "period": 60
+      }
     }
   ],
   "build": {

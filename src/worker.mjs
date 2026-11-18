@@ -1,3 +1,4 @@
+import { handlePortal } from './portal-service.mjs';
 import { REGIONS, relevantTopics, actionBundle, buildSystemPrompt } from './knowledge.mjs';
 import { DIRECT_BYTES, filePolicy, handleUploadApi, openLargeFile, streamMultipartFile } from './uploads.mjs';
 import { runtimeTools,runtimeStatus } from './runtime-tools.mjs';
@@ -84,6 +85,7 @@ async function askWithFile(env, file, question, messages, largeFile=null) {
 
 export async function handleApi(request,env) {
   const url = new URL(request.url);
+ if(url.pathname.startsWith('/api/v1/portal/'))return handlePortal(request,env);
   if (url.pathname === '/api/status' && request.method==='GET') {
     return reply({ ready:!!env.AI, provider:'Cloudflare Workers AI', mode:env.AI?'live':'unconfigured', model:MODEL, travelAgent:PROMPT_VERSION,runtime:runtimeStatus(env) });
   }
