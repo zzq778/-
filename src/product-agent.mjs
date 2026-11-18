@@ -55,7 +55,7 @@ export function cleanChatPayload(data){
 }
 export async function runProductAgent({question,history=[],region='长春市',invoke,budgetMs=28000,pageContext='',runtime=[],analysisOnly=false}){
  const dynamic=runtime.map(t=>t.schema);
- const capabilities=dynamic.length?'\n本次已配置额外工具：'+dynamic.map(t=>t.function.name).join('、')+'。涉及天气和检索时应使用这些实际工具，并注明来源和范围。':'\n本次未配置实时天气与公开网页检索服务。';
+ const capabilities=analysisOnly?'\n本次仅允许读取已授权反馈分类统计并回答问题，不提供联网检索、其他业务工具或写入操作。':dynamic.length?'\n本次已配置额外工具：'+dynamic.map(t=>t.function.name).join('、')+'。涉及天气和检索时应使用这些实际工具，并注明来源和范围。':'\n本次未配置实时天气与公开网页检索服务。';
  const messages=[{role:'system',content:prompt+capabilities+'\n当前默认办事地区：'+region+pageContext},...history,{role:'user',content:question}];
  const sources=new Map();let itinerary=null,planText='',count=0,service=null,feedbackDraft=null,posterDraft=null;
  const addSources=list=>{for(const s of list||[]){if(s&&typeof s.url==='string'&&/^https?:\/\//i.test(s.url)&&!sources.has(s.url)&&sources.size<12)sources.set(s.url,{label:s.label||s.name||'官方资料',url:s.url});}};

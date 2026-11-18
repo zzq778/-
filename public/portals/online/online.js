@@ -7,7 +7,7 @@ try{const raw=sessionStorage.getItem('jzzx-feedback-draft-v1');if(raw){sessionSt
 const errorMessage=code=>({AUTH_REQUIRED:'业务凭证不正确。',FORBIDDEN:'当前身份无权执行此操作。',PORTAL_NOT_CONFIGURED:'联网反馈服务暂不可用。',RATE_LIMIT:'请求过多，请稍后再试。',MERCHANT_NOT_FOUND:'该商户当前无法接收反馈。',REQUEST_ID_CONFLICT:'请求内容发生冲突，请刷新后重试。',NOT_FOUND:'没有可访问的记录。'})[code]||'服务暂不可用，请稍后重试。';
 async function api(path,body,auth=true){
  const headers={accept:'application/json'};if(auth)headers.authorization='Bearer '+key;if(body)headers['content-type']='application/json';
- const r=await fetch('/api/v1/portal/'+path,{method:body?'POST':'GET',headers,...(body?{body:JSON.stringify(body)}:{}),cache:'no-store',signal:AbortSignal.timeout(12000)});
+ const r=await fetch('/api/v1/portal/'+path,{method:body?'POST':'GET',headers,...(body?{body:JSON.stringify(body)}:{}),cache:'no-store',signal:AbortSignal.timeout(path==='analysis'?30000:12000)});
  const x=await r.json().catch(()=>({}));if(!r.ok)throw Error(errorMessage(x.error));return x;
 }
 function render(){
