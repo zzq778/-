@@ -59,7 +59,23 @@ try:
         assert page.locator('[data-workspace=itinerary]').is_visible()
         page.locator('[data-tab=portal]').click()
         page.locator('[data-tab=workspaces]').click()
-        assert frame.locator('[data-tab=feedback]').is_visible()
+        assert frame.locator('[data-tab=docs]').is_visible()
+        page.locator('[data-tab=me]').click()
+        page.locator('[data-workspace=merchant]').click()
+        assert '商户' in frame.locator('body').inner_text()
+        assert page.locator('.bottom [data-tab=me]').get_attribute('aria-current') == 'page'
+        page.locator('.workspace-page .back-link').click()
+        assert page.locator('[data-workspace=merchant]').is_visible()
+        page.reload()
+        page.locator('[data-tab=portal]').click()
+        page.locator('[data-tab=workspaces]').click()
+        assert page.locator('.workspace-tabs [data-workspace=merchant]').get_attribute('aria-pressed') == 'true'
+        page.locator('[data-tab=home]').click()
+        page.locator('[data-workspace=itinerary]').click()
+        assert frame.locator('[data-iti-action=export]').is_visible()
+        assert page.locator('.bottom [data-tab=home]').get_attribute('aria-current') == 'page'
+        page.locator('.workspace-page .back-link').click()
+        assert page.locator('[data-workspace=itinerary]').is_visible()
         assert not errors, errors
         browser.close()
 finally:
