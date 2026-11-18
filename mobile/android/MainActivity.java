@@ -62,7 +62,11 @@ public final class MainActivity extends Activity {
     web.setWebViewClient(new WebViewClient(){
       @Override public boolean shouldOverrideUrlLoading(WebView v, WebResourceRequest request) {
         Uri uri=request.getUrl();
-        if(!request.isForMainFrame())return !isLocalFrame(uri);
+        if(!request.isForMainFrame()){
+          if(isLocalFrame(uri))return false;
+          if(request.hasGesture())return openExternal(uri);
+          return true;
+        }
         return openExternal(uri);
       }
       @Override public boolean shouldOverrideUrlLoading(WebView v,String url) {

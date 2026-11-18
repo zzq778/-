@@ -64,6 +64,26 @@ try:
         f.locator('.op-reply').last.wait_for()
         t.wait_for_function("document.querySelector('.workspace-frame').contentDocument.querySelectorAll('.op-reply').length===2")
         assert '请持续跟进。' in f.locator('.op-reply').last.inner_text()
+        # Test a complete image UI path including actual browser JPEG decoding.
+        t.locator('[data-tab=home]').first.click()
+        t.locator('#chatInput').fill('为吉林制作宣传图')
+        t.locator('#conversationForm button').click()
+        t.locator('[data-chat-poster]').wait_for()
+        t.locator('[data-chat-poster]').click()
+        studio=t.frame_locator('.workspace-frame')
+        assert '吉林秋季山林' in studio.locator('#studioPrompt').input_value()
+        studio.locator('#studioCode').fill('test-image-code-00000000000000000000')
+        assert not studio.locator('#studioConsent').is_checked()
+        studio.locator('#studioConsent').check()
+        studio.locator('#studioGenerate').click()
+        studio.locator('#studioResult').wait_for()
+        assert studio.locator('#studioImage').evaluate('(im)=>im.naturalWidth===32 && im.naturalHeight===32')
+        assert studio.locator('#studioCode').input_value()==''
+        t.screenshot(path=str(out/'mobile-studio-test-fixture.png'),full_page=True)
+        with t.expect_download() as exported:
+            studio.locator('#studioSave').click()
+        assert exported.value.suggested_filename.endswith('.jpg')
+        assert Path(exported.value.path()).read_bytes().startswith(b'\xff\xd8\xff')
         tc.close();mc.close();gc.close()
         for width in (320,390,820):
             c,a=page(urls['web'],width);a.screenshot(path=str(out/f'web-home-{width}.png'),full_page=True)
