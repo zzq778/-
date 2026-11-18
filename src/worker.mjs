@@ -2,6 +2,7 @@ import { REGIONS, relevantTopics, actionBundle, buildSystemPrompt } from './know
 import { DIRECT_BYTES, filePolicy, handleUploadApi, openLargeFile, streamMultipartFile } from './uploads.mjs';
 import { runCivicAgent } from './agent.mjs';
 import { answerWenlv } from './wenlv/pipeline.mjs';
+import { runTravelAgent, PROMPT_VERSION } from './wenlv/travel-agent.mjs';
 
 const MODEL = '@cf/zai-org/glm-4.7-flash';
 const FILE_MODEL = 'deepseek-flash';
@@ -82,7 +83,7 @@ async function askWithFile(env, file, question, messages, largeFile=null) {
 export async function handleApi(request,env) {
   const url = new URL(request.url);
   if (url.pathname === '/api/status' && request.method==='GET') {
-    return reply({ ready:!!env.AI, provider:'Cloudflare Workers AI', mode:env.AI?'live':'unconfigured', model:MODEL });
+    return reply({ ready:!!env.AI, provider:'Cloudflare Workers AI', mode:env.AI?'live':'unconfigured', model:MODEL, travelAgent:PROMPT_VERSION });
   }
   if (url.pathname.startsWith('/api/upload/')) return handleUploadApi(request,env);
   if (url.pathname !== '/api/chat') return reply({ error:'NOT_FOUND',message:'接口不存在' },404);
@@ -117,7 +118,7 @@ export async function handleApi(request,env) {
   const question=clamp(payload?.question,300), region=REGIONS.includes(payload?.region)?payload.region:'长春市';
   const finalQuestion=question || (attachment||largeFile ? '请帮我理解这份材料，提炼关键内容，并说明与办理政务事项有关的下一步。' : '');
   if (!finalQuestion) return reply({error:'EMPTY',message:'请输入政务问题'},400);
-  if (!attachment&&!largeFile&&!env.AI&&payload?.mode!=='wenlv') return reply({error:'NO_AI',message:'云端 AI 尚未启用，请先部署 Cloudflare AI 绑定'},503);
+  if (!attachment&&!largeFile&&!env.AI&&!['wenlv','wenlv-agent'].includes(payload?.mode)) return reply({error:'NO_AI',message:'云端 AI 尚未启用，请先部署 Cloudflare AI 绑定'},503);
   if(env.LIMITER){
     const ip=request.headers.get('cf-connecting-ip')||'unknown';
     const limit=await env.LIMITER.limit({key:ip});
@@ -139,6 +140,15 @@ export async function handleApi(request,env) {
   const pageContext = `\n应用上下文：用户当前位于${pageName}${guideName?'，正在浏览'+guideName:''}。${taskContext}可以建议应用内现有导办入口，但不得声称已在政府网站替用户操作。`;
   const messages = [ {role:'system',content:buildSystemPrompt(region,topics)+pageContext}, ...history, {role:'user',content:finalQuestion} ];
   try {
+    if (payload?.mode === 'wenlv-agent') {
+      if (attachment || largeFile) return reply({error:'TRAVEL_TEXT_ONLY',message:'当前旅行规划仅接收文字。'},400);
+      // An unconfigured rate limiter must not expose a paid multi-call model endpoint.
+      const invoke = env.AI && env.LIMITER
+        ? (messages,tools)=>env.AI.run(MODEL,{messages,tools,tool_choice:'required',parallel_tool_calls:false,max_completion_tokens:450,temperature:0.1,chat_template_kwargs:{enable_thinking:false}})
+        : null;
+      const outcome=await runTravelAgent({question:finalQuestion,invoke});
+      return reply({...outcome,region,model:outcome.modelCalls?MODEL:'wenlv-local',disclaimer:'非政府官方应用；线路为候选安排，实际交通、开放、预约和价格请向景区核实。'});
+    }
     if (payload?.mode === 'wenlv') {
       // 五步流水线：结构由代码给，模型只写措辞，展示前过校验。
       const outcome = await answerWenlv({
