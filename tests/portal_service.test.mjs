@@ -1,19 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {DatabaseSync} from 'node:sqlite';
-import {readFileSync} from 'node:fs';
-import {createHash} from 'node:crypto';
+import {environment,key} from './portal_fixture.mjs';
 import {handleMobile} from '../src/mobile-worker.mjs';
 import {handleApi} from '../src/worker.mjs';
 const origin='https://portal.example';
-function database(){
- const s=new DatabaseSync(':memory:');s.exec(readFileSync(new URL('../migrations/portal/0001_feedback.sql',import.meta.url),'utf8'));
- s.exec("INSERT INTO portal_merchants(id,name,region) VALUES('m1','商户一','吉林市'),('m2','商户二','长春市'),('m3','商户三','吉林市')");
- return {prepare(sql){return {bind(...p){const q=s.prepare(sql);return {first:async()=>q.get(...p)||null,all:async()=>({results:q.all(...p)}),run:async()=>q.run(...p)}}}}};
-}
-const actors=[['touristA','tourist','吉林市'],['touristB','tourist','吉林市'],['merchantA','merchant','吉林市','m1'],['merchantB','merchant','吉林市','m3'],['govA','government','吉林市'],['govB','government','长春市']];
-const key=id=>'test-'+id+'-long-credential-000000000000000000';
-function environment(){return {PORTAL_DB:database(),PORTAL_LIMITER:{limit:async()=>({success:true})},PORTAL_ACTORS:JSON.stringify(actors.map(([id,role,region,merchantId])=>({id,role,region,merchantId,keyHash:createHash('sha256').update(key(id)).digest('hex')})))}}
 const request=(actor,path,body,extra={})=>new Request(origin+'/api/v1/portal/'+path,{method:body?'POST':'GET',headers:{authorization:'Bearer '+key(actor),'content-type':'application/json',...extra},...(body?{body:JSON.stringify(body)}:{})});
 test('actual SQL, scoped role authentication, submission, cross-device read and reply, idempotency',async()=>{
  const e=environment();const go=(a,p,b)=>handleMobile(request(a,p,b),e);

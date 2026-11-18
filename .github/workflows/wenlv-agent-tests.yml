@@ -1,7 +1,7 @@
 name: Wenlv Agent regression
 on:
   push:
-    branches: ['feat/wenlv-art-v094', 'feat/wenlv-product-v1', 'feat/wenlv-product-v097', 'feat/unified-product']
+    branches: ['feat/wenlv-art-v094', 'feat/wenlv-product-v1', 'feat/wenlv-product-v097', 'feat/unified-product', 'feat/agent-native-product']
   pull_request:
     branches: [main]
     paths:
@@ -34,6 +34,9 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -47,3 +50,11 @@ jobs:
           python tests/browser_mobile_product.py
           python tests/browser_workspaces.py
           python tests/browser_web_product.py
+          python tests/browser_product_http.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: product-quality-screenshots
+          path: artifacts/product-quality/
+          if-no-files-found: ignore
+          retention-days: 7

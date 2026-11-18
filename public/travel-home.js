@@ -8,6 +8,10 @@ function safeTravelUrl(raw) {
   return domains.some(d=>host===d||host.endsWith('.'+d));
 }
 
+function safePublicSource(raw){
+ if(typeof raw!=='string'||/[\s\\\x00-\x1f]/.test(raw)||!/^https?:\/\/[a-z0-9-]+(?:\.[a-z0-9-]+)+(?:[/?#]|$)/i.test(raw))return false;
+ try{const u=new URL(raw);return !u.username&&!u.password&&!/^\d/.test(u.hostname)&&!/\.(local|internal|localhost)$/i.test(u.hostname)}catch{return false}
+}
 function normalizePlan(raw,catalog){
   if(!raw||!Number.isInteger(raw.days)||raw.days<1||raw.days>3||!Array.isArray(raw.plan)||raw.plan.length!==raw.days)return null;
   const entries=new Map((catalog?.attractions||[]).map(a=>[a.id,a])),seen=new Set(),plan=[];
@@ -180,5 +184,5 @@ if(typeof document!=='undefined'){
  document.addEventListener('input',e=>{if(e.target.id==='travelQuestion')state.query=e.target.value.slice(0,140);});
 }
 function acceptPlan(raw){const p=normalizePlan(raw,data());if(!p)return false;state.plan=p;state.planning=null;state.error='';state.clarify='';state.pendingQuestion='';state.trace=[];state.source='对话行程';state.answer='';state.notice='';refreshOutcome(true);return true;}
-root.JZZX_TRAVEL_HOME=Object.freeze({acceptPlan,render,normalizePlan,fromRoute,planForStorage,safeTravelUrl,composeTravelQuestion,cleanPlanning,shareText});
+root.JZZX_TRAVEL_HOME=Object.freeze({acceptPlan,safePublicSource,render,normalizePlan,fromRoute,planForStorage,safeTravelUrl,composeTravelQuestion,cleanPlanning,shareText});
 })(globalThis);

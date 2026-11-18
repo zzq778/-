@@ -85,7 +85,7 @@ function cloudPanel(){
 
 let chatTurns=[],chatDraft='',chatError='',chatPending='';
 function chatSources(list){
- return (Array.isArray(list)?list:[]).filter(x=>x&&typeof x.label==='string'&&typeof x.url==='string'&&/^https?:\/\//i.test(x.url)).slice(0,12);
+ return (Array.isArray(list)?list:[]).filter(x=>{if(!x||typeof x.label!=='string'||typeof x.url!=='string'||/[\s\\\x00-\x1f]/.test(x.url))return false;try{const u=new URL(x.url);return ['http:','https:'].includes(u.protocol)&&!u.username&&!u.password&&/^[a-z0-9-]+(?:\.[a-z0-9-]+)+$/i.test(u.hostname)&&!/^\d/.test(u.hostname)&&!/\.(local|internal|localhost)$/i.test(u.hostname)}catch{return false}}).slice(0,12);
 }
 function conversation(){
  const messages=chatTurns.map((t,i)=>'<div class="conversation-user"><p>'+esc(t.question)+'</p></div><article class="conversation-reply"><strong class="reply-name">吉小知</strong><p>'+esc(t.text)+'</p>'+(t.trip?'<button type="button" class="chat-trip" data-chat-trip="'+i+'"><strong>'+esc(t.trip.title)+'</strong><span>查看完整行程 →</span></button>':'')+(t.feedbackDraft?'<section class="chat-draft"><strong>反馈草稿 · '+esc(t.feedbackDraft.category)+'</strong><p>'+esc(t.feedbackDraft.text)+'</p><div><button type="button" class="secondary" data-chat-feedback="'+i+'" data-destination="tourist">打开本机反馈</button><button type="button" class="secondary" data-chat-feedback="'+i+'" data-destination="online">打开联网反馈</button></div></section>':'')+(t.sources.length?'<details class="chat-sources"><summary>参考资料 · '+t.sources.length+'</summary>'+t.sources.map(x=>'<a href="'+esc(x.url)+'" target="_blank" rel="noopener noreferrer">'+esc(x.label)+' ↗</a>').join('')+'</details>':'')+'</article>').join('');

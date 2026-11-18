@@ -409,7 +409,7 @@
       const rawPlan=data.agent?.plan;
       const plan=rawPlan&&allowedGuides.has(rawPlan.id)&&Array.isArray(rawPlan.steps)?{id:rawPlan.id,title:String(rawPlan.title||'办事步骤').slice(0,40),steps:rawPlan.steps.filter(x=>typeof x==='string').slice(0,3).map(x=>x.slice(0,140))}:null;
       const itinerary=window.JZZX_TRAVEL_HOME?.normalizePlan(data.itinerary,window.WENLV)||null;
-      const sources=(Array.isArray(data.sources)?data.sources:[]).filter(s=>window.JZZX_TRAVEL_HOME?.safeTravelUrl(s?.url)&&typeof (s.label||s.title)==='string').slice(0,12).map(s=>({label:(s.label||s.title).slice(0,100),url:s.url}));
+      const sources=(Array.isArray(data.sources)?data.sources:[]).filter(s=>window.JZZX_TRAVEL_HOME?.safePublicSource(s?.url)&&typeof (s.label||s.title)==='string').slice(0,12).map(s=>({label:(s.label||s.title).slice(0,100),url:s.url}));
       const d=data.feedbackDraft;const feedbackDraft=d&&['服务态度','设施与环境','价格与收费','安全问题','其他'].includes(d.category)&&typeof d.text==='string'&&d.text.trim()?{category:d.category,text:d.text.slice(0,400)}:null;
       state.messages.push({from:'assistant',text:data.text.slice(0,2000),actions,agent:{trace,plan},itinerary,sources,feedbackDraft});
       revealIndex=state.messages.length-1;
