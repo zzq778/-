@@ -410,6 +410,73 @@ export const CHAT_CONTRACT={
           }
         }
       }
+    },
+    "/api/v1/portal/summary": {
+      "get": {
+        "operationId": "feedbackSummary",
+        "description": "商户及管理人员读取当前授权范围内全部反馈的分类统计，不含原文、账号或凭证",
+        "security": [
+          {
+            "portalAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "真实分类汇总、待答复和已答复数量"
+          },
+          "403": {
+            "description": "身份无权访问"
+          },
+          "503": {
+            "description": "服务不可用"
+          }
+        }
+      }
+    },
+    "/api/v1/portal/analysis": {
+      "post": {
+        "operationId": "analyzeFeedback",
+        "description": "明确确认后对授权统计进行模型分析；原始反馈不进入模型",
+        "security": [
+          {
+            "portalAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "question",
+                  "confirm"
+                ],
+                "properties": {
+                  "question": {
+                    "type": "string",
+                    "maxLength": 300
+                  },
+                  "confirm": {
+                    "const": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "实际统计及 complete/partial 分析结果"
+          },
+          "400": {
+            "description": "未确认或问题无效"
+          },
+          "403": {
+            "description": "身份无权访问"
+          }
+        }
+      }
     }
   },
   "components": {

@@ -2,6 +2,7 @@ import {handleMobile} from './mobile-worker.mjs';
 import {CHAT_CONTRACT} from './chat-contract.mjs';
 import {handleImage} from './image-service.mjs';
 import { handlePortal } from './portal-service.mjs';
+import { analyzeFeedback } from './portal-insights.mjs';
 import { REGIONS, relevantTopics, actionBundle, buildSystemPrompt } from './knowledge.mjs';
 import { DIRECT_BYTES, filePolicy, handleUploadApi, openLargeFile, streamMultipartFile } from './uploads.mjs';
 import { runtimeTools,runtimeStatus } from './runtime-tools.mjs';
@@ -89,7 +90,7 @@ async function askWithFile(env, file, question, messages, largeFile=null) {
 export async function handleApi(request,env) {
   const url = new URL(request.url);
  if(url.pathname.startsWith('/api/v1/images'))return handleImage(request,env);
- if(url.pathname.startsWith('/api/v1/portal/'))return handlePortal(request,env);
+ if(url.pathname.startsWith('/api/v1/portal/'))return handlePortal(request,env,analyzeFeedback);
   if(url.pathname==='/api/v1/chat')return handleMobile(request,env);
   if(url.pathname==='/api/v1/openapi.json'&&request.method==='GET')return reply({...CHAT_CONTRACT,servers:[{url:url.origin}]});
   if (url.pathname === '/api/status' && request.method==='GET') {

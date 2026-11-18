@@ -1,5 +1,6 @@
 import {handleImage} from './image-service.mjs';
 import { handlePortal } from './portal-service.mjs';
+import { analyzeFeedback } from './portal-insights.mjs';
 import { runtimeTools,runtimeStatus } from './runtime-tools.mjs';
 import { cleanChatPayload, runProductAgent } from './product-agent.mjs';
 import { CHAT_CONTRACT } from './chat-contract.mjs';
@@ -23,9 +24,9 @@ const configured=s=>typeof s==='string'&&s.length>=16&&s.length<=160;
 export async function handleMobile(request,env){
  const url=new URL(request.url);
  if(url.pathname.startsWith('/api/v1/images'))return handleImage(request,env);
- if(url.pathname.startsWith('/api/v1/portal/'))return handlePortal(request,env);
+ if(url.pathname.startsWith('/api/v1/portal/'))return handlePortal(request,env,analyzeFeedback);
  const ready=!!env.AI&&!!env.LIMITER&&typeof env.TRAVEL_PREVIEW_CODE==='string'&&env.TRAVEL_PREVIEW_CODE.length>=16&&env.TRAVEL_PREVIEW_CODE.length<=160;
- if(url.pathname==='/api/status'&&request.method==='GET')return json({service:'jzzx-mobile',version:'0.9.7',ready,model:MOBILE_MODEL,promptVersion:PROMPT_VERSION,runtime:runtimeStatus(env)});
+ if(url.pathname==='/api/status'&&request.method==='GET')return json({service:'jzzx-mobile',version:'1.0.0-preview',ready,model:MOBILE_MODEL,promptVersion:PROMPT_VERSION,runtime:runtimeStatus(env)});
  if(url.pathname==='/api/v1/openapi.json'&&request.method==='GET')return json({...CHAT_CONTRACT,servers:[{url:url.origin}]});
  if(!url.pathname.startsWith('/api/'))return env.ASSETS.fetch(request);
  const chat=url.pathname==='/api/v1/chat';

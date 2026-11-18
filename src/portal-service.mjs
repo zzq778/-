@@ -39,8 +39,15 @@ async function list(db,a){
  const replies=(await db.prepare('SELECT id,feedback_id,actor_role,body,created_at FROM portal_replies WHERE feedback_id IN ('+ids.map(()=>'?').join(',')+') ORDER BY created_at,id').bind(...ids).all()).results;
  return items.map(f=>({...f,replies:replies.filter(r=>r.feedback_id===f.id),status:replies.some(r=>r.feedback_id===f.id)?'answered':'pending'}));
 }
+async function summarize(db,a){
+ const [where,params]=scope(a);
+ const rows=(await db.prepare('SELECT f.category,COUNT(*) AS total,SUM(CASE WHEN EXISTS (SELECT 1 FROM portal_replies r WHERE r.feedback_id=f.id) THEN 1 ELSE 0 END) AS answered FROM portal_feedback f JOIN portal_merchants m ON m.id=f.merchant_id WHERE '+where+' GROUP BY f.category').bind(...params).all()).results;
+ const categories=FEEDBACK_CATEGORIES.map(category=>{const row=rows.find(x=>x.category===category);const total=Number(row?.total||0),answered=Number(row?.answered||0);return {category,total,answered,pending:total-answered}});
+ const total=categories.reduce((n,x)=>n+x.total,0),answered=categories.reduce((n,x)=>n+x.answered,0);
+ return {region:a.region,scope:a.role==='merchant'?'当前商户全部反馈':'当前授权地区全部反馈',total,answered,pending:total-answered,categories,asOf:new Date().toISOString()};
+}
 export function portalReady(env){return !!configured(env)}
-export async function handlePortal(request,env){
+export async function handlePortal(request,env,analyze){
  const url=new URL(request.url),action=url.pathname.slice('/api/v1/portal/'.length);
  const origin=request.headers.get('origin');if(origin&&origin!==url.origin)return json({error:'ORIGIN'},403);
  if(action==='status'&&request.method==='GET')return json({ready:portalReady(env)});
@@ -56,6 +63,22 @@ export async function handlePortal(request,env){
    if(a.role!=='tourist')return json({error:'FORBIDDEN'},403);
    const items=(await db.prepare('SELECT id,name,region FROM portal_merchants WHERE active=1 AND region=? ORDER BY name LIMIT 100').bind(a.region).all()).results;
    return json({items});
+  }
+  if(action==='summary'&&request.method==='GET'){
+   if(a.role==='tourist')return json({error:'FORBIDDEN'},403);
+   return json(await summarize(db,a));
+  }
+  if(action==='analysis'&&request.method==='POST'){
+   if(a.role==='tourist')return json({error:'FORBIDDEN'},403);
+   const v=await payload(request),question=str(v?.question,300);
+   if(!question||v.confirm!==true)return json({error:'CONFIRMATION_OR_QUESTION_REQUIRED'},400);
+   const summary=await summarize(db,a);
+   let result={status:'partial',text:'智能分析暂不可用。下方为真实反馈统计。'};
+   // Only aggregate data, never identity, raw feedback or credentials, reaches the model.
+   if(typeof analyze==='function'&&env.LIMITER&&(await env.LIMITER.limit({key:'portal-analysis:'+a.id})).success){
+    try{result=await analyze(env,summary,question)}catch{}
+   }
+   return json({...result,summary});
   }
   if(action==='feedback'&&request.method==='GET')return json({items:await list(db,a)});
   if(action==='feedback'&&request.method==='POST'){

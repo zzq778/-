@@ -18,6 +18,7 @@ env.AI={run:async(_model,{messages,tools})=>{
  const last=messages.at(-1);
  if(last.role==='tool')return call('reply',{text:'已整理资料，请核对后继续。'});
  const q=last.content;
+ if(q.includes('优先处理'))return call('read_feedback_summary',{});
  if(q.includes('宣传图'))return call('prepare_poster',{prompt:'吉林秋季山林旅行插画，留白，不使用官方标识。'});
  if(q.includes('反馈'))return call('prepare_feedback',{category:'设施与环境',text:'停车指引不清，希望改善。'});
  if(q.includes('净月潭'))return call('read_place',{id:'jingyuetan'});
