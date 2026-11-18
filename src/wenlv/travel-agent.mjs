@@ -115,22 +115,23 @@ export async function runTravelAgent({question,invoke=null,now=new Date(),budget
   return result('complete',templateAnswer(itinerary));
  };
  const vague=!intent.areas.length&&!intent.clusters.length&&!intent.themes.length;
+ const missing=vague?'destination':!intent.days?'days':null;
  if(typeof invoke!=='function'){
-  if(vague)return result('clarify',questions.destination,{questionField:'destination',reason:'no-model',degraded:true});
+  if(missing)return result('clarify',questions[missing],{questionField:missing,reason:'no-model',degraded:true});
   return fallback('no-model');
  }
  const messages=[{role:'system',content:SYSTEM_PROMPT},{role:'user',content:JSON.stringify({question:String(question).slice(0,300),constraints:{days:intent.days,areas:intent.areas,clusters:intent.clusters,themes:intent.themes,companions:intent.companions,season:intent.season,exclusions:intent.exclusions}})}];
  const deadline=Date.now()+budgetMs;
  for(let turn=0;turn<MAX_TURNS;turn++){
   const remaining=deadline-Date.now();if(remaining<500)return fallback('budget');
-  const names=!retrieval?['search_places',...(vague?['ask_user']:[])]:!itinerary?['draft_itinerary',...(inspected<1?['inspect_place']:[])]:!checked?['review_itinerary']:checked.ok?['finish',...(turn<MAX_TURNS-2?['draft_itinerary']:[])]:['draft_itinerary'];
+  const names=!retrieval?['search_places',...(missing?['ask_user']:[])]:!itinerary?['draft_itinerary',...(inspected<1?['inspect_place']:[])]:!checked?['review_itinerary']:checked.ok?['finish',...(turn<MAX_TURNS-2?['draft_itinerary']:[])]:['draft_itinerary'];
   let choice;
   try{modelCalls++;choice=toolCall(await bounded(Promise.resolve(invoke(messages,names.map(n=>CATALOG[n]))),Math.min(remaining,10000)));}catch{return fallback('model-error')}
   if(!choice||!names.includes(choice.name))return fallback('invalid-tool');
   const {name,args,id}=choice;
   let value;
   if(name==='ask_user'){
-   if(!Object.hasOwn(questions,args.field))return fallback('invalid-argument');
+   if(!Object.hasOwn(questions,args.field)||args.field!==missing&&!(vague&&args.field==='theme'))return fallback('invalid-argument');
    modelActions++;note(name,'请求补充 '+args.field,'model');
    return result('clarify',questions[args.field],{questionField:args.field});
   }
