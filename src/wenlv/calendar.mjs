@@ -4,7 +4,6 @@
  * 只写“哪几个月、为什么这时候值得去”，不写具体日期与场次——
  * 节庆日期年年变，写死了就会在演示现场翻车。
  */
-import { validateEvent } from './schema.mjs';
 
 const S = (label, url, kind = 'gov') => ({ label, url, kind });
 const HALL = S('吉林省文化和旅游厅', 'https://whhlyt.jl.gov.cn/');
@@ -98,8 +97,7 @@ export const CALENDAR = Object.freeze([
   }
 ]);
 
-const problems = CALENDAR.flatMap(event => validateEvent(event).map(msg => `${event.id}: ${msg}`));
-if (problems.length) throw new Error(`时令库 self-check 失败：\n${problems.join('\n')}`);
+// 知识库结构与日期在构建/测试阶段校验，Worker 模块初始化不依赖运行时钟。
 
 /** 某个自然月（1–12）里值得推荐的时令条目。 */
 export function eventsInMonth(month) {
