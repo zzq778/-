@@ -72,7 +72,7 @@ test('home loads knowledge before planner and application; service worker caches
   assert.ok(index.indexOf('src="./travel-home.js"')<index.indexOf('src="./app.js"'));
   assert.match(sw,/'\.\/travel-home\.js'/);
   assert.match(sw,/'\.\/travel-home\.css'/);
-  assert.match(app,/JZZX_TRAVEL_HOME\.render\(state\.region\)/);
+  assert.match(app,/JZZX_TRAVEL_HOME\.render\(state\.region,taskCard\(\)\)/);
 });
 
 test('hard constraints avoid explicit exclusion and unrequested cities', async()=>{
