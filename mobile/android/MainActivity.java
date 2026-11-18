@@ -5,18 +5,31 @@ import android.os.Bundle;
 import android.graphics.Color;
 import android.content.Intent;
 import android.net.Uri;
+import android.webkit.JavascriptInterface;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.speech.tts.TextToSpeech;
+import android.widget.Toast;
+import android.util.Base64;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Locale;
 
-/** Hybrid application shell. Only first-party HTTPS API requests; no JS-to-native bridge. */
+/** Trusted bundled UI. External navigation opens in the browser; native interfaces only offer
+ * user-mediated document export and speech, with no arbitrary file reads or credential access. */
 public final class MainActivity extends Activity {
+  private static final String HOST="jizhengzhixing-mobile.zedi-li070614.workers.dev";
+  private static final int SAVE_DOCUMENT=701;
+  private static final int MAX_FILE_BYTES=3*1024*1024;
   private WebView web;
+  private volatile TextToSpeech tts;
+  private volatile boolean speechReady=false;
+  private byte[] pendingFile;
   @Override public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     getWindow().setStatusBarColor(Color.rgb(250,249,245));
@@ -36,13 +49,24 @@ public final class MainActivity extends Activity {
     s.setJavaScriptCanOpenWindowsAutomatically(false);
     s.setAllowFileAccessFromFileURLs(false);
     s.setAllowUniversalAccessFromFileURLs(false);
+    web.addJavascriptInterface(new NativeFiles(),"JZZXNativeFiles");
+    web.addJavascriptInterface(new NativeSpeech(),"JZZXNativeSpeech");
+    tts=new TextToSpeech(this,status->{
+      TextToSpeech current=tts;
+      if(status==TextToSpeech.SUCCESS&&current!=null){
+        int language=current.setLanguage(Locale.SIMPLIFIED_CHINESE);
+        speechReady=language!=TextToSpeech.LANG_MISSING_DATA&&language!=TextToSpeech.LANG_NOT_SUPPORTED;
+      }
+    });
     web.setWebChromeClient(new WebChromeClient());
     web.setWebViewClient(new WebViewClient(){
       @Override public boolean shouldOverrideUrlLoading(WebView v, WebResourceRequest request) {
-        return openExternal(request.getUrl());
+        Uri uri=request.getUrl();
+        if(!request.isForMainFrame())return !isLocalFrame(uri);
+        return openExternal(uri);
       }
       @Override public boolean shouldOverrideUrlLoading(WebView v,String url) {
-        return openExternal(Uri.parse(url));
+        Uri uri=Uri.parse(url);return isLocalFrame(uri)?false:openExternal(uri);
       }
     });
     setContentView(web);
@@ -50,23 +74,84 @@ public final class MainActivity extends Activity {
         ByteArrayOutputStream out=new ByteArrayOutputStream()){
       byte[] buf=new byte[8192];int n;
       while((n=in.read(buf))!=-1)out.write(buf,0,n);
-      web.loadDataWithBaseURL("https://jizhengzhixing-mobile.zedi-li070614.workers.dev/",new String(out.toByteArray(), StandardCharsets.UTF_8),"text/html","UTF-8",null);
+      web.loadDataWithBaseURL("https://"+HOST+"/",new String(out.toByteArray(),StandardCharsets.UTF_8),"text/html","UTF-8",null);
     }catch(Exception e){
       web.loadDataWithBaseURL(null,"<meta charset=utf-8><p>应用资源读取失败，请重新安装。</p>","text/html","UTF-8",null);
     }
   }
+  private boolean isLocalFrame(Uri uri){
+    String value=uri.toString();return value.equals("about:srcdoc")||value.equals("about:blank");
+  }
   private boolean openExternal(Uri uri){
     String scheme=uri.getScheme();
     if(!"https".equalsIgnoreCase(scheme)&&!"http".equalsIgnoreCase(scheme))return true;
-    if("jizhengzhixing-mobile.zedi-li070614.workers.dev".equalsIgnoreCase(uri.getHost()))return true;
-    try{startActivity(new Intent(Intent.ACTION_VIEW,uri));}catch(Exception ignored){}
+    if(HOST.equalsIgnoreCase(uri.getHost()))return true;
+    try{startActivity(new Intent(Intent.ACTION_VIEW,uri));}catch(Exception ignored){toast("无法打开链接");}
     return true;
+  }
+  private void toast(String text){runOnUiThread(()->Toast.makeText(this,text,Toast.LENGTH_SHORT).show());}
+  private static boolean validFile(String mime,byte[] bytes){
+    if(bytes.length<1||bytes.length>MAX_FILE_BYTES)return false;
+    if("image/png".equals(mime))return bytes.length>=8&&(bytes[0]&255)==137&&bytes[1]==80&&bytes[2]==78&&bytes[3]==71&&bytes[4]==13&&bytes[5]==10&&bytes[6]==26&&bytes[7]==10;
+    if("image/jpeg".equals(mime))return bytes.length>=4&&(bytes[0]&255)==255&&(bytes[1]&255)==216&&(bytes[2]&255)==255&&(bytes[bytes.length-2]&255)==255&&(bytes[bytes.length-1]&255)==217;
+    return "text/csv".equals(mime);
+  }
+  private final class NativeFiles{
+    @JavascriptInterface public void save(String mime,String name,String base64){
+      if(mime==null||name==null||base64==null||base64.length()>MAX_FILE_BYTES*4/3+8){toast("文件过大或格式错误");return;}
+      if(!"image/png".equals(mime)&&!"image/jpeg".equals(mime)&&!"text/csv".equals(mime)){toast("不支持该文件类型");return;}
+      byte[] bytes;
+      try{bytes=Base64.decode(base64,Base64.DEFAULT);}catch(IllegalArgumentException e){toast("文件格式错误");return;}
+      if(!validFile(mime,bytes)){toast("文件数据无效");return;}
+      String file=name.replaceAll("[\\\\/:*?\"<>|\\p{Cntrl}]","_");
+      String suffix="image/png".equals(mime)?".png":"image/jpeg".equals(mime)?".jpg":".csv";
+      if(!file.toLowerCase(Locale.ROOT).endsWith(suffix))file+=suffix;
+      if(file.length()>100)file=file.substring(0,100-suffix.length())+suffix;
+      final String title=file;
+      runOnUiThread(()->{
+        if(isFinishing()||pendingFile!=null){toast("请先完成当前保存");return;}
+        pendingFile=bytes;
+        try{
+          Intent pick=new Intent(Intent.ACTION_CREATE_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE)
+            .setType(mime).putExtra(Intent.EXTRA_TITLE,title);
+          startActivityForResult(pick,SAVE_DOCUMENT);
+        }catch(Exception e){pendingFile=null;toast("无法打开系统保存窗口");}
+      });
+    }
+  }
+  @Override protected void onActivityResult(int request,int result,Intent data){
+    super.onActivityResult(request,result,data);
+    if(request!=SAVE_DOCUMENT)return;
+    byte[] bytes=pendingFile;pendingFile=null;
+    if(result!=RESULT_OK||data==null||data.getData()==null||bytes==null){toast("未保存文件");return;}
+    final Uri uri=data.getData();
+    new Thread(()->{
+      try(OutputStream out=getContentResolver().openOutputStream(uri,"w")){
+        if(out==null)throw new IllegalStateException("No document stream");
+        out.write(bytes);out.flush();toast("文件已保存");
+      }catch(Exception e){toast("保存失败，请检查存储位置");}
+    },"jzzx-export").start();
+  }
+  private final class NativeSpeech{
+    @JavascriptInterface public boolean speak(String text){
+      TextToSpeech current=tts;
+      if(!speechReady||current==null||text==null||text.trim().isEmpty()||text.length()>Math.min(3500,TextToSpeech.getMaxSpeechInputLength()))return false;
+      try{return current.speak(text,TextToSpeech.QUEUE_FLUSH,null,"jzzx-itinerary")==TextToSpeech.SUCCESS;}catch(Exception e){return false;}
+    }
+    @JavascriptInterface public boolean isSpeaking(){TextToSpeech current=tts;return speechReady&&current!=null&&current.isSpeaking();}
+    @JavascriptInterface public void stop(){TextToSpeech current=tts;if(current!=null)current.stop();}
   }
   @Override public void onBackPressed(){
     if(web==null){super.onBackPressed();return;}
+    TextToSpeech current=tts;if(current!=null)current.stop();
     web.evaluateJavascript("typeof window.onNativeBack === 'function' && window.onNativeBack()", result->{
       if(!"true".equals(result))super.onBackPressed();
     });
   }
-  @Override protected void onDestroy(){if(web!=null){web.destroy();web=null;}super.onDestroy();}
+  @Override protected void onDestroy(){
+    speechReady=false;TextToSpeech current=tts;tts=null;if(current!=null){current.stop();current.shutdown();}
+    pendingFile=null;
+    if(web!=null){web.removeJavascriptInterface("JZZXNativeFiles");web.removeJavascriptInterface("JZZXNativeSpeech");web.destroy();web=null;}
+    super.onDestroy();
+  }
 }

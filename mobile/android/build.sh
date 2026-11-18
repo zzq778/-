@@ -16,8 +16,19 @@ javac --release 8 -classpath "$PLATFORM" -d "$WORK/classes" "$ROOT/mobile/androi
 "$BT/d8" --min-api 24 --lib "$PLATFORM" --output "$WORK/dex" $(find "$WORK/classes" -name '*.class')
 (cd "$WORK/dex" && zip -q -j "$WORK/base.apk" classes.dex)
 "$BT/zipalign" -f 4 "$WORK/base.apk" "$WORK/aligned.apk"
-# Local test signature; never publish this ephemeral key or use it for production updates.
-keytool -genkeypair -keyalg RSA -keysize 2048 -validity 3650 -keystore "$WORK/debug.jks" -storepass android -keypass android -alias preview -dname "CN=JiZheng Online Preview" -noprompt
-"$BT/apksigner" sign --ks "$WORK/debug.jks" --ks-key-alias preview --ks-pass pass:android --key-pass pass:android --out "$ROOT/dist/JiZhengZhiXing-v0.9.7-online-preview.apk" "$WORK/aligned.apk"
+# If a stable, authorized preview key is supplied, reuse it; otherwise use an ephemeral test signature.
+KEYSTORE="$WORK/debug.jks"
+ALIAS="${ANDROID_PREVIEW_ALIAS:-preview}"
+STOREPASS="${ANDROID_PREVIEW_STOREPASS:-android}"
+KEYPASS="${ANDROID_PREVIEW_KEYPASS:-$STOREPASS}"
+if [ -n "${ANDROID_PREVIEW_KEYSTORE_B64:-}" ]; then
+  printf '%s' "$ANDROID_PREVIEW_KEYSTORE_B64" | base64 -d > "$KEYSTORE"
+  chmod 600 "$KEYSTORE"
+else
+  echo "Using ephemeral preview signature; not an in-place update"
+  keytool -genkeypair -keyalg RSA -keysize 2048 -validity 3650 -keystore "$WORK/debug.jks" -storepass android -keypass android -alias preview -dname "CN=JiZheng Online Preview" -noprompt
+  ALIAS=preview; STOREPASS=android; KEYPASS=android
+fi
+"$BT/apksigner" sign --ks "$KEYSTORE" --ks-key-alias "$ALIAS" --ks-pass "pass:$STOREPASS" --key-pass "pass:$KEYPASS" --out "$ROOT/dist/JiZhengZhiXing-v0.9.7-online-preview.apk" "$WORK/aligned.apk"
 "$BT/apksigner" verify --verbose --print-certs "$ROOT/dist/JiZhengZhiXing-v0.9.7-online-preview.apk"
 "$BT/aapt" dump badging "$ROOT/dist/JiZhengZhiXing-v0.9.7-online-preview.apk" | head -15 || true

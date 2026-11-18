@@ -340,6 +340,9 @@
   function download(name, text, type) {
     try {
       var blob = new Blob(['\ufeff' + text], { type: type || 'text/csv;charset=utf-8' });
+      if(window.JZZXNativeFiles&&typeof FileReader!=='undefined'){
+        var reader=new FileReader();reader.onerror=function(){toast('无法读取导出内容');};reader.onload=function(){try{window.JZZXNativeFiles.save('text/csv',name,String(reader.result).split(',')[1]);toast('请在系统保存窗口选择位置');}catch(e){toast('系统保存不可用');}};reader.readAsDataURL(blob);return;
+      }
       var url = URL.createObjectURL(blob);
       var a = document.createElement('a');
       a.href = url;
@@ -348,7 +351,7 @@
       a.click();
       document.body.removeChild(a);
       setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
-      toast('已导出 ' + name);
+      toast('已发起下载 ' + name);
     } catch (e) {
       toast('当前浏览器不支持下载');
     }
