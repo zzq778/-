@@ -12,7 +12,7 @@ function modelCall(name,args={},id=name){
 }
 function env(){
  const observed=[];
- const sequence=[modelCall('search_places'),modelCall('inspect_place',{id:'wusongdao'}),modelCall('draft_itinerary',{ids:['wusongdao','jilin-bowuguan']}),modelCall('review_itinerary'),modelCall('finish')];
+ const sequence=[modelCall('draft_itinerary',{ids:['wusongdao','jilin-bowuguan']})];
  const binding={AI:{run:async(model,options)=>{
   assert.equal(model,MOBILE_MODEL);
   assert.equal(options.tool_choice,'required');
@@ -47,12 +47,12 @@ test('cross-origin, incorrect password, oversized payload and rate limit never c
 test('mobile HTTP API drives model tools and passes real observations',async()=>{
  const e=env();const response=await handleMobile(req(),e.binding);assert.equal(response.status,200);
  const result=await response.json();assert.equal(result.status,'complete');assert.equal(result.degraded,false);
- assert.equal(result.modelActions,5);assert.equal(result.modelCalls,5);
- assert.deepEqual(result.trace.map(t=>t.tool),['search_places','inspect_place','draft_itinerary','review_itinerary','finish']);
+ assert.equal(result.modelActions,1);assert.equal(result.modelCalls,1);
+ assert.deepEqual(result.trace.map(t=>t.tool),['search_places','draft_itinerary','review_itinerary','finish']);
  const places=result.itinerary.plan.flatMap(d=>d.nodes).map(n=>n.attractionId).sort();
  assert.deepEqual(places,['jilin-bowuguan','wusongdao']);
- assert.match(e.observed[2].messages.at(-1).content,/雾凇岛/);
- assert.equal(JSON.parse(e.observed[4].messages.at(-1).content).ok,true);
+ assert.match(e.observed[0].messages.at(-1).content,/雾凇岛/);
+ assert.equal(result.trace[2].actor,'system');
  assert.equal(response.headers.get('cache-control'),'no-store');
 });
 test('provider error remains explicitly degraded, not claimed as completed AI',async()=>{
@@ -76,7 +76,7 @@ test('actual bundled UI connects to the isolated Worker and preserves results on
  await runInContext('runCloud('+JSON.stringify(QUESTION)+',null)',b.box);
  assert.equal(request.url,ORIGIN+'/api/travel');assert.equal(request.opts.headers.authorization,'Bearer '+CODE);
  assert.match(b.els['#screen'].innerHTML,/联网规划/);assert.equal(runInContext('plan.source',b.box),'联网规划');
- assert.match(b.els['#screen'].innerHTML,/雾凇岛/);assert.doesNotMatch(b.els['#screen'].innerHTML,/模型选择|实际执行记录|工作流/);assert.equal(runInContext('taskTrace.length',b.box),5);
+ assert.match(b.els['#screen'].innerHTML,/雾凇岛/);assert.doesNotMatch(b.els['#screen'].innerHTML,/模型选择|实际执行记录|工作流/);assert.equal(runInContext('taskTrace.length',b.box),4);
  const first=runInContext('JSON.stringify(plan.nodes)',b.box);
  offline=true;await runInContext('runCloud("长春一天",null)',b.box);
  assert.equal(runInContext('JSON.stringify(plan.nodes)',b.box),first);

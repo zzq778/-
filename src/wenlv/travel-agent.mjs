@@ -72,7 +72,7 @@ function safeSummary(s,plan){
  if(r.issues.length||!nodes(plan).some(n=>r.patched.includes(n.name)))return templateAnswer(plan);
  return r.patched;
 }
-export async function runTravelAgent({question,invoke=null,now=new Date(),budgetMs=36000}){
+export async function runTravelAgent({question,invoke=null,now=new Date(),budgetMs=36000,compact=false}){
  const intent=parseIntent(question,{now});
  let retrieval=null,itinerary=null,checked=null,inspected=0,modelCalls=0,modelActions=0,reason=null;
  const trace=[];
@@ -120,6 +120,26 @@ export async function runTravelAgent({question,invoke=null,now=new Date(),budget
  if(typeof invoke!=='function'){
   if(missing)return result('clarify',questions[missing],{questionField:missing,reason:'no-model',degraded:true});
   return fallback('no-model');
+ }
+ if(compact){
+  // Search and review are deterministic mandatory steps; the model makes the real choice.
+  if(missing)return result('clarify',questions[missing],{questionField:missing,reason:null});
+  const candidates=search('system');
+  const candidateIds=new Set(candidates.attractions.map(a=>a.id));
+  if(!candidateIds.size)return fallback('no-match');
+  const selection=tool('draft_itinerary','根据候选景点选择实际要去的景点 ID，仅选已有 ID。ids 可为空，表示采用系统路线。',{ids:{type:'array',items:{type:'string'},maxItems:9},summary:{type:'string',maxLength:220}},['ids']);
+  const compactPrompt='你是吉小知，负责吉林文旅行程选择。依据用户约束和真实候选景点调用 draft_itinerary 一次。选择合适数量的不同景点；只使用候选 ID，不编造地点，不承诺实时营业、交通、票价或预约。summary 可简要描述安排。不输出内部过程。';
+  const user=JSON.stringify({question:String(question).slice(0,300),constraints:{days:intent.days,areas:intent.areas,clusters:intent.clusters,themes:intent.themes,companions:intent.companions,season:intent.season,exclusions:intent.exclusions},candidates});
+  let choice;
+  try{modelCalls++;choice=toolCall(await bounded(Promise.resolve(invoke([{role:'system',content:compactPrompt},{role:'user',content:user}],[selection])),Math.min(budgetMs,30000)));}catch(e){return fallback(e?.message==='model-timeout'?'model-timeout':'model-error')}
+  if(!choice||choice.name!=='draft_itinerary')return fallback('invalid-tool');
+  if(!Array.isArray(choice.args.ids)||choice.args.ids.some(id=>typeof id!=='string'||!candidateIds.has(id)))return fallback('unknown-id');
+  const prepared=draft(choice.args.ids,'model');
+  if(prepared?.error)return fallback(prepared.error);
+  modelActions++;review('system');
+  if(!checked.ok)return fallback('review-failed');
+  note('finish','交付已核对行程','system');
+  return result('complete',safeSummary(choice.args.summary,itinerary));
  }
  const messages=[{role:'system',content:SYSTEM_PROMPT},{role:'user',content:JSON.stringify({question:String(question).slice(0,300),constraints:{days:intent.days,areas:intent.areas,clusters:intent.clusters,themes:intent.themes,companions:intent.companions,season:intent.season,exclusions:intent.exclusions}})}];
  const deadline=Date.now()+budgetMs;

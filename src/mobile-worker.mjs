@@ -51,7 +51,7 @@ export async function handleMobile(request,env){
   }
   const payload=await readPayload(request);const question=typeof payload?.question==='string'?payload.question.trim():'';if(!question||question.length>300)return json({error:'INVALID_QUESTION'},400);
   const invoke=workersModel(env,MOBILE_MODEL,'travel',450,.1);
-  const outcome=await runTravelAgent({question,invoke});if(outcome.degraded)console.warn(JSON.stringify({event:'jzzx-travel-degraded',reason:outcome.reason,modelCalls:outcome.modelCalls,modelActions:outcome.modelActions}));
+  const outcome=await runTravelAgent({question,invoke,compact:true});if(outcome.degraded)console.warn(JSON.stringify({event:'jzzx-travel-degraded',reason:outcome.reason,modelCalls:outcome.modelCalls,modelActions:outcome.modelActions}));
   return json({...outcome,model:MOBILE_MODEL,notice:'候选行程，非实时交通、预约或开放核验。'});
  }catch(e){console.warn(JSON.stringify({event:'jzzx-handler-error',route:chat?'chat':'travel',name:String(e?.name||'Error').slice(0,40)}));return json({error:'SERVICE_ERROR'},503);}
 }

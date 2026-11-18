@@ -168,7 +168,7 @@ export async function handleApi(request,env) {
       const invoke = env.AI && env.LIMITER
         ? workersModel(env,MODEL,'web-travel',450,.1)
         : null;
-      const outcome=await runTravelAgent({question:finalQuestion,invoke});
+      const outcome=await runTravelAgent({question:finalQuestion,compact:!!invoke,invoke});
       return reply({...outcome,region,model:outcome.modelCalls?MODEL:'wenlv-local',disclaimer:'非政府官方应用；线路为候选安排，实际交通、开放、预约和价格请向景区核实。'});
     }
     if (payload?.mode === 'wenlv') {

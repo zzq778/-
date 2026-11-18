@@ -64,7 +64,7 @@ export async function runProductAgent({question,history=[],region='长春市',in
  for(let step=0;step<6;step++){
   const remaining=deadline-Date.now();if(remaining<500){reason='budget';break;}
   const available=step===5?[byTool.get('reply')]:analysisOnly?[...dynamic,byTool.get('reply')]:[...tools,...dynamic];
-  let call;try{call=parseCall(await bounded(Promise.resolve(invoke(messages,available)),Math.min(remaining,18000)),available)}catch(e){reason=e?.message==='timeout'?'model-timeout':'model-error';break}
+  let call;try{call=parseCall(await bounded(Promise.resolve(invoke(messages,available)),Math.min(remaining,28000)),available)}catch(e){reason=e?.message==='timeout'?'model-timeout':'model-error';break}
   if(!call||!available.some(t=>t.function.name===call.name)){reason='invalid-tool';break;}
   const {name,args,id}=call;
   if(name==='reply')return result('complete',args.text.trim().replace(/https?:\/\/[^\s，。；、）)\]}]+/g,'（请查看参考资料）').slice(0,1800));

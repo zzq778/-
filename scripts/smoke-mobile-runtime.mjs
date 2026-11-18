@@ -23,6 +23,7 @@ try{
  await ready();
  // No Origin emulates a native client; the travel request emulates the browser.
  const a=await run('/api/v1/chat','你好',false);
+ await wait(1200);
  const b=await run('/api/travel','延边两天民俗美食',true);
  if(!a||!b)process.exitCode=1;
 }finally{try{process.kill(-child.pid,'SIGTERM')}catch{}await rm(localVars,{force:true});}
