@@ -109,7 +109,7 @@ test('front end suppresses malformed planning data and shares actual route only'
  for(const n of plan.plan.flatMap(d=>d.nodes))assert.match(text,new RegExp(n.name));
  assert.match(text,/出发前请核实/);
 });
-test('actual front script sends wenlv request, renders, stores, restores and preserves prior result on failure',async()=>{
+test('actual front script sends agent request, renders, stores, restores and preserves prior result on failure',async()=>{
  const store={},handlers={};
  const outcome={innerHTML:'',querySelector(){return null}};
  const q={value:'冬天看雾凇两天',focus(){}};
@@ -123,7 +123,7 @@ test('actual front script sends wenlv request, renders, stores, restores and pre
  box.fetch=async(url,opts)=>{
   request={url,body:JSON.parse(opts.body)};
   if(fail)throw Error('网络不可用');
-  return {ok:true,json:async()=>({mode:'wenlv',text:result.answer,itinerary:result.itinerary,degraded:true,planning:{days:2,areas:['吉林市'],themes:['雾凇'],season:'winter',sourceRouteId:result.itinerary.sourceRouteId,modelUsed:false}})};
+  return {ok:true,json:async()=>({mode:'wenlv-agent',status:'complete',trace:[{tool:'search_places',detail:'实际检索',actor:'system'}],text:result.answer,itinerary:result.itinerary,degraded:true,planning:{days:2,areas:['吉林市'],themes:['雾凇'],season:'winter',sourceRouteId:result.itinerary.sourceRouteId,modelUsed:false}})};
  };
  runInContext(read('public/travel-home.js'),box);
  box.JZZX_TRAVEL_HOME.render('长春市');
@@ -132,10 +132,10 @@ test('actual front script sends wenlv request, renders, stores, restores and pre
  const settle=async()=>{for(let i=0;i<15;i++)await Promise.resolve();};
  submit();await settle();
  assert.equal(request.url,'/api/chat');
- assert.equal(request.body.mode,'wenlv');
+ assert.equal(request.body.mode,'wenlv-agent');
  assert.equal(request.body.question,q.value);
  assert.match(outcome.innerHTML,/雾凇岛/);
- assert.match(outcome.innerHTML,/为什么这样安排/);
+ assert.match(outcome.innerHTML,/吉小知的执行记录/);
  click('save');assert.ok(store['jzzx-travel-plan-v1']);
  assert.ok(!store['jzzx-travel-plan-v1'].includes(q.value));
  click('new');assert.match(outcome.innerHTML,/继续查看/);
