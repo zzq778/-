@@ -22,7 +22,7 @@ try:
             page.route('**/api/status',lambda route:route.fulfill(status=200,content_type='application/json',body=json.dumps({'ready':True})))
             def reply(route):
                 req=json.loads(route.request.post_data)
-                assert req['mode']=='agent',req
+                assert req['mode']=='product',req
                 assert req['region']=='长春市'
                 route.fulfill(status=200,content_type='application/json',body=json.dumps({
                     'text':'我已经查到本地养老事项指引。请先确认您要办理的是待遇查询，还是领取资格认证。',

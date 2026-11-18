@@ -2,8 +2,8 @@ import { parseIntent } from './wenlv/intent.mjs';
 import { retrieve } from './wenlv/search.mjs';
 import { ATTRACTIONS } from './wenlv/attractions.mjs';
 import { runTravelAgent } from './wenlv/travel-agent.mjs';
-import { AGENT_TOOLS, executeAgentTool } from './agent.mjs';
-import { REGIONS } from './knowledge.mjs';
+import { AGENT_TOOLS, executeAgentTool, visiblePlan } from './agent.mjs';
+import { REGIONS, TOPICS, actionBundle } from './knowledge.mjs';
 
 export const PRODUCT_AGENT_VERSION='1.0';
 const places=new Map(ATTRACTIONS.map(x=>[x.id,x]));
@@ -50,11 +50,11 @@ export function cleanChatPayload(data){
  if(!REGIONS.includes(region))return null;
  return {question,history:history.map(({role,content})=>({role,content})),region};
 }
-export async function runProductAgent({question,history=[],region='长春市',invoke,budgetMs=28000}){
- const messages=[{role:'system',content:prompt+'\n当前默认办事地区：'+region},...history,{role:'user',content:question}];
- const sources=new Map();let itinerary=null,planText='',count=0;
+export async function runProductAgent({question,history=[],region='长春市',invoke,budgetMs=28000,pageContext=''}){
+ const messages=[{role:'system',content:prompt+'\n当前默认办事地区：'+region+pageContext},...history,{role:'user',content:question}];
+ const sources=new Map();let itinerary=null,planText='',count=0,service=null;
  const addSources=list=>{for(const s of list||[]){if(s&&typeof s.url==='string'&&/^https?:\/\//i.test(s.url)&&!sources.has(s.url)&&sources.size<12)sources.set(s.url,{label:s.label||s.name||'官方资料',url:s.url});}};
- const result=(status,text)=>({status,text,itinerary,sources:[...sources.values()],toolCount:count,version:PRODUCT_AGENT_VERSION});
+ const result=(status,text)=>({status,text,itinerary,sources:[...sources.values()],toolCount:count,version:PRODUCT_AGENT_VERSION,...(service?{actions:actionBundle([service]).actions,agent:{plan:visiblePlan(service)}}:{})});
  const deadline=Date.now()+budgetMs;
  for(let step=0;step<6;step++){
   const remaining=deadline-Date.now();if(remaining<500)break;
@@ -62,7 +62,7 @@ export async function runProductAgent({question,history=[],region='长春市',in
   let call;try{call=parseCall(await bounded(Promise.resolve(invoke(messages,available)),Math.min(remaining,10000)))}catch{break}
   if(!call||!available.some(t=>t.function.name===call.name))break;
   const {name,args,id}=call;
-  if(name==='reply')return result('complete',args.text.trim().slice(0,1800));
+  if(name==='reply')return result('complete',args.text.trim().replace(/https?:\/\/[^\s，。；、）)\]}]+/g,'（请查看参考资料）').slice(0,1800));
   let value;
   if(name==='find_places'){
    const found=retrieve(parseIntent(args.query),{limit:6,routeLimit:3,eventLimit:3});
@@ -79,7 +79,10 @@ export async function runProductAgent({question,history=[],region='长春市',in
    value={status:planned.status,text:planned.text,itinerary:itinerary&&{days:itinerary.days,plan:itinerary.plan.map(d=>({day:d.day,nodes:d.nodes.map(n=>({id:n.attractionId,name:n.name,slot:n.slot}))}))},scope:'资料规划，非实时交通或预约'};
   }else {
    value=executeAgentTool(name,args,region);
-   if(value.source)addSources([value.source]);
+   if(name==='search_services'&&value.items?.length){
+    const id=value.items[0].id,guide=executeAgentTool('read_service_guide',{service_id:id},region);
+    if(!guide.error){service=TOPICS.find(t=>t.id===id)||null;value.guide=guide;addSources([guide.source]);}
+   }else if(value.source){service=TOPICS.find(t=>t.id===(value.id||value.service_id))||service;addSources([value.source]);}
   }
   count++;
   messages.push({role:'assistant',content:null,tool_calls:[{id,type:'function',function:{name,arguments:JSON.stringify(args)}}]},{role:'tool',tool_call_id:id,content:JSON.stringify(value)});

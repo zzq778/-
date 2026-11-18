@@ -33,6 +33,12 @@ try:
             page.locator('.task-save').click()
             page.locator('[data-action=ai-close]').first.click()
             page.locator('.saved-task').wait_for()
+            page.locator('[data-action=ai-full]').first.click()
+            page.locator('#chatInput').fill('帮我安排吉林市一天')
+            page.route('**/api/chat',lambda r:r.fulfill(json={'text':'可以先去雾凇岛。','itinerary':{'days':1,'plan':[{'day':1,'nodes':[{'attractionId':'wusongdao','slot':'上午'}]}]},'sources':[{'label':'吉林文旅','url':'http://lyj.jlcity.gov.cn/'}]}))
+            page.locator('#chatInput').press('Enter')
+            page.locator('[data-open-chat-trip]').click()
+            assert '雾凇岛' in page.locator('#travelResult').inner_text()
             page.locator('[data-action=task-open]').click()
             page.locator('.task-step').first.click()
             assert page.locator('.task-step.checked').count()==1
