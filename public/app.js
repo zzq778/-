@@ -444,6 +444,7 @@
       const Context=window.AudioContext||window.webkitAudioContext;
       if(Context){micCtx=new Context();if(micCtx.state==='suspended')await micCtx.resume();micSource=micCtx.createMediaStreamSource(micStream);analyser=micCtx.createAnalyser();analyser.fftSize=256;micSource.connect(analyser);meterLoop()}
       const Recognition=window.SpeechRecognition||window.webkitSpeechRecognition;
+      if(!Recognition&&state.assistant==='full'){stopMic();renderAssistant();setVoiceText('当前浏览器不支持语音转文字，可使用系统听写或输入法。');return}
       if(!Recognition){state.voice='meter';renderAssistant();setVoiceText('麦克风已接通，声纹会跟随真实音量变化；但当前浏览器没有语音转文字接口，请使用键盘语音输入。');return}
       const r=new Recognition();recognition=r;r.lang='zh-CN';r.interimResults=true;r.continuous=false;r.maxAlternatives=1;
       r.onstart=()=>{if(recognition!==r)return;state.voice='listening';renderAssistant();setVoiceText('正在聆听，说完后会填入输入框，请核对后发送。')};
