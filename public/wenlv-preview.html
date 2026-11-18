@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <link rel="icon" href="./assets/icon-192.png" />
   <meta name="theme-color" content="#f5f7fb" />
-  <title>吉林文旅知识库 · 预览</title>
+  <title>吉林旅行 · 景点与路线目录</title>
   <style>
     :root { --ink:#0f1c2e; --sub:#5b6b7f; --line:#e3e9f2; --brand:#2c5cf6; --bg:#f5f7fb; }
     * { box-sizing: border-box; }
@@ -128,7 +128,7 @@
     (function () {
       var root = document.getElementById('wenlv-app');
       if (!window.WENLV) {
-        root.innerHTML = '<p>数据未加载：请先执行 npm run build:data 生成 public/wenlv-data.js。</p>';
+        root.innerHTML = '<p>景点资料暂不可用，请重新打开页面。</p>';
         return;
       }
       window.WENLV_UI.mount(root);

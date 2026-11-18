@@ -13,7 +13,7 @@
   'use strict';
   var P = window.JZZXPortal;
   var app = document.getElementById('app');
-  if (!P || !app) { app.innerHTML = '<p class="p-empty">数据层未加载，请检查 shared/portal-core.js。</p>'; return; }
+  if (!P || !app) { app.innerHTML = '<p class="p-empty">暂时无法打开工作台，请重新进入。</p>'; return; }
 
   var U = P.utils;
   var state = { tab: 'docs', issueCat: 'infra', flash: '' };
@@ -51,7 +51,7 @@
     }).join('');
     return '<section class="p-card"><div class="p-card-head"><div><h3>证件办理</h3>' +
       '<p class="p-hint">提交后状态为「待审核」；审核结果由政府端写回同一份数据，商户端只负责提交与撤回。</p></div></div>' +
-      rows + '<p class="p-note">本演示不上传文件，只记录证件类型与状态；真实办理仍需在政务系统提交扫描件。</p></section>';
+      rows + '<p class="p-note">这里只记录证件类型与状态。正式办证请前往政务服务平台提交材料。</p></section>';
   }
 
   /* ── 2. 商户提交问题 ─────────────────────────────────── */
@@ -71,9 +71,9 @@
         '<div style="margin-top:6px"><span class="p-pill ' + it.status + '">' + (it.status === 'pending' ? '待政府处理' : '已答复') + '</span></div></div>' +
         (it.detail ? '<p class="p-note" style="margin-top:7px">' + U.esc(it.detail) + '</p>' : '') +
         (msgs ? '<div class="p-thread">' + msgs + '</div>' : '') + reply + '</div>';
-    }).join('') : '<p class="p-empty">还没有提交过问题。政府端接入后，可以从待办列表里直接看到。</p>';
+    }).join('') : '<p class="p-empty">还没有记录。新增问题后，可在此设备的管理工作台查看。</p>';
 
-    return '<section class="p-card"><h3>提交问题</h3><p class="p-hint">按类型提交，问题会进入政府端待办（JZZXPortal.government.inbox）。</p>' +
+    return '<section class="p-card"><h3>提交问题</h3><p class="p-hint">选择类型并描述问题，记录会同步至此设备的管理工作台。</p>' +
       '<form class="p-form" id="issueForm"><div class="p-field"><span class="p-label">问题类型</span><div class="p-chips" id="issueCats">' + cats + '</div></div>' +
       '<div class="p-field"><label class="p-label" for="issueTitle">一句话标题</label>' +
       '<input class="p-input" id="issueTitle" name="title" maxlength="40" required placeholder="例如：停车场入口积水影响客人进出" /></div>' +
@@ -104,7 +104,7 @@
       '<section class="p-card"><h3>基础信息</h3>' +
       '<form class="p-form" id="profileForm">' +
       field('商户名称', 'name', m.name, '例如：雾凇岛人家', true) +
-      field('联系人', 'contact', m.contact, '真实姓名或负责人称呼', true) +
+      field('联系人', 'contact', m.contact, '负责人称呼（不要填写真实身份信息）', true) +
       field('联系电话', 'phone', m.phone, '手机号或座机', true) +
       '<div class="p-field"><label class="p-label" for="type">经营类型</label><select class="p-select" id="type" name="type">' + typeOptions + '</select></div>' +
       field('经营地址', 'address', m.address, '门牌到村/街道即可', true) +
@@ -154,8 +154,8 @@
   }
 
   function footer() {
-    return '<footer class="p-footer">本地演示：数据只存在这台设备的浏览器里，换设备/清缓存会丢。' +
-      '政府端接入说明见 public/portals/README.md。</footer>';
+    return '<footer class="p-footer">记录仅保存在此浏览器；清除浏览器数据将删除记录。' +
+      '不会向实际政务部门发送信息。</footer>';
   }
 
   function body() {

@@ -91,3 +91,33 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 .p-badge{color:#276b52;background:#e7f3e9}.p-tab{color:#496d60;min-height:44px}
 .p-note,.p-footer,.p-sub,.p-card .p-hint{color:#60776b}
 .portal-local-banner{max-width:540px;margin:auto;padding:10px 16px;font-size:12px;line-height:1.55;background:#fff4df;color:#765722;border-bottom:1px solid #e9d7b4}
+
+/* Shared workspace product typography and interaction. */
+:root{--ink:#243631;--sub:#4b6258;--muted:#536960;--blue:#17594d;--blue-ink:#16483e;--bg:#f6f5f0;--line:#dce2da;--soft:#f3f5f0}
+body{background:var(--bg);font-size:15px}
+.p-app{max-width:760px;background:var(--bg);min-height:100vh}
+.p-header{background:var(--bg);padding:18px 20px 8px}
+.p-title{font-size:21px;letter-spacing:0;font-weight:700}
+.p-sub,.p-card .p-hint,.p-note,.p-footer{font-size:13px;line-height:1.65;color:var(--muted)}
+.p-tabs{gap:16px;margin-top:14px;border-bottom:1px solid var(--line)}
+.p-tab{background:transparent;border:0;border-bottom:2px solid transparent;border-radius:0;color:var(--sub);padding:10px 0;font-size:14px}
+.p-tab[aria-selected="true"]{background:transparent;color:var(--blue-ink);border-color:var(--blue)}
+.p-body{gap:14px;padding:14px 16px}
+.p-card{padding:17px;border-radius:10px;box-shadow:none;background:#fff}
+.p-card h3{font-size:17px;font-weight:700;margin-bottom:8px}
+.p-row{border-bottom:1px solid var(--line);padding:14px 0;flex-wrap:wrap}
+.p-row-main strong{font-size:15px}.p-row-main small{font-size:13px;color:var(--muted)}
+.p-btn,.p-btn.ghost,.p-btn.small{font-size:14px;border-radius:7px;min-height:44px}
+.p-btn{background:var(--blue)}.p-btn.ghost{color:var(--blue-ink);background:#f3f5ef;border-color:var(--line)}
+.p-label{font-size:14px;color:var(--ink)}
+.p-input,.p-textarea,.p-select{font-size:16px;border-radius:7px;background:white;border-color:#c6d0c6}
+.p-chip{font-size:13px;min-height:44px;border-radius:7px}.p-chip[aria-pressed="true"]{background:var(--blue);border-color:var(--blue)}
+.p-empty{font-size:14px;background:var(--soft);border:0;border-radius:7px;color:var(--muted);text-align:left}
+.p-pill,.p-demo,.p-badge{font-size:12px;border-radius:5px;font-weight:600}
+.p-msg{font-size:14px;border-radius:7px}.p-msg .who,.p-stat span{font-size:12px}
+.p-progress i{background:var(--blue)}.p-stat{border-radius:7px}
+.portal-local-banner{max-width:760px;background:#f1eee4;color:#5b5137;border-color:#ded9ca;font-size:13px}
+.p-app a{color:var(--blue-ink);text-underline-offset:3px}
+.p-reply{flex-wrap:wrap}.p-reply input{min-width:120px}
+@media(max-width:365px){.p-header{padding:14px 12px 6px}.p-body{padding:12px}.p-card{padding:13px}.p-tabs{gap:12px}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
