@@ -1,0 +1,37 @@
+name: macOS desktop preview
+on:
+  push:
+    branches: ['feat/agent-native-product']
+    paths: ['desktop/macos/**','.github/workflows/macos-desktop.yml','mobile/site/**','public/**']
+  pull_request:
+    branches: [main]
+    paths: ['desktop/macos/**','.github/workflows/macos-desktop.yml','mobile/site/**','public/**']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: mac-desktop-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  mac:
+    runs-on: macos-15
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Build and sign universal preview application
+        run: bash desktop/macos/build.sh
+      - name: Launch native WebKit and exercise offline planning and saving
+        run: dist/JiZhengZhiXing.app/Contents/MacOS/JiZhengZhiXing --self-test
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: JiZhengZhiXing-macOS-universal-preview
+          path: dist/JiZhengZhiXing-macOS-universal.zip
+          if-no-files-found: error
+          retention-days: 7
