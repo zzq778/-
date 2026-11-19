@@ -176,3 +176,10 @@ input:focus-visible{outline:none!important}
 @media(prefers-reduced-motion:reduce){.orbit-ring,.jzzx-thinking-label{animation:none}.jzzx-thinking-label{color:#466f60;background:none}}
 
 .thinking-panel.jzzx-thinking{padding:12px 4px;border:0;background:transparent;box-shadow:none}.thinking-panel.jzzx-thinking small:empty{display:none}.chat-icon-btn.voice-recording{background:#e7ede6;color:#2d6a57;box-shadow:none}
+
+/* Keep layout stable; only the new word has a short opacity transition. */
+.reply-fresh{animation:jzzx-token-in .14s ease-out both}
+@keyframes jzzx-token-in{from{opacity:.48}to{opacity:1}}
+@keyframes jzzx-reply-breath{0%,100%{opacity:.42;transform:scaleY(.82)}50%{opacity:.95;transform:scaleY(1)}}
+@media(prefers-reduced-motion:reduce){.reply-fresh,.reply-breath-caret{animation:none!important}}
+.reveal-caret{background:#4a7969;width:3px;height:1em;animation:jzzx-reply-breath 1.35s ease-in-out infinite;transform-origin:center}.motion-off .reply-fresh{animation:none}

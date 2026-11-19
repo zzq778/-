@@ -41,3 +41,15 @@
 @media(prefers-reduced-motion:reduce){.orbit-ring,.jzzx-thinking-label{animation:none}.jzzx-thinking-label{color:#466f60;background:none}}
 
 .conversation-wait.jzzx-thinking{margin:10px 0;padding:3px 0}.conversation-wait .text-button{margin-left:auto}.chat-mic{flex:none;display:grid;place-items:center;width:42px;height:42px;background:transparent;color:var(--jade);border:0;border-radius:7px}.chat-mic.recording{background:#e0e9df;color:#255e4b}.chat-mic:disabled{opacity:.4}.chat-voice-message{font-size:12px;color:var(--muted);line-height:1.5;margin:0 0 8px}.chat-voice-message[hidden]{display:none}.conversation-compose{gap:6px}.conversation-compose textarea{flex:1}.chat-mic:focus-visible{outline:2px solid #a58348;outline-offset:2px}
+
+/* Keep layout stable; only the new word has a short opacity transition. */
+.reply-fresh{animation:jzzx-token-in .14s ease-out both}
+@keyframes jzzx-token-in{from{opacity:.48}to{opacity:1}}
+@keyframes jzzx-reply-breath{0%,100%{opacity:.42;transform:scaleY(.82)}50%{opacity:.95;transform:scaleY(1)}}
+@media(prefers-reduced-motion:reduce){.reply-fresh,.reply-breath-caret{animation:none!important}}
+
+.reply-breath-caret{display:inline-block;vertical-align:-.12em;width:3px;height:.93em;margin-left:3px;background:#4a7969;border-radius:3px;transform-origin:center;animation:jzzx-reply-breath 1.35s ease-in-out infinite}
+.chat-reveal-controls{display:flex;justify-content:flex-end;margin-top:5px;min-height:34px}
+.chat-reveal-controls button{font-size:12px;padding:7px 4px;color:var(--jade);min-height:34px}
+.chat-reply-extras[hidden]{display:none!important}
+.conversation-reply p{margin:0}

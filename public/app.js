@@ -211,7 +211,7 @@
       aiRoot.innerHTML=`<div class="ai-overlay compact" data-dismiss="assistant"><section class="ai-compact-stage" role="dialog" aria-modal="true" aria-label="吉小知快捷语音输入"><button type="button" class="close-ai" data-action="ai-close" aria-label="返回页面">${ico('close')}</button><div class="voice-visual"><div class="voice-orb">${ico('mic')}</div><strong class="voice-status-title" id="voiceVisualStatus">${esc(text)}</strong><div class="voice-status-sub" id="voiceVisualSub">可以直接说，也可以输入文字</div></div><div class="compact-dock"><span class="dock-caption">吉小知 · 智能政务导办</span><form class="voice-capsule" id="voiceForm"><button type="button" class="mic-trigger ${['requesting','listening','meter'].includes(state.voice)?'active':''}" data-action="voice" aria-label="${state.voice==='idle'?'开始语音输入':'停止语音输入'}">${ico('mic')}</button><input id="compactInput" class="voice-input" name="question" maxlength="140" autocomplete="off" placeholder="输入问题或点击麦克风" aria-label="请输入政务问题"/><span class="voice-meter ${state.voice==='idle'?'idle':''}" aria-hidden="true">${barMarkup()}</span><button type="button" class="expand-ai" data-action="ai-full" aria-label="展开完整对话">${ico('plus')}</button></form><div class="voice-inline-message" id="voiceInlineMessage" aria-live="polite">${esc(help)}</div><div class="compact-help"><button type="button" data-action="ai-close">返回</button><button type="button" data-action="voice-help">语音帮助</button><button type="button" data-action="ai-full">完整对话 ↗</button></div></div></section></div>`;
       const compact=document.getElementById('compactInput');if(compact)compact.value=previousInput;
     } else {
-      markup=`<div class="ai-overlay" data-dismiss="assistant"><section class="ai-full-panel" role="dialog" aria-modal="true" aria-label="吉小知对话"><div class="drag-handle"></div><header class="ai-full-head"><span class="small-liquid">${ico('search')}</span><span class="head-copy"><strong>吉小知</strong><small>${esc(state.region)} · 文旅与公共服务</small></span><button type="button" class="close-round" data-action="ai-close" aria-label="关闭对话">${ico('close')}</button></header><div class="ai-full-scroll" id="chatScroll">${state.messages.length===0?`<div class="ai-greeting"><h2>今天想做什么？</h2><p>安排旅行、查询办事资料、写活动文案，都可以直接告诉我。</p><span class="demo-pill">${state.aiStatus==='ready'?'在线问答已连接':state.aiStatus==='unavailable'?'连接暂时不可用':'正在连接'}</span><div class="prompts">${['带父母去吉林市玩两天，不滑雪','我想办医保报销，先做什么？','帮我写一段吉林民宿的宣传文案','身份证到期，怎么换领？'].map(x=>`<button type="button" class="prompt" data-prompt="${esc(x)}">${esc(x)} ↗</button>`).join('')}</div></div>`:''}<div class="chat-stream">${state.messages.map((x,i)=>`<div class="bubble ${x.from} ${revealJob?.index===i?'revealing':''}" data-message-index="${i}"><span class="bubble-copy">${esc(revealJob?.index===i?revealJob.pieces.slice(0,revealJob.count).join(''):x.text)}</span>${revealJob?.index===i?`<span class="reveal-caret" aria-hidden="true"></span><div class="reveal-controls"><span class="reveal-hint">正在呈现回答</span><button type="button" data-action="skip-reveal" class="reveal-skip">显示全文 ${ico('arrow')}</button></div>`:''}${x.attachmentName?`<div class="chat-attachment-label">📎 ${esc(x.attachmentName)}</div>`:''}${x.agent?.plan?.steps?.length?`<section class="agent-plan"><div class="agent-plan-title">${ico('file')} ${esc(x.agent.plan.title)}<small>依据：本地事项索引</small></div><ol>${x.agent.plan.steps.map(s=>`<li>${esc(s)}</li>`).join('')}</ol><button type="button" class="task-save" data-save-plan="${i}">${state.task?.id===x.agent.plan.id&&state.task?.region===state.region?'更新本机清单':'保存为导办清单'} ${ico('right')}</button></section>`:''}${x.itinerary?`<button type="button" class="chat-action chat-itinerary" data-open-chat-trip="${i}">${esc(x.itinerary.title)} · 查看行程 ↗</button>`:''}${x.posterDraft?`<section class="agent-plan"><strong>素材描述</strong><p>${esc(x.posterDraft.prompt)}</p><button class="chat-action" type="button" data-chat-poster="${i}">编辑并生成图片</button></section>`:''}${x.feedbackDraft?`<section class="agent-plan"><strong>反馈草稿 · ${esc(x.feedbackDraft.category)}</strong><p>${esc(x.feedbackDraft.text)}</p><button type="button" class="chat-action" data-chat-feedback="${i}" data-destination="tourist">打开本机反馈</button><button type="button" class="chat-action" data-chat-feedback="${i}" data-destination="online">打开联网反馈</button></section>`:''}${x.sources?.length?`<details class="chat-sources"><summary>参考资料 · ${x.sources.length}</summary>${x.sources.map(s=>`<a href="${esc(s.url)}" rel="noopener noreferrer" target="_blank">${esc(s.label)} ↗</a>`).join('')}</details>`:''}${x.from==='assistant'?`<div class="bubble-meta">${x.actions?.length?`<div class="chat-actions">${x.actions.map(a=>`<button type="button" class="chat-action" data-answer-action="${esc(a.type)}" data-answer-value="${esc(a.value)}">${esc(a.label)} ↗</button>`).join('')}</div>`:''}<button type="button" class="chat-action" data-action="tts" style="margin-top:8px">${ico('audio')} 播报这条回复</button></div>`:''}</div>`).join('')}${state.thinking?`<div class="thinking-panel jzzx-thinking" role="status" aria-live="polite" aria-label="正在准备回答"><span class="jzzx-orbit" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="12.5" stroke="currentColor" stroke-opacity=".16" stroke-width="1.5"/><g class="orbit-ring"><path d="M4 17a12 12 0 0 1 18-11.4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="26" cy="9.4" r="1.8" fill="currentColor"/></g><path d="M12 16h8M16 12v8" stroke="currentColor" stroke-opacity=".55" stroke-width="1.2" stroke-linecap="round"/></svg></span><span class="thinking-content"><strong class="jzzx-thinking-label">${state.uploadProgress?'正在处理材料':'正在思考'}</strong><small>${esc(state.uploadProgress||'')}</small></span></div>`:''}</div></div><div class="ai-composer"><div class="attachment-strip" id="attachmentStrip" hidden></div><form class="chat-form" id="chatForm"><input id="chatFile" class="visually-hidden" type="file" accept="image/png,image/jpeg,image/webp,image/gif,.pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.md,.csv" aria-label="添加图片或文档"/><button type="button" class="chat-icon-btn attach-btn" data-action="attach" aria-label="添加图片或文件">${ico('plus')}</button><input id="chatInput" class="chat-input" name="question" placeholder="输入问题，或点击麦克风说话" maxlength="600" aria-label="输入问题"/><button type="button" class="chat-icon-btn ${['requesting','listening'].includes(state.voice)?'voice-recording':''}" data-action="voice" aria-label="语音输入，识别后填入输入框" aria-pressed="${['requesting','listening'].includes(state.voice)}" title="语音转文字">${ico('mic')}</button><button type="submit" class="chat-icon-btn send" aria-label="发送问题">${ico('send')}</button></form><div class="audio-note" id="fullVoiceMessage">${esc(state.voiceMessage)}</div><div class="chat-footnote">支持 PDF / Word / PPT 最大 100 MB，图片最大 64 MiB，其他文件最大 32 MiB。请勿上传身份证、密码等敏感信息。</div></div></section></div>`;
+      markup=`<div class="ai-overlay" data-dismiss="assistant"><section class="ai-full-panel" role="dialog" aria-modal="true" aria-label="吉小知对话"><div class="drag-handle"></div><header class="ai-full-head"><span class="small-liquid">${ico('search')}</span><span class="head-copy"><strong>吉小知</strong><small>${esc(state.region)} · 文旅与公共服务</small></span><button type="button" class="close-round" data-action="ai-close" aria-label="关闭对话">${ico('close')}</button></header><div class="ai-full-scroll" id="chatScroll">${state.messages.length===0?`<div class="ai-greeting"><h2>今天想做什么？</h2><p>安排旅行、查询办事资料、写活动文案，都可以直接告诉我。</p><span class="demo-pill">${state.aiStatus==='ready'?'在线问答已连接':state.aiStatus==='unavailable'?'连接暂时不可用':'正在连接'}</span><div class="prompts">${['带父母去吉林市玩两天，不滑雪','我想办医保报销，先做什么？','帮我写一段吉林民宿的宣传文案','身份证到期，怎么换领？'].map(x=>`<button type="button" class="prompt" data-prompt="${esc(x)}">${esc(x)} ↗</button>`).join('')}</div></div>`:''}<div class="chat-stream">${state.messages.map((x,i)=>`<div class="bubble ${x.from} ${revealJob?.index===i?'revealing':''}" data-message-index="${i}"><span class="bubble-copy">${esc(revealJob?.index===i?revealJob.pieces.slice(0,revealJob.count).join(''):x.text)}</span>${revealJob?.index===i?`<span class="reveal-caret" aria-hidden="true"></span><div class="reveal-controls"><span class="reveal-hint">正在显示回复</span><button type="button" data-action="skip-reveal" class="reveal-skip">显示全文 ${ico('arrow')}</button></div>`:''}${x.attachmentName?`<div class="chat-attachment-label">📎 ${esc(x.attachmentName)}</div>`:''}${x.agent?.plan?.steps?.length?`<section class="agent-plan"><div class="agent-plan-title">${ico('file')} ${esc(x.agent.plan.title)}<small>依据：本地事项索引</small></div><ol>${x.agent.plan.steps.map(s=>`<li>${esc(s)}</li>`).join('')}</ol><button type="button" class="task-save" data-save-plan="${i}">${state.task?.id===x.agent.plan.id&&state.task?.region===state.region?'更新本机清单':'保存为导办清单'} ${ico('right')}</button></section>`:''}${x.itinerary?`<button type="button" class="chat-action chat-itinerary" data-open-chat-trip="${i}">${esc(x.itinerary.title)} · 查看行程 ↗</button>`:''}${x.posterDraft?`<section class="agent-plan"><strong>素材描述</strong><p>${esc(x.posterDraft.prompt)}</p><button class="chat-action" type="button" data-chat-poster="${i}">编辑并生成图片</button></section>`:''}${x.feedbackDraft?`<section class="agent-plan"><strong>反馈草稿 · ${esc(x.feedbackDraft.category)}</strong><p>${esc(x.feedbackDraft.text)}</p><button type="button" class="chat-action" data-chat-feedback="${i}" data-destination="tourist">打开本机反馈</button><button type="button" class="chat-action" data-chat-feedback="${i}" data-destination="online">打开联网反馈</button></section>`:''}${x.sources?.length?`<details class="chat-sources"><summary>参考资料 · ${x.sources.length}</summary>${x.sources.map(s=>`<a href="${esc(s.url)}" rel="noopener noreferrer" target="_blank">${esc(s.label)} ↗</a>`).join('')}</details>`:''}${x.from==='assistant'?`<div class="bubble-meta">${x.actions?.length?`<div class="chat-actions">${x.actions.map(a=>`<button type="button" class="chat-action" data-answer-action="${esc(a.type)}" data-answer-value="${esc(a.value)}">${esc(a.label)} ↗</button>`).join('')}</div>`:''}<button type="button" class="chat-action" data-action="tts" style="margin-top:8px">${ico('audio')} 播报这条回复</button></div>`:''}</div>`).join('')}${state.thinking?`<div class="thinking-panel jzzx-thinking" role="status" aria-live="polite" aria-label="正在准备回答"><span class="jzzx-orbit" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="12.5" stroke="currentColor" stroke-opacity=".16" stroke-width="1.5"/><g class="orbit-ring"><path d="M4 17a12 12 0 0 1 18-11.4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="26" cy="9.4" r="1.8" fill="currentColor"/></g><path d="M12 16h8M16 12v8" stroke="currentColor" stroke-opacity=".55" stroke-width="1.2" stroke-linecap="round"/></svg></span><span class="thinking-content"><strong class="jzzx-thinking-label">${state.uploadProgress?'正在处理材料':'正在思考'}</strong><small>${esc(state.uploadProgress||'')}</small></span></div>`:''}</div></div><div class="ai-composer"><div class="attachment-strip" id="attachmentStrip" hidden></div><form class="chat-form" id="chatForm"><input id="chatFile" class="visually-hidden" type="file" accept="image/png,image/jpeg,image/webp,image/gif,.pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.md,.csv" aria-label="添加图片或文档"/><button type="button" class="chat-icon-btn attach-btn" data-action="attach" aria-label="添加图片或文件">${ico('plus')}</button><input id="chatInput" class="chat-input" name="question" placeholder="输入问题，或点击麦克风说话" maxlength="600" aria-label="输入问题"/><button type="button" class="chat-icon-btn ${['requesting','listening'].includes(state.voice)?'voice-recording':''}" data-action="voice" aria-label="语音输入，识别后填入输入框" aria-pressed="${['requesting','listening'].includes(state.voice)}" title="语音转文字">${ico('mic')}</button><button type="submit" class="chat-icon-btn send" aria-label="发送问题">${ico('send')}</button></form><div class="audio-note" id="fullVoiceMessage">${esc(state.voiceMessage)}</div><div class="chat-footnote">支持 PDF / Word / PPT 最大 100 MB，图片最大 64 MiB，其他文件最大 32 MiB。请勿上传身份证、密码等敏感信息。</div></div></section></div>`;
     }
     if(state.assistant==='full'){
       if(existingFull){
@@ -265,47 +265,42 @@
     const scroll=document.getElementById('chatScroll');
     if(scroll && scroll.scrollHeight-scroll.scrollTop-scroll.clientHeight<130)scroll.scrollTop=scroll.scrollHeight;
   }
-  function replyPieces(text){
-    // Intl.Segmenter 可以正确处理中文词组、空格与 emoji，老浏览器回退到 Unicode 码点。
-    const words=typeof Intl.Segmenter==='function'
-      ?Array.from(new Intl.Segmenter('zh-CN',{granularity:'word'}).segment(text),x=>x.segment)
-      :Array.from(text);
-    const groupSize=Math.max(1,Math.ceil(words.length/125));
-    const pieces=[];
-    for(let i=0;i<words.length;i+=groupSize)pieces.push(words.slice(i,i+groupSize).join(''));
-    return pieces;
-  }
+function replyTimeline(text){
+ const words=typeof Intl.Segmenter==='function'?Array.from(new Intl.Segmenter('zh-CN',{granularity:'word'}).segment(text),x=>x.segment):Array.from(text);
+ const group=Math.max(1,Math.ceil(words.length/180)),pieces=[];let buffer='',n=0;
+ for(const word of words){buffer+=word;n++;if(n>=group||/[。！？!?；;，,：:\n]$/.test(word)){pieces.push(buffer);buffer='';n=0}}
+ if(buffer)pieces.push(buffer);
+ const base=Math.max(17,Math.min(53,3900/Math.max(1,pieces.length)));
+ const waits=pieces.map((v,i)=>base*(1+.24*Math.sin(i*.64)+.14*Math.cos(i*.23))+(/[。！？!?\n]$/.test(v)?110:/[，,；;：:]$/.test(v)?43:0));
+ const scale=Math.min(1,6500/Math.max(1,waits.reduce((a,b)=>a+b,0)));
+ return {pieces,waits:waits.map(v=>v*scale)};
+}
+function paintReply(body,pieces,count){
+ const last=document.createElement('span');last.className='reply-fresh';last.textContent=pieces[count-1]||'';
+ body.replaceChildren(document.createTextNode(pieces.slice(0,Math.max(0,count-1)).join('')),last);
+}
   function startReveal(index){
     cancelReveal();
     if(reduced()||state.elder||document.hidden||state.assistant!=='full'){renderAssistant();return}
     const text=state.messages[index]?.text;
     if(!text){renderAssistant();return}
-    const pieces=replyPieces(text);
+    const {pieces,waits}=replyTimeline(text);
     if(pieces.length<2){renderAssistant();return}
-    const base=Math.min(72,Math.max(20,3300/pieces.length));
-    revealJob={index,pieces,count:0,nextAt:0,base};
+    revealJob={index,pieces,waits,count:1,nextAt:0};
     renderAssistant();
     const tick=now=>{
       const job=revealJob;
       if(!job||job.index!==index)return;
-      if(!job.nextAt)job.nextAt=now+90;
-      let changed=false;
-      // 将页面后台恢复或帧率下降时的进度补齐，不阻塞 UI 线程。
-      while(job.count<job.pieces.length&&now>=job.nextAt){
-        const piece=job.pieces[job.count++];
-        const pause=/[。！？\n]$/.test(piece)?100:/[，；：]$/.test(piece)?45:0;
-        job.nextAt+=job.base+pause;
-        changed=true;
-      }
-      if(changed){
-        const card=aiRoot.querySelector(`[data-message-index="${index}"]`);
-        const body=card?.querySelector('.bubble-copy');
-        if(body){
-          const scroll=document.getElementById('chatScroll');
-          const shouldFollow=scroll&&scroll.scrollHeight-scroll.scrollTop-scroll.clientHeight<130;
-          body.textContent=job.pieces.slice(0,job.count).join('');
-          if(shouldFollow)scroll.scrollTop=scroll.scrollHeight;
-        }
+      if(reduced()||document.hidden){finishReveal();return}
+      if(!job.nextAt)job.nextAt=now+job.waits[0];
+      const previous=job.count;
+      while(job.count<job.pieces.length&&now>=job.nextAt){job.nextAt+=job.waits[job.count];job.count++}
+      if(previous!==job.count){
+        const body=aiRoot.querySelector('[data-message-index="'+index+'"] .bubble-copy');
+        const scroll=document.getElementById('chatScroll');
+        const shouldFollow=scroll&&scroll.scrollHeight-scroll.scrollTop-scroll.clientHeight<130;
+        if(body)paintReply(body,job.pieces,job.count);
+        if(shouldFollow)scroll.scrollTop=scroll.scrollHeight;
       }
       if(job.count===job.pieces.length){finishReveal();return}
       revealFrame=requestAnimationFrame(tick);
