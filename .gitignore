@@ -9,3 +9,7 @@ node_modules/
 /desktop/windows/generated/
 /desktop/windows/bin/
 /desktop/windows/obj/
+
+/.mcp-smoke/
+/lxclaw/demo-data/
+/jzzx-output/
