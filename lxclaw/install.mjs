@@ -5,9 +5,9 @@ import {fileURLToPath} from 'node:url';
 import {randomUUID} from 'node:crypto';
 
 const here=dirname(fileURLToPath(import.meta.url));
-const {values:v}=parseArgs({options:{workspace:{type:'string'},config:{type:'string'},mode:{type:'string',default:'local'},role:{type:'string',default:'tourist'},weather:{type:'boolean'},'allow-image':{type:'boolean'},'include-feedback-text':{type:'boolean'},help:{type:'boolean'}}});
+const {values:v}=parseArgs({options:{workspace:{type:'string'},config:{type:'string'},mode:{type:'string',default:'local'},role:{type:'string',default:'tourist'},weather:{type:'boolean'},'allow-image':{type:'boolean'},'include-feedback-text':{type:'boolean'},'switch-profile':{type:'boolean'},help:{type:'boolean'}}});
 if(v.help||!v.workspace){
- console.log('node lxclaw/install.mjs --workspace "<LXClaw当前工作空间>" [--config "<当前OpenClaw严格JSON配置文件>"] [--mode local|demo|cloud] [--role tourist|merchant|government]');
+ console.log('node lxclaw/install.mjs --workspace "<LXClaw当前工作空间>" [--config "<当前OpenClaw严格JSON配置文件>"] [--mode local|demo|cloud] [--role tourist|merchant|government] [--switch-profile]');
  console.log('不指定 --config 时只安装技能并生成 MCP 配置片段，不修改引擎配置。');
  if(!v.help)process.exitCode=2;
 }else{
@@ -37,7 +37,10 @@ if(v.help||!v.workspace){
   originalConfig=await readFile(configPath,'utf8');config=JSON.parse(originalConfig);
   if(!config||typeof config!=='object'||Array.isArray(config))throw Error('INVALID_CONFIG');
   if(config.mcp!==undefined&&(!config.mcp||typeof config.mcp!=='object'||Array.isArray(config.mcp))||config.mcp?.servers!==undefined&&(!config.mcp.servers||typeof config.mcp.servers!=='object'||Array.isArray(config.mcp.servers)))throw Error('INVALID_MCP_CONFIG');
-  const prev=config.mcp?.servers?.[name];if(prev&&JSON.stringify(prev)!==JSON.stringify(spec))throw Error('MCP_ENTRY_CONFLICT: use native MCP editor to change profile');
+  const prev=config.mcp?.servers?.[name];
+  if(prev&&JSON.stringify(prev)!==JSON.stringify(spec)){
+   if(!v['switch-profile']||prev.args?.[0]!==server||prev.command!==process.execPath)throw Error('MCP_ENTRY_CONFLICT: use native MCP editor or --switch-profile for this installation');
+  }
   config.mcp??={};config.mcp.servers??={};config.mcp.servers[name]=spec;
  }
  for(const {to,data} of writes){await mkdir(dirname(to),{recursive:true});await writeFile(to,data,{flag:'wx'})}

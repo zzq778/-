@@ -26,8 +26,19 @@ function client(args){
  });
  return {rpc,async init(version='2025-06-18'){const r=await rpc('initialize',{protocolVersion:version,capabilities:{},clientInfo:{name:'independent-test',version:'1'}});assert.equal(r.result.protocolVersion,version);child.stdin.write('{"jsonrpc":"2.0","method":"notifications/initialized"}\n');return r.result},async call(name,args={},isError=false){const r=await rpc('tools/call',{name,arguments:args});assert.equal(r.result?.isError,isError,JSON.stringify(r));return isError?r.result.content[0].text:JSON.parse(r.result.content[0].text)},async list(){return (await rpc('tools/list')).result.tools.map(x=>x.name)},async close(){child.stdin.end();const timer=setTimeout(()=>child.kill(),2000);try{await closed}finally{clearTimeout(timer)}}}
 }
-async function temp(t){const dir=await mkdtemp(join(tmpdir(),'jzzx-lxclaw-'));t.after(()=>rm(dir,{recursive:true,force:true}));return dir}
-async function using(t,args){const c=client(args);t.after(()=>c.close());await c.init();return c}
+const cleanup=new WeakMap();
+function resources(t){
+ if(!cleanup.has(t)){
+  const r={clients:[],dirs:[]};cleanup.set(t,r);
+  t.after(async()=>{
+   // Windows SQLite files cannot be removed while child processes still own handles.
+   await Promise.allSettled(r.clients.map(c=>c.close()));
+   for(const dir of r.dirs)await rm(dir,{recursive:true,force:true,maxRetries:5,retryDelay:150});
+  });
+ }return cleanup.get(t);
+}
+async function temp(t){const dir=await mkdtemp(join(tmpdir(),'jzzx-lxclaw-'));resources(t).dirs.push(dir);return dir}
+async function using(t,args){const c=client(args);resources(t).clients.push(c);await c.init();return c}
 test('independent MCP process: discover, search, inspect, selected plan, replan, constraints and export',async t=>{
  const dir=await temp(t),c=await using(t,['--output',dir]);
  assert.ok((await c.list()).includes('jzzx_plan_trip'));assert.ok(!(await c.list()).includes('jzzx_submit_feedback'));
@@ -125,4 +136,6 @@ test('installer: four real skills, backup, non-destructive conflict handling and
  const fragment=JSON.parse(await readFile(snippet.snippet,'utf8'));assert.ok(fragment.mcp.servers.jzzx.args.includes('merchant'));
  assert.throws(()=>run(['--config',config,'--mode','demo']),/MCP_ENTRY_CONFLICT/);
  assert.deepEqual(JSON.parse(await readFile(config,'utf8')),next);
+ const switched=JSON.parse(run(['--config',config,'--mode','demo','--role','merchant','--switch-profile']));
+ const updated=JSON.parse(await readFile(config,'utf8'));assert.ok(updated.mcp.servers.jzzx.args.includes('merchant'));assert.deepEqual(updated.mcp.servers.existing,before.mcp.servers.existing);assert.deepEqual(JSON.parse(await readFile(switched.backup,'utf8')),next);
 });

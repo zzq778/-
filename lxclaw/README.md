@@ -10,7 +10,7 @@ workspace 必须是实际存在的活动 Agent 工作空间，而不是软件安
 
 ## 模式
 - local（默认）：景点、政务、行程和实际 HTML 文件导出。无模型费用，LXClaw 自己推理。
-- demo：安装时追加 --mode demo --role tourist（或 merchant/government）。同一解压目录的 lxclaw/demo-data/jzzx-demo.sqlite 由三个身份共享，明确虚构商户与身份，实际使用与云端相同的 SQL 和业务处理函数；每个 MCP 实例固定角色。不要输入真实个人信息。切换请在不同 Agent 配置/会话中使用对应片段，或通过原生 MCP 编辑器变更服务器参数并重载。无生产写入、无伪造成功。
+- demo：安装时追加 --mode demo --role tourist（或 merchant/government）。同一解压目录的 lxclaw/demo-data/jzzx-demo.sqlite 由三个身份共享，明确虚构商户与身份，实际使用与云端相同的 SQL 和业务处理函数；每个 MCP 实例固定角色。不要输入真实个人信息。切换请在不同 Agent 配置/会话中使用对应片段，或通过原生 MCP 编辑器变更服务器参数并重载。已使用 --config 安装且完全退出客户端时，再次执行安装命令并指定 --mode demo --role merchant --switch-profile，脚本仅替换本次安装的 jzzx 条目、备份旧配置并保留其他插件；重新打开 LXClaw。不要给同一 Agent 同时开放多个生产角色。无生产写入、无伪造成功。
 - cloud：--mode cloud --role tourist/merchant/government。固定访问现有移动 Worker，查询实际服务状态；聊天、业务、图片分别通过宿主环境变量 JZZX_AGENT_CODE（或 JZZX_PREVIEW_CODE）、JZZX_PORTAL_CODE、JZZX_IMAGE_CODE 授权。启动 LXClaw 的宿主进程须继承这些变量；不要把明文凭证写进 skill、MCP JSON、报告、命令历史或聊天。云端权限由服务检查，不能通过工具切角色。当前没有有效业务凭证或 D1 配置时会明确报错。生产反馈写入只生成草稿，人工终端运行 node lxclaw/approve.mjs "<草稿实际路径>" 核对并确认；该命令不提供给模型。信任宿主与操作者，不是针对有任意宿主 exec 权限的强隔离。
 - 可选 --weather 直接启用 Open-Meteo（先遵守供应商使用条款）；--allow-image 仅在 cloud 模式与素材凭证存在时提供生成工具，显式确认每次费用/调用。未配置时不提供生图工具；可复用 LXClaw 自带技能（实际可用性需验证）。
 - 默认云端反馈仅返回元数据，不向模型传原文，--include-feedback-text 是额外授权，仍不保证全面脱敏；请勿用于包含敏感个人数据的反馈。报告只使用汇总。
