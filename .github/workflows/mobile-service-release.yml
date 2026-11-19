@@ -1,0 +1,48 @@
+name: Mobile service release
+on:
+  workflow_dispatch:
+  push:
+    branches: ['feat/agent-native-product']
+    paths: ['.github/workflows/mobile-service-release.yml','src/mobile-entry.mjs','src/mobile-worker.mjs','src/workers-model.mjs','src/product-agent.mjs','src/wenlv/travel-agent.mjs','scripts/smoke-mobile-runtime.mjs','wrangler.mobile.jsonc','mobile/site/index.html']
+permissions:
+  contents: read
+concurrency:
+  group: jzzx-mobile-deploy
+  cancel-in-progress: false
+jobs:
+  release-mobile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm run build:mobile && npm test
+      - name: Check deployment authorization
+        id: access
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::No repository CLOUDFLARE_API_TOKEN. No deployment performed."
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Exercise real Workers AI through the actual Worker runtime
+        if: steps.access.outputs.ready == 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: '8181cde33c60feace3f3eee52ee2c207'
+        run: node scripts/smoke-mobile-runtime.mjs
+      - name: Deploy existing mobile Worker only
+        if: steps.access.outputs.ready == 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: '8181cde33c60feace3f3eee52ee2c207'
+        run: npx --yes wrangler@4 deploy --config wrangler.mobile.jsonc --keep-vars
+      - name: Verify live chat route and optionally authenticated response
+        env:
+          TRAVEL_PREVIEW_CODE: ${{ secrets.TRAVEL_PREVIEW_CODE }}
+        run: node scripts/check-mobile-service.mjs

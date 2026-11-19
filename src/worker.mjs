@@ -1,5 +1,13 @@
+import {workersModel} from './workers-model.mjs';
+import {handleMobile} from './mobile-worker.mjs';
+import {CHAT_CONTRACT} from './chat-contract.mjs';
+import {handleImage} from './image-service.mjs';
+import { handlePortal } from './portal-service.mjs';
+import { analyzeFeedback } from './portal-insights.mjs';
 import { REGIONS, relevantTopics, actionBundle, buildSystemPrompt } from './knowledge.mjs';
 import { DIRECT_BYTES, filePolicy, handleUploadApi, openLargeFile, streamMultipartFile } from './uploads.mjs';
+import { runtimeTools,runtimeStatus } from './runtime-tools.mjs';
+import { cleanChatPayload,runProductAgent } from './product-agent.mjs';
 import { runCivicAgent } from './agent.mjs';
 import { answerWenlv } from './wenlv/pipeline.mjs';
 import { runTravelAgent, PROMPT_VERSION } from './wenlv/travel-agent.mjs';
@@ -82,8 +90,12 @@ async function askWithFile(env, file, question, messages, largeFile=null) {
 
 export async function handleApi(request,env) {
   const url = new URL(request.url);
+ if(url.pathname.startsWith('/api/v1/images'))return handleImage(request,env);
+ if(url.pathname.startsWith('/api/v1/portal/'))return handlePortal(request,env,analyzeFeedback);
+  if(url.pathname==='/api/v1/chat')return handleMobile(request,env);
+  if(url.pathname==='/api/v1/openapi.json'&&request.method==='GET')return reply({...CHAT_CONTRACT,servers:[{url:url.origin}]});
   if (url.pathname === '/api/status' && request.method==='GET') {
-    return reply({ ready:!!env.AI, provider:'Cloudflare Workers AI', mode:env.AI?'live':'unconfigured', model:MODEL, travelAgent:PROMPT_VERSION });
+    return reply({ ready:!!env.AI, provider:'Cloudflare Workers AI', mode:env.AI?'live':'unconfigured', model:MODEL, travelAgent:PROMPT_VERSION,runtime:runtimeStatus(env) });
   }
   if (url.pathname.startsWith('/api/upload/')) return handleUploadApi(request,env);
   if (url.pathname !== '/api/chat') return reply({ error:'NOT_FOUND',message:'接口不存在' },404);
@@ -94,7 +106,7 @@ export async function handleApi(request,env) {
   // 此 API 只供同源前端调用，不对跨站网页开放。该检查不能代替用户鉴权。
   const origin = request.headers.get('origin');
   if (origin && origin !== url.origin) return reply({error:'ORIGIN',message:'不接受跨站请求'},403);
-  const limitBytes=isMultipart?MAX_ATTACHMENT_BYTES+65536:6000;
+  const limitBytes=isMultipart?MAX_ATTACHMENT_BYTES+65536:65536;
   if (Number(request.headers.get('content-length')||'0') > limitBytes) return reply({error:'TOO_LARGE',message:'附件或请求过大'},413);
   let payload,attachment=null;
   try {
@@ -109,8 +121,9 @@ export async function handleApi(request,env) {
       if(!FILE_EXTENSIONS.has(attachment.name.split('.').pop()?.toLowerCase()))return reply({error:'FILE_TYPE',message:'不支持该文件类型'},415);
     } else {
       const raw=await request.text();
-      if(raw.length>6000)return reply({error:'TOO_LARGE',message:'请求过长'},413);
+      if(raw.length>65536)return reply({error:'TOO_LARGE',message:'请求过长'},413);
       payload=JSON.parse(raw);
+      if(payload?.mode!=='product'&&raw.length>6000)return reply({error:'TOO_LARGE',message:'请求过长'},413);
     }
   } catch { return reply({error:'BAD_REQUEST',message:'请求格式不正确'},400); }
   const largeFile=typeof payload?.attachmentToken==='string' ? await openLargeFile(env,payload.attachmentToken) : null;
@@ -140,13 +153,22 @@ export async function handleApi(request,env) {
   const pageContext = `\n应用上下文：用户当前位于${pageName}${guideName?'，正在浏览'+guideName:''}。${taskContext}可以建议应用内现有导办入口，但不得声称已在政府网站替用户操作。`;
   const messages = [ {role:'system',content:buildSystemPrompt(region,topics)+pageContext}, ...history, {role:'user',content:finalQuestion} ];
   try {
+    if(payload?.mode==='product'){
+      if(attachment||largeFile)return reply({error:'TEXT_ONLY',message:'文件请使用原有材料咨询入口。'},400);
+      if(!env.AI||!env.LIMITER)return reply({error:'NOT_READY',message:'对话暂不可用。'},503);
+      const clean=cleanChatPayload(payload);
+      if(!clean)return reply({error:'INVALID_CHAT',message:'问题或对话历史格式不正确。'},400);
+      const invoke=workersModel(env,MODEL,'web-chat',850,.2);
+      const outcome=await runProductAgent({...clean,invoke,pageContext,runtime:runtimeTools(env)});
+      return reply({...outcome,text:normalizeAiAnswer(outcome.text),disclaimer:'非政府官方应用。景区与办事信息请以官方公告为准。'},outcome.status==='unavailable'?503:200);
+    }
     if (payload?.mode === 'wenlv-agent') {
       if (attachment || largeFile) return reply({error:'TRAVEL_TEXT_ONLY',message:'当前旅行规划仅接收文字。'},400);
       // An unconfigured rate limiter must not expose a paid multi-call model endpoint.
       const invoke = env.AI && env.LIMITER
-        ? (messages,tools)=>env.AI.run(MODEL,{messages,tools,tool_choice:'required',parallel_tool_calls:false,max_completion_tokens:450,temperature:0.1,chat_template_kwargs:{enable_thinking:false}})
+        ? workersModel(env,MODEL,'web-travel',450,.1)
         : null;
-      const outcome=await runTravelAgent({question:finalQuestion,invoke});
+      const outcome=await runTravelAgent({question:finalQuestion,compact:!!invoke,invoke});
       return reply({...outcome,region,model:outcome.modelCalls?MODEL:'wenlv-local',disclaimer:'非政府官方应用；线路为候选安排，实际交通、开放、预约和价格请向景区核实。'});
     }
     if (payload?.mode === 'wenlv') {

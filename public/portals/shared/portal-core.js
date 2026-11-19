@@ -172,7 +172,7 @@
   function saveMerchant(patch) {
     var current = loadMerchant();
     var next = Object.assign({}, current, patch || {}, { updatedAt: nowISO(), demo: false });
-    write(KEYS.merchant, next);
+    if(!write(KEYS.merchant, next))return null;
     emit('merchant:changed', next);
     return next;
   }
@@ -205,8 +205,8 @@
   }
 
   function saveIssues(list) {
-    write(KEYS.issues, list);
-    emit('issues:changed', list);
+    if(!write(KEYS.issues, list))return false;
+    emit('issues:changed', list);return true;
   }
 
   function addIssue(payload) {
@@ -225,7 +225,7 @@
     };
     var list = loadIssues();
     list.unshift(item);
-    saveIssues(list);
+    if(!saveIssues(list))return null;
     return item;
   }
 
@@ -237,8 +237,8 @@
   }
 
   function saveFeedback(list) {
-    write(KEYS.feedback, list);
-    emit('feedback:changed', list);
+    if(!write(KEYS.feedback, list))return false;
+    emit('feedback:changed', list);return true;
   }
 
   function addFeedback(payload) {
@@ -256,7 +256,7 @@
     };
     var list = loadFeedback();
     list.unshift(item);
-    saveFeedback(list);
+    if(!saveFeedback(list))return null;
     return item;
   }
 
@@ -269,7 +269,7 @@
     hit.messages = hit.messages || [];
     hit.messages.push({ role: role, text: body, at: nowISO() });
     hit.status = 'answered';
-    saveFeedback(list);
+    if(!saveFeedback(list))return null;
     return hit;
   }
 
@@ -282,7 +282,7 @@
     hit.messages = hit.messages || [];
     hit.messages.push({ role: role, text: body, at: nowISO() });
     hit.status = 'replied';
-    saveIssues(list);
+    if(!saveIssues(list))return null;
     return hit;
   }
 
@@ -293,8 +293,7 @@
     if (!hit) return false;
     hit.status = status;
     hit.updatedAt = nowISO();
-    saveMerchant({ docs: m.docs });
-    return true;
+    return !!saveMerchant({ docs: m.docs });
   }
 
   /* ── 政府端接入点 ──────────────────────────────────────── */
@@ -372,8 +371,8 @@
     },
     issues: {
       list: loadIssues,
-      add: function (payload) { var item = addIssue(payload); notifyAdapters('issue:created', item); return item; },
-      reply: function (id, role, text) { var item = replyIssue(id, role, text); notifyAdapters('issue:replied', item); return item; },
+      add: function (payload) { var item = addIssue(payload); if(item)notifyAdapters('issue:created', item); return item; },
+      reply: function (id, role, text) { var item = replyIssue(id, role, text); if(item)notifyAdapters('issue:replied', item); return item; },
       counts: function () {
         var list = loadIssues();
         return { total: list.length, pending: list.filter(function (x) { return x.status === 'pending'; }).length };
@@ -381,8 +380,8 @@
     },
     feedback: {
       list: loadFeedback,
-      add: function (payload) { var item = addFeedback(payload); notifyAdapters('feedback:created', item); return item; },
-      reply: function (id, role, text) { var item = replyFeedback(id, role, text); notifyAdapters('feedback:replied', item); return item; },
+      add: function (payload) { var item = addFeedback(payload); if(item)notifyAdapters('feedback:created', item); return item; },
+      reply: function (id, role, text) { var item = replyFeedback(id, role, text); if(item)notifyAdapters('feedback:replied', item); return item; },
       counts: function () {
         var list = loadFeedback();
         return { total: list.length, pending: list.filter(function (x) { return x.status === 'pending'; }).length };

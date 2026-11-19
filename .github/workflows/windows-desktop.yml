@@ -1,0 +1,75 @@
+name: Windows desktop preview
+on:
+  push:
+    branches: ['feat/agent-native-product']
+    paths: ['desktop/**','mobile/**','public/**','scripts/build-mobile-workspaces.mjs','.github/workflows/windows-desktop.yml','tests/browser_desktop.py']
+  pull_request:
+    branches: [main]
+    paths: ['desktop/**','mobile/**','public/**','scripts/build-mobile-workspaces.mjs','.github/workflows/windows-desktop.yml','tests/browser_desktop.py']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: windows-desktop-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Build Windows x64 executable
+        shell: pwsh
+        run: |
+          python desktop/windows/bundle.py desktop/windows/generated/index.html desktop/windows/generated/app.ico
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          dotnet build desktop/windows/JiZhengZhiXing.csproj -c Release -p:Platform=x64 -o dist/windows
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          if (!(Test-Path dist/windows/JiZhengZhiXing.exe)) { throw "Missing EXE" }
+          if (!(Get-ChildItem dist/windows -Recurse -Filter WebView2Loader.dll)) { throw "Missing WebView2 loader" }
+          Copy-Item desktop/windows/README.txt dist/windows/README.txt
+      - name: native WebView2 startup and offline plan smoke test
+        shell: pwsh
+        run: |
+          $p=Start-Process -FilePath (Resolve-Path dist/windows/JiZhengZhiXing.exe) -ArgumentList '--self-test' -PassThru
+          if (!$p.WaitForExit(65000)) { $p.Kill(); throw "Native GUI smoke timed out" }
+          if ($p.ExitCode -ne 0) { throw "Native GUI smoke failed: $($p.ExitCode)" }
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: JiZhengZhiXing-Windows-x64-preview
+          path: dist/windows/
+          if-no-files-found: error
+          retention-days: 7
+  desktop-browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: |
+          pip install playwright
+          python -m playwright install --with-deps chromium
+          mkdir -p artifacts
+          python tests/browser_desktop.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: windows-desktop-screenshots
+          path: artifacts/desktop-*.png
+          if-no-files-found: ignore
+          retention-days: 7

@@ -5,3 +5,7 @@ node_modules/
 .DS_Store
 
 /mobile/site/workspaces.js
+
+/desktop/windows/generated/
+/desktop/windows/bin/
+/desktop/windows/obj/

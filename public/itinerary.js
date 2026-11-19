@@ -566,7 +566,7 @@
   }
 
   function speechSupported() {
-    return typeof global.speechSynthesis !== 'undefined' && typeof global.SpeechSynthesisUtterance !== 'undefined';
+    return !!global.JZZXNativeSpeech || (typeof global.speechSynthesis !== 'undefined' && typeof global.SpeechSynthesisUtterance !== 'undefined');
   }
 
   function setReadState(day) {
@@ -594,6 +594,14 @@
     stopSpeak();
     var it = model().itinerary;
     var text = speechText(it, d);
+    if(global.JZZXNativeSpeech){
+      try{
+        if(!global.JZZXNativeSpeech.speak(text))throw new Error('系统语音不可用');
+        speakingDay=d;setReadState(d);if(hint)hint.textContent='正在朗读，点同一按钮可停止。';
+        var count=0;var poll=setInterval(function(){count++;if(speakingDay!==d||count>600||!global.JZZXNativeSpeech.isSpeaking()){clearInterval(poll);if(speakingDay===d){speakingDay=null;setReadState(null);}}},500);
+        return {ok:true,day:d,length:text.length,text:text};
+      }catch(e){if(hint)hint.textContent='系统中文语音不可用，请检查手机语音设置。';return {ok:false,reason:'native-speech-unavailable'};}
+    }
     try {
       var utter = new global.SpeechSynthesisUtterance(text);
       utter.lang = 'zh-CN';
@@ -615,7 +623,8 @@
 
   function stopSpeak() {
     var had = speakingDay !== null;
-    if (speechSupported()) {
+    if(global.JZZXNativeSpeech){try{global.JZZXNativeSpeech.stop();}catch(e){}}
+    else if (speechSupported()) {
       try { global.speechSynthesis.cancel(); } catch (e) { /* 忽略：有的浏览器未实现 */ }
     }
     speakingDay = null;
@@ -785,6 +794,11 @@
       var name = model().itinerary.title.replace(/[\\/:*?"<>|]/g, '') + '.png';
       canvas.toBlob(function (blob) {
         if (!blob) { fail('生成图片为空'); return; }
+        if(global.JZZXNativeFiles && typeof FileReader!=='undefined'){
+          var reader=new FileReader();reader.onerror=function(){fail('图片读取失败');};
+          reader.onload=function(){try{global.JZZXNativeFiles.save('image/png',name,String(reader.result).split(',')[1]);if(hint)hint.textContent='请在系统保存窗口选择位置。';}catch(e){fail('系统保存不可用');}};
+          reader.readAsDataURL(blob);return;
+        }
         var url = URL.createObjectURL(blob);
         var a = document.createElement('a');
         a.href = url;
@@ -792,10 +806,10 @@
         document.body.appendChild(a);
         a.click();
         a.remove();
-        setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
+        setTimeout(function () { URL.revokeObjectURL(url); }, 2000);if(hint)hint.textContent='已发起长图下载。';
       }, 'image/png');
       lastExport = { ok: true, width: EXPORT_WIDTH, height: layout.height, name: name };
-      if (hint) hint.textContent = '行程长图已准备好，请在下载中查看。';
+      if (hint) hint.textContent = '正在准备行程长图。';
       return lastExport;
     } catch (e) {
       return fail(e && e.message ? e.message : '未知错误');

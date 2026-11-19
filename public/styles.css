@@ -162,3 +162,24 @@ input:focus-visible{outline:none!important}
 .chat-icon-btn.voice-recording svg{animation:voice-mic-pulse 1.15s ease-in-out infinite}
 @keyframes voice-mic-pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.12)}}
 @media(prefers-reduced-motion:reduce){.chat-icon-btn.voice-recording svg{animation:none}}
+
+/* Quiet orbital motion + light sweep, inspired by modern chat waiting indicators. */
+.jzzx-thinking{display:flex;align-items:center;gap:10px;min-height:40px;color:#466f60}
+.jzzx-orbit{display:inline-flex;flex:none;width:27px;height:27px;color:#4a7969}
+.jzzx-orbit svg{width:100%;height:100%;overflow:visible}
+.orbit-ring{transform-origin:16px 16px;animation:jzzx-orbit 1.8s linear infinite}
+.jzzx-thinking-label{font-size:14px;font-weight:600;color:#466f60}
+@supports ((-webkit-background-clip:text) or (background-clip:text)){.jzzx-thinking-label{background:linear-gradient(100deg,#466f60 20%,#a1b3a3 43%,#e1b96f 50%,#466f60 68%);background-size:260% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:jzzx-sweep 2.5s ease-in-out infinite}}
+.jzzx-thinking .thinking-content{min-width:0;display:grid;gap:3px}
+.jzzx-thinking small{color:#68776f;font-size:12px}
+@keyframes jzzx-orbit{to{transform:rotate(360deg)}}@keyframes jzzx-sweep{0%{background-position:100% 0}100%{background-position:-80% 0}}
+@media(prefers-reduced-motion:reduce){.orbit-ring,.jzzx-thinking-label{animation:none}.jzzx-thinking-label{color:#466f60;background:none}}
+
+.thinking-panel.jzzx-thinking{padding:12px 4px;border:0;background:transparent;box-shadow:none}.thinking-panel.jzzx-thinking small:empty{display:none}.chat-icon-btn.voice-recording{background:#e7ede6;color:#2d6a57;box-shadow:none}
+
+/* Keep layout stable; only the new word has a short opacity transition. */
+.reply-fresh{animation:jzzx-token-in .14s ease-out both}
+@keyframes jzzx-token-in{from{opacity:.48}to{opacity:1}}
+@keyframes jzzx-reply-breath{0%,100%{opacity:.42;transform:scaleY(.82)}50%{opacity:.95;transform:scaleY(1)}}
+@media(prefers-reduced-motion:reduce){.reply-fresh,.reply-breath-caret{animation:none!important}}
+.reveal-caret{background:#4a7969;width:3px;height:1em;animation:jzzx-reply-breath 1.35s ease-in-out infinite;transform-origin:center}.motion-off .reply-fresh{animation:none}

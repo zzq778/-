@@ -52,7 +52,11 @@ test('Worker endpoint gates model by limiter and supports local agent without AI
  let calls=0;
  const local=await handleApi(req(),{AI:{run:async()=>{calls++;throw Error('must not call')} }});
  assert.equal(local.status,200);const body=await local.json();assert.equal(body.status,'complete');assert.equal(body.modelCalls,0);assert.equal(calls,0);
- const seq=[call('search_places'),call('draft_itinerary'),call('review_itinerary'),call('finish')];
+ const seq=[call('draft_itinerary',{ids:[]})];
  const cloud=await handleApi(req(),{AI:{run:async(_model,options)=>{assert.ok(options.tools.length);return seq[calls++];}},LIMITER:{limit:async()=>({success:true})}});
- assert.equal(cloud.status,200);const data=await cloud.json();assert.equal(data.status,'complete');assert.equal(data.modelCalls,4);assert.equal(data.degraded,false);
+ assert.equal(cloud.status,200);const data=await cloud.json();assert.equal(data.status,'complete');assert.equal(data.modelCalls,1);assert.equal(data.degraded,false);
 });
+
+test('compact planner uses one real selection; deterministic search and audit stay authoritative',async()=>{let n=0;const r=await runTravelAgent({question:'吉林市冬天两天看雾凇，不想滑雪',now,compact:true,invoke:async(messages,tools)=>{n++;assert.equal(tools.length,1);assert.equal(tools[0].function.name,'draft_itinerary');assert.match(messages.at(-1).content,/雾凇岛/);return call('draft_itinerary',{ids:['wusongdao','jilin-bowuguan']})}});assert.equal(n,1);assert.equal(r.degraded,false);assert.equal(r.modelActions,1);assert.equal(r.itinerary.days,2);assert.deepEqual(r.trace.map(t=>t.actor),['system','model','system','system']);const bad=await runTravelAgent({question:'吉林市两天',now,compact:true,invoke:async()=>call('draft_itinerary',{ids:['not-real']})});assert.equal(bad.degraded,true);assert.equal(bad.reason,'unknown-id');});
+
+test('compact planner constrains model IDs and retries invalid choices without pretending success',async()=>{let n=0;const r=await runTravelAgent({question:'吉林市冬天两天看雾凇，不想滑雪',now,compact:true,invoke:async(messages,tools)=>{n++;assert.ok(tools[0].function.parameters.properties.ids.items.enum.includes('wusongdao'));return call('draft_itinerary',{ids:n===1?['unknown-place']:['wusongdao','jilin-bowuguan']})}});assert.equal(r.degraded,false);assert.equal(r.modelCalls,2);assert.equal(r.modelActions,1);assert.ok(r.itinerary.plan.flatMap(d=>d.nodes).some(x=>x.attractionId==='wusongdao'));});

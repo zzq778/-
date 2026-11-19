@@ -179,9 +179,9 @@
   function services(){return `${heading('01 / SERVICE DIRECTORY','政务服务','常见事项入口与操作步骤，先把路径理清楚。')}<div class="page-wrap"><label class="search-field">${ico('search')}<input id="searchInput" type="search" value="${esc(state.search)}" placeholder="搜索养老、医保、证件……" autocomplete="off" /></label><div class="filter-row"><button type="button" class="filter-pill ${state.filter==='all'?'active':''}" data-filter="all">全部</button>${kinds.map(([id,n])=>`<button type="button" data-filter="${id}" class="filter-pill ${state.filter===id?'active':''}">${esc(n)}</button>`).join('')}</div>${serviceList()}<p class="note-plain">仅提供事项目录与导办说明，不在本应用提交政务申请。</p></div>${fab()}`}
   var PORTALS={tourist:{label:'游客端',dir:'tourist',desc:'看线路、时令，向商户反馈问题'},merchant:{label:'商户端',dir:'merchant',desc:'证件办理、提交问题、经营档案、答复反馈'},government:{label:'政府端',dir:'government',desc:'查看与处理本机文旅反馈'}};
   function portalMeta(){return PORTALS[state.portalRole]||PORTALS.tourist}
-  function setPortalRole(role){if(!PORTALS[role])return;state.portalRole=role;try{localStorage.setItem('jzzx-portal-role',role)}catch(e){}state.modal=null;render();notice('已切换到'+PORTALS[role].label)}
+  function setPortalRole(role){if(!PORTALS[role])return;state.onlinePortal=false;state.studioPortal=false;state.portalRole=role;try{localStorage.setItem('jzzx-portal-role',role)}catch(e){}state.modal=null;render();notice('已切换到'+PORTALS[role].label)}
   function roleSheet(close){var opts=Object.keys(PORTALS).map(function(k){var m=PORTALS[k],on=state.portalRole===k;return '<button type="button" class="role-option'+(on?' active':'')+'" data-role="'+k+'" aria-pressed="'+on+'"><span class="role-copy"><strong>'+m.label+'</strong><small>'+m.desc+'</small></span>'+(on?ico('check'):'')+'</button>'}).join('');return '<div class="sheet-header"><strong>选择运营端</strong>'+close+'</div>'+'<p class="sheet-desc">切换后，底部「文旅」会进入对应端的页面。三个工作台共享本机数据。</p>'+'<div class="role-list">'+opts+'</div>'+'<p class="sheet-legal">切换工作台仅用于管理本机记录，不代表真实政府或商户身份认证。</p>'}
-  function wenlvHub(){var m=portalMeta();return heading('02 / WENLV','文旅','当前进入：'+m.label+' · 可在「我的」切换端')+`<div class="wenlv-hub"><div class="wenlv-hub-bar"><span>${m.label} · 本机协作</span><button type="button" data-action="roles">切换端</button></div><iframe class="portal-frame" src="./portals/${m.dir}/index.html" title="${m.label}文旅页面" loading="lazy"></iframe><p class="wenlv-hub-note">三端共享当前浏览器的资料和问题记录，不会发送给真实政府部门或商户。</p></div>`+fab()}
+  function wenlvHub(){var m=portalMeta();if(state.studioPortal)return `<section class="wenlv-hub"><div class="wenlv-hub-bar"><span>素材制作</span><button type="button" data-action="local-portal">返回工作台</button></div><iframe class="portal-frame" src="./portals/studio/index.html" title="文旅素材制作"></iframe></section>`;if(state.onlinePortal)return `<section class="wenlv-hub"><div class="wenlv-hub-bar"><span>联网反馈</span><button type="button" data-action="local-portal">返回本机工作台</button></div><iframe class="portal-frame" src="./portals/online/index.html" title="联网文旅反馈"></iframe></section>`;return heading('02 / WENLV','文旅','当前进入：'+m.label+' · 可在「我的」切换端')+`<div class="wenlv-hub"><div class="wenlv-hub-bar"><span>${m.label} · 本机协作</span><button type="button" data-action="roles">切换端</button><button type="button" data-action="online-portal">联网反馈</button><button type="button" data-action="studio-portal">素材制作</button></div><iframe class="portal-frame" src="./portals/${m.dir}/index.html" title="${m.label}文旅页面" loading="lazy"></iframe><p class="wenlv-hub-note">三端共享当前浏览器的资料和问题记录，不会发送给真实政府部门或商户。</p></div>`+fab()}
   function profile(){return `${heading('03 / PERSONAL SETTINGS','我的设置','让政务服务更符合您的习惯。')}<div class="page-wrap"><div class="profile-card"><div class="profile-header"><div class="avatar">${esc((state.alias||'吉').slice(0,1))}</div><div><h3>${esc(state.alias||'访客，您好')}</h3><p>个人偏好仅保存在本机</p></div></div></div>${state.task?`<div class="profile-task">${taskCard()}</div>`:''}<div class="setting-list"><button type="button" class="setting" data-action="personal"><span>个人信息<br><small>${esc(window.JZZX_PROFILE?window.JZZX_PROFILE.summary(window.JZZX_PROFILE.load()):'性别、年龄、手机号、职业、单位')}</small></span>${ico('edit')}</button><button type="button" class="setting" data-action="alias"><span>我的称呼<br><small>只保存在本机</small></span>${ico('edit')}</button><button type="button" class="setting" data-action="roles"><span>运营端（文旅）<br><small>${esc(portalMeta().label)} · 切换后「文旅」进入对应页面</small></span>${ico('right')}</button><button type="button" class="setting" data-action="regions"><span>当前地区<br><small>${esc(state.region)}</small></span>${ico('right')}</button><button type="button" class="setting" data-action="elder"><span>长辈模式<br><small>更大字号与清楚的操作入口</small></span><span class="switch ${state.elder?'on':''}"></span></button><button type="button" class="setting" data-action="motion"><span>动态效果<br><small>支持系统“减少动态”偏好</small></span><span class="switch ${state.motion?'on':''}"></span></button><button type="button" class="setting" data-action="voice-help"><span>麦克风与语音说明<br><small>如何在 Android 正确使用</small></span>${ico('right')}</button></div><p class="note-plain">吉政知行提供信息导办，不代替政府机关的正式办事服务。</p></div>${fab()}`}
   function render(){document.documentElement.classList.toggle('elder',state.elder);document.documentElement.classList.toggle('motion-off',!state.motion);const r={home,services,news:wenlvHub,profile}[state.tab]||home;content.innerHTML=r();nav.innerHTML=[['home','首页','home'],['services','便民','grid'],['news','文旅','news'],['profile','我的','user']].map(([id,t,icon])=>`<button type="button" class="tab ${state.tab===id?'active':''}" data-tab="${id}" ${state.tab===id?'aria-current="page"':''}><span class="tab-icon">${ico(icon)}</span><span>${t}</span></button>`).join('');renderModal();renderAssistant();revealOnScroll();}
   function revealOnScroll(){const els=[...document.querySelectorAll('.reveal')];if(!('IntersectionObserver'in window)){els.forEach(e=>e.classList.add('visible'));return;}const o=new IntersectionObserver(entries=>entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');o.unobserve(e.target)}}),{rootMargin:'0px 0px -26px 0px',threshold:.08});els.forEach(e=>o.observe(e));}
@@ -195,7 +195,7 @@
     else if(state.modal==='itinerary')body=window.JZZX_ITINERARY?window.JZZX_ITINERARY.sheet(close):`<div class="sheet-header"><strong>行程卡片</strong>${close}</div><p class="sheet-desc">行程卡片暂不可用，请刷新页面后重试。</p>`;
     else if(state.modal==='task')body=taskSheet();
     else if(state.modal==='role-select')body=roleSheet(close);
-    else if(state.modal==='personal')body=window.JZZX_PROFILE?window.JZZX_PROFILE.sheet():`<div class="sheet-header"><strong>个人信息</strong>${close}</div><p class="sheet-desc">个人信息暂不可用，请刷新页面后重试。</p>`;
+    else if(state.modal==='personal')body=window.JZZX_PROFILE?window.JZZX_PROFILE.sheet():`<div class="sheet-header"><strong>个人信息</strong>${close}</div><p class="sheet-desc">个人信息暂不可用，请刷新页面后重试。</p>`;
      else if(state.modal.startsWith('guide:')){const key=state.modal.split(':')[1],g=guide[key];if(!g){state.modal=null;modalRoot.innerHTML='';return;}const official=Object.keys(URLS).find(k=>URLS[k]===g.url);body=`<div class="sheet-header"><strong>${esc(g.title)}</strong>${close}</div><p class="sheet-desc">${esc(state.region)} · 办事参考步骤，实际要求请查看官方指南。</p><ol class="guide-steps">${g.steps.map((s,i)=>`<li><span class="step-circle">${i+1}</span><span>${esc(s)}</span></li>`).join('')}</ol><button type="button" class="primary" data-official="${official}">前往官方服务入口 ${ico('external')}</button><p class="sheet-legal">这里提供信息导办；办理申请请使用政府指定渠道。</p>`}
     modalRoot.innerHTML=`<div class="overlay ${state.modal==='task'?'task-overlay':''}" data-dismiss="modal"><section class="sheet ${state.modal==='task'?'task-sheet':state.modal==='itinerary'?'itinerary-sheet':''}" role="dialog" aria-modal="true" aria-label="${state.modal==='task'?'我的导办清单':state.modal==='itinerary'?'行程卡片':state.modal==='role-select'?'选择运营端':(state.modal==='policy-list'||state.modal.startsWith('policy:'))?'政策解读':state.modal.startsWith('guide:')?'办事指南':'设置'}"><div class="drag-handle"></div>${body}</section></div>`;
     if(state.modal==='personal'&&window.JZZX_PROFILE)window.JZZX_PROFILE.enhance(modalRoot);
@@ -205,11 +205,13 @@
     const existingFull=state.assistant==='full'?aiRoot.querySelector('.ai-full-panel'):null;
     let markup;
     if(state.assistant==='compact'){
+      const previousInput=document.getElementById('compactInput')?.value||'';
       let text=state.voice==='listening'?'我在听…':state.voice==='meter'?'声音已接入':state.voice==='requesting'?'正在申请权限…':'有什么想办的事？';
       const help=state.voiceMessage||(state.voice==='listening'?'请对着麦克风说话，声纹会随声音起伏':'点击左侧麦克风说话，或直接输入文字');
       aiRoot.innerHTML=`<div class="ai-overlay compact" data-dismiss="assistant"><section class="ai-compact-stage" role="dialog" aria-modal="true" aria-label="吉小知快捷语音输入"><button type="button" class="close-ai" data-action="ai-close" aria-label="返回页面">${ico('close')}</button><div class="voice-visual"><div class="voice-orb">${ico('mic')}</div><strong class="voice-status-title" id="voiceVisualStatus">${esc(text)}</strong><div class="voice-status-sub" id="voiceVisualSub">可以直接说，也可以输入文字</div></div><div class="compact-dock"><span class="dock-caption">吉小知 · 智能政务导办</span><form class="voice-capsule" id="voiceForm"><button type="button" class="mic-trigger ${['requesting','listening','meter'].includes(state.voice)?'active':''}" data-action="voice" aria-label="${state.voice==='idle'?'开始语音输入':'停止语音输入'}">${ico('mic')}</button><input id="compactInput" class="voice-input" name="question" maxlength="140" autocomplete="off" placeholder="输入问题或点击麦克风" aria-label="请输入政务问题"/><span class="voice-meter ${state.voice==='idle'?'idle':''}" aria-hidden="true">${barMarkup()}</span><button type="button" class="expand-ai" data-action="ai-full" aria-label="展开完整对话">${ico('plus')}</button></form><div class="voice-inline-message" id="voiceInlineMessage" aria-live="polite">${esc(help)}</div><div class="compact-help"><button type="button" data-action="ai-close">返回</button><button type="button" data-action="voice-help">语音帮助</button><button type="button" data-action="ai-full">完整对话 ↗</button></div></div></section></div>`;
+      const compact=document.getElementById('compactInput');if(compact)compact.value=previousInput;
     } else {
-      markup=`<div class="ai-overlay" data-dismiss="assistant"><section class="ai-full-panel" role="dialog" aria-modal="true" aria-label="吉小知智能导办对话"><div class="drag-handle"></div><header class="ai-full-head"><span class="small-liquid">${ico('search')}</span><span class="head-copy"><strong>吉小知</strong><small>${esc(state.region)} · 查政策 · 带您办</small></span><button type="button" class="close-round" data-action="ai-close" aria-label="关闭对话">${ico('close')}</button></header><div class="ai-full-scroll" id="chatScroll">${state.messages.length===0?`<div class="ai-greeting"><h2>您想办理什么事项？</h2><p>查询办事资料、办理步骤和官方服务入口。</p><span class="demo-pill">${state.aiStatus==='ready'?'在线问答已连接':state.aiStatus==='unavailable'?'连接暂时不可用':'正在连接'}</span><div class="prompts">${['帮我规划长春的养老金资格认证','我想办医保报销，先做什么？','身份证到期，帮我安排办事步骤','找不到办事入口，帮我定位'].map(x=>`<button type="button" class="prompt" data-prompt="${esc(x)}">${esc(x)} ↗</button>`).join('')}</div></div>`:''}<div class="chat-stream">${state.messages.map((x,i)=>`<div class="bubble ${x.from} ${revealJob?.index===i?'revealing':''}" data-message-index="${i}"><span class="bubble-copy">${esc(revealJob?.index===i?revealJob.pieces.slice(0,revealJob.count).join(''):x.text)}</span>${revealJob?.index===i?`<span class="reveal-caret" aria-hidden="true"></span><div class="reveal-controls"><span class="reveal-hint">正在呈现回答</span><button type="button" data-action="skip-reveal" class="reveal-skip">显示全文 ${ico('arrow')}</button></div>`:''}${x.attachmentName?`<div class="chat-attachment-label">📎 ${esc(x.attachmentName)}</div>`:''}${x.agent?.plan?.steps?.length?`<section class="agent-plan"><div class="agent-plan-title">${ico('file')} ${esc(x.agent.plan.title)}<small>依据：本地事项索引</small></div><ol>${x.agent.plan.steps.map(s=>`<li>${esc(s)}</li>`).join('')}</ol><button type="button" class="task-save" data-save-plan="${i}">${state.task?.id===x.agent.plan.id&&state.task?.region===state.region?'更新本机清单':'保存为导办清单'} ${ico('right')}</button></section>`:''}${x.from==='assistant'?`<div class="bubble-meta">${x.actions?.length?`<div class="chat-actions">${x.actions.map(a=>`<button type="button" class="chat-action" data-answer-action="${esc(a.type)}" data-answer-value="${esc(a.value)}">${esc(a.label)} ↗</button>`).join('')}</div>`:''}<button type="button" class="chat-action" data-action="tts" style="margin-top:8px">${ico('audio')} 播报这条回复</button></div>`:''}</div>`).join('')}${state.thinking?`<div class="thinking-panel" role="status" aria-live="polite" aria-label="正在准备回答"><span class="service-loader" aria-hidden="true"></span><span class="thinking-content"><strong>正在查询办事资料</strong><small>${esc(state.uploadProgress||'请稍候')}</small></span></div>`:''}</div></div><div class="ai-composer"><div class="attachment-strip" id="attachmentStrip" hidden></div><form class="chat-form" id="chatForm"><input id="chatFile" class="visually-hidden" type="file" accept="image/png,image/jpeg,image/webp,image/gif,.pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.md,.csv" aria-label="添加图片或文档"/><button type="button" class="chat-icon-btn attach-btn" data-action="attach" aria-label="添加图片或文件">${ico('plus')}</button><input id="chatInput" class="chat-input" name="question" placeholder="输入问题，或点击麦克风说话" maxlength="140" aria-label="输入政务问题"/><button type="button" class="chat-icon-btn ${['requesting','listening'].includes(state.voice)?'voice-recording':''}" data-action="voice" aria-label="语音输入，识别后填入输入框" aria-pressed="${['requesting','listening'].includes(state.voice)}" title="语音转文字">${ico('mic')}</button><button type="submit" class="chat-icon-btn send" aria-label="发送问题">${ico('send')}</button></form><div class="audio-note" id="fullVoiceMessage">${esc(state.voiceMessage)}</div><div class="chat-footnote">支持 PDF / Word / PPT 最大 100 MB，图片最大 64 MiB，其他文件最大 32 MiB。请勿上传身份证、密码等敏感信息。</div></div></section></div>`;
+      markup=`<div class="ai-overlay" data-dismiss="assistant"><section class="ai-full-panel" role="dialog" aria-modal="true" aria-label="吉小知对话"><div class="drag-handle"></div><header class="ai-full-head"><span class="small-liquid">${ico('search')}</span><span class="head-copy"><strong>吉小知</strong><small>${esc(state.region)} · 文旅与公共服务</small></span><button type="button" class="close-round" data-action="ai-close" aria-label="关闭对话">${ico('close')}</button></header><div class="ai-full-scroll" id="chatScroll">${state.messages.length===0?`<div class="ai-greeting"><h2>今天想做什么？</h2><p>安排旅行、查询办事资料、写活动文案，都可以直接告诉我。</p><span class="demo-pill">${state.aiStatus==='ready'?'在线问答已连接':state.aiStatus==='unavailable'?'连接暂时不可用':'正在连接'}</span><div class="prompts">${['带父母去吉林市玩两天，不滑雪','我想办医保报销，先做什么？','帮我写一段吉林民宿的宣传文案','身份证到期，怎么换领？'].map(x=>`<button type="button" class="prompt" data-prompt="${esc(x)}">${esc(x)} ↗</button>`).join('')}</div></div>`:''}<div class="chat-stream">${state.messages.map((x,i)=>`<div class="bubble ${x.from} ${revealJob?.index===i?'revealing':''}" data-message-index="${i}"><span class="bubble-copy">${esc(revealJob?.index===i?revealJob.pieces.slice(0,revealJob.count).join(''):x.text)}</span>${revealJob?.index===i?`<span class="reveal-caret" aria-hidden="true"></span><div class="reveal-controls"><span class="reveal-hint">正在显示回复</span><button type="button" data-action="skip-reveal" class="reveal-skip">显示全文 ${ico('arrow')}</button></div>`:''}${x.attachmentName?`<div class="chat-attachment-label">📎 ${esc(x.attachmentName)}</div>`:''}${x.agent?.plan?.steps?.length?`<section class="agent-plan"><div class="agent-plan-title">${ico('file')} ${esc(x.agent.plan.title)}<small>依据：本地事项索引</small></div><ol>${x.agent.plan.steps.map(s=>`<li>${esc(s)}</li>`).join('')}</ol><button type="button" class="task-save" data-save-plan="${i}">${state.task?.id===x.agent.plan.id&&state.task?.region===state.region?'更新本机清单':'保存为导办清单'} ${ico('right')}</button></section>`:''}${x.itinerary?`<button type="button" class="chat-action chat-itinerary" data-open-chat-trip="${i}">${esc(x.itinerary.title)} · 查看行程 ↗</button>`:''}${x.posterDraft?`<section class="agent-plan"><strong>素材描述</strong><p>${esc(x.posterDraft.prompt)}</p><button class="chat-action" type="button" data-chat-poster="${i}">编辑并生成图片</button></section>`:''}${x.feedbackDraft?`<section class="agent-plan"><strong>反馈草稿 · ${esc(x.feedbackDraft.category)}</strong><p>${esc(x.feedbackDraft.text)}</p><button type="button" class="chat-action" data-chat-feedback="${i}" data-destination="tourist">打开本机反馈</button><button type="button" class="chat-action" data-chat-feedback="${i}" data-destination="online">打开联网反馈</button></section>`:''}${x.sources?.length?`<details class="chat-sources"><summary>参考资料 · ${x.sources.length}</summary>${x.sources.map(s=>`<a href="${esc(s.url)}" rel="noopener noreferrer" target="_blank">${esc(s.label)} ↗</a>`).join('')}</details>`:''}${x.from==='assistant'?`<div class="bubble-meta">${x.actions?.length?`<div class="chat-actions">${x.actions.map(a=>`<button type="button" class="chat-action" data-answer-action="${esc(a.type)}" data-answer-value="${esc(a.value)}">${esc(a.label)} ↗</button>`).join('')}</div>`:''}<button type="button" class="chat-action" data-action="tts" style="margin-top:8px">${ico('audio')} 播报这条回复</button></div>`:''}</div>`).join('')}${state.thinking?`<div class="thinking-panel jzzx-thinking" role="status" aria-live="polite" aria-label="正在准备回答"><span class="jzzx-orbit" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="12.5" stroke="currentColor" stroke-opacity=".16" stroke-width="1.5"/><g class="orbit-ring"><path d="M4 17a12 12 0 0 1 18-11.4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="26" cy="9.4" r="1.8" fill="currentColor"/></g><path d="M12 16h8M16 12v8" stroke="currentColor" stroke-opacity=".55" stroke-width="1.2" stroke-linecap="round"/></svg></span><span class="thinking-content"><strong class="jzzx-thinking-label">${state.uploadProgress?'正在处理材料':'正在思考'}</strong><small>${esc(state.uploadProgress||'')}</small></span></div>`:''}</div></div><div class="ai-composer"><div class="attachment-strip" id="attachmentStrip" hidden></div><form class="chat-form" id="chatForm"><input id="chatFile" class="visually-hidden" type="file" accept="image/png,image/jpeg,image/webp,image/gif,.pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.md,.csv" aria-label="添加图片或文档"/><button type="button" class="chat-icon-btn attach-btn" data-action="attach" aria-label="添加图片或文件">${ico('plus')}</button><input id="chatInput" class="chat-input" name="question" placeholder="输入问题，或点击麦克风说话" maxlength="600" aria-label="输入问题"/><button type="button" class="chat-icon-btn ${['requesting','listening'].includes(state.voice)?'voice-recording':''}" data-action="voice" aria-label="语音输入，识别后填入输入框" aria-pressed="${['requesting','listening'].includes(state.voice)}" title="语音转文字">${ico('mic')}</button><button type="submit" class="chat-icon-btn send" aria-label="发送问题">${ico('send')}</button></form><div class="audio-note" id="fullVoiceMessage">${esc(state.voiceMessage)}</div><div class="chat-footnote">支持 PDF / Word / PPT 最大 100 MB，图片最大 64 MiB，其他文件最大 32 MiB。请勿上传身份证、密码等敏感信息。</div></div></section></div>`;
     }
     if(state.assistant==='full'){
       if(existingFull){
@@ -225,6 +227,7 @@
         }
         const voice=existingFull.querySelector('#fullVoiceMessage');
         if(voice)voice.textContent=state.voiceMessage;
+        const mic=existingFull.querySelector('[data-action=voice]');if(mic){const active=['requesting','listening'].includes(state.voice);mic.classList.toggle('voice-recording',active);mic.setAttribute('aria-pressed',String(active));}
         renderAttachment();
       }else{aiRoot.innerHTML=markup;}
     }
@@ -262,47 +265,42 @@
     const scroll=document.getElementById('chatScroll');
     if(scroll && scroll.scrollHeight-scroll.scrollTop-scroll.clientHeight<130)scroll.scrollTop=scroll.scrollHeight;
   }
-  function replyPieces(text){
-    // Intl.Segmenter 可以正确处理中文词组、空格与 emoji，老浏览器回退到 Unicode 码点。
-    const words=typeof Intl.Segmenter==='function'
-      ?Array.from(new Intl.Segmenter('zh-CN',{granularity:'word'}).segment(text),x=>x.segment)
-      :Array.from(text);
-    const groupSize=Math.max(1,Math.ceil(words.length/125));
-    const pieces=[];
-    for(let i=0;i<words.length;i+=groupSize)pieces.push(words.slice(i,i+groupSize).join(''));
-    return pieces;
-  }
+function replyTimeline(text){
+ const words=typeof Intl.Segmenter==='function'?Array.from(new Intl.Segmenter('zh-CN',{granularity:'word'}).segment(text),x=>x.segment):Array.from(text);
+ const group=Math.max(1,Math.ceil(words.length/180)),pieces=[];let buffer='',n=0;
+ for(const word of words){buffer+=word;n++;if(n>=group||/[。！？!?；;，,：:\n]$/.test(word)){pieces.push(buffer);buffer='';n=0}}
+ if(buffer)pieces.push(buffer);
+ const base=Math.max(17,Math.min(53,3900/Math.max(1,pieces.length)));
+ const waits=pieces.map((v,i)=>base*(1+.24*Math.sin(i*.64)+.14*Math.cos(i*.23))+(/[。！？!?\n]$/.test(v)?110:/[，,；;：:]$/.test(v)?43:0));
+ const scale=Math.min(1,6500/Math.max(1,waits.reduce((a,b)=>a+b,0)));
+ return {pieces,waits:waits.map(v=>v*scale)};
+}
+function paintReply(body,pieces,count){
+ const last=document.createElement('span');last.className='reply-fresh';last.textContent=pieces[count-1]||'';
+ body.replaceChildren(document.createTextNode(pieces.slice(0,Math.max(0,count-1)).join('')),last);
+}
   function startReveal(index){
     cancelReveal();
     if(reduced()||state.elder||document.hidden||state.assistant!=='full'){renderAssistant();return}
     const text=state.messages[index]?.text;
     if(!text){renderAssistant();return}
-    const pieces=replyPieces(text);
+    const {pieces,waits}=replyTimeline(text);
     if(pieces.length<2){renderAssistant();return}
-    const base=Math.min(72,Math.max(20,3300/pieces.length));
-    revealJob={index,pieces,count:0,nextAt:0,base};
+    revealJob={index,pieces,waits,count:1,nextAt:0};
     renderAssistant();
     const tick=now=>{
       const job=revealJob;
       if(!job||job.index!==index)return;
-      if(!job.nextAt)job.nextAt=now+90;
-      let changed=false;
-      // 将页面后台恢复或帧率下降时的进度补齐，不阻塞 UI 线程。
-      while(job.count<job.pieces.length&&now>=job.nextAt){
-        const piece=job.pieces[job.count++];
-        const pause=/[。！？\n]$/.test(piece)?100:/[，；：]$/.test(piece)?45:0;
-        job.nextAt+=job.base+pause;
-        changed=true;
-      }
-      if(changed){
-        const card=aiRoot.querySelector(`[data-message-index="${index}"]`);
-        const body=card?.querySelector('.bubble-copy');
-        if(body){
-          const scroll=document.getElementById('chatScroll');
-          const shouldFollow=scroll&&scroll.scrollHeight-scroll.scrollTop-scroll.clientHeight<130;
-          body.textContent=job.pieces.slice(0,job.count).join('');
-          if(shouldFollow)scroll.scrollTop=scroll.scrollHeight;
-        }
+      if(reduced()||document.hidden){finishReveal();return}
+      if(!job.nextAt)job.nextAt=now+job.waits[0];
+      const previous=job.count;
+      while(job.count<job.pieces.length&&now>=job.nextAt){job.nextAt+=job.waits[job.count];job.count++}
+      if(previous!==job.count){
+        const body=aiRoot.querySelector('[data-message-index="'+index+'"] .bubble-copy');
+        const scroll=document.getElementById('chatScroll');
+        const shouldFollow=scroll&&scroll.scrollHeight-scroll.scrollTop-scroll.clientHeight<130;
+        if(body)paintReply(body,job.pieces,job.count);
+        if(shouldFollow)scroll.scrollTop=scroll.scrollHeight;
       }
       if(job.count===job.pieces.length){finishReveal();return}
       revealFrame=requestAnimationFrame(tick);
@@ -362,13 +360,21 @@
   }
 
   async function ask(question){
-    question=String(question||'').trim().slice(0,140);
+    question=String(question||'').trim().slice(0,600);
     if((!question&&!state.attachment)||state.thinking)return;
     const attachment=state.attachment;
     state.attachment=null;
     finishReveal();stopMic();state.assistant='full';
     // 先保存历史，避免将新问题重复放入 history。
-    const history=state.messages.slice(-4).filter(x=>!x.isError).map(x=>({role:x.from==='assistant'?'assistant':'user',content:x.text.slice(0,400)}));
+    const history=[];
+    for(let i=0;i<state.messages.length-1;i++){
+      const u=state.messages[i],a=state.messages[i+1];
+      if(u.from==='user'&&a.from==='assistant'&&!a.isError){
+        const extra=a.itinerary?'\n当前行程：'+a.itinerary.plan.map(d=>'第'+d.day+'天 '+d.nodes.map(n=>n.name).join('、')).join('；'):'';
+        history.push({role:'user',content:u.text.slice(0,600)},{role:'assistant',content:(a.text+extra).slice(0,1800)});i++;
+      }
+    }
+    history.splice(0,Math.max(0,history.length-8));
     const prompt=question||(attachment?'请说明这份材料的主要内容，并给我下一步办理建议。':'');
     state.messages.push({from:'user',text:prompt,attachmentName:attachment?.name||''});state.thinking=true;state.uploadProgress='';renderAssistant();
     const ctrl=new AbortController();aiController=ctrl;
@@ -376,7 +382,7 @@
     let revealIndex=null;
     try{
       if(!['https:','http:'].includes(location.protocol))throw new Error('当前为离线页面。联网后可使用办事咨询。');
-      const payload={question:prompt,region:state.region,history,mode:attachment?'chat':'agent',context:{tab:state.tab,guide:state.tab==='services'&&state.filter!=='all'?state.filter:null,task:state.task?.region===state.region?{id:state.task.id,understood:markedCount(state.task)}:null}};
+      const payload={question:prompt,region:state.region,history,mode:attachment?'chat':'product',context:{tab:state.tab,guide:state.tab==='services'&&state.filter!=='all'?state.filter:null,task:state.task?.region===state.region?{id:state.task.id,understood:markedCount(state.task)}:null}};
       if(attachment?.size>MAX_DIRECT_BYTES)payload.attachmentToken=await uploadLargeAttachment(attachment,ctrl);
       const form=attachment&&attachment.size<=MAX_DIRECT_BYTES?new FormData():null;
       if(form){form.append('payload',JSON.stringify(payload));form.append('file',attachment,attachment.name)}
@@ -400,7 +406,11 @@
       const trace=Array.isArray(data.agent?.trace)?data.agent.trace.filter(x=>x&&typeof x.label==='string'&&typeof x.detail==='string').slice(0,4).map(x=>({label:x.label.slice(0,40),detail:x.detail.slice(0,100)})):[];
       const rawPlan=data.agent?.plan;
       const plan=rawPlan&&allowedGuides.has(rawPlan.id)&&Array.isArray(rawPlan.steps)?{id:rawPlan.id,title:String(rawPlan.title||'办事步骤').slice(0,40),steps:rawPlan.steps.filter(x=>typeof x==='string').slice(0,3).map(x=>x.slice(0,140))}:null;
-      state.messages.push({from:'assistant',text:data.text.slice(0,2000),actions,agent:{trace,plan}});
+      const itinerary=window.JZZX_TRAVEL_HOME?.normalizePlan(data.itinerary,window.WENLV)||null;
+      const sources=(Array.isArray(data.sources)?data.sources:[]).filter(s=>window.JZZX_TRAVEL_HOME?.safePublicSource(s?.url)&&typeof (s.label||s.title)==='string').slice(0,12).map(s=>({label:(s.label||s.title).slice(0,100),url:s.url}));
+      const d=data.feedbackDraft;const feedbackDraft=d&&['服务态度','设施与环境','价格与收费','安全问题','其他'].includes(d.category)&&typeof d.text==='string'&&d.text.trim()?{category:d.category,text:d.text.slice(0,400)}:null;
+      const posterDraft=typeof data.posterDraft?.prompt==='string'&&data.posterDraft.prompt.trim()?{prompt:data.posterDraft.prompt.slice(0,1200)}:null;
+      state.messages.push({from:'assistant',text:data.text.slice(0,2000),actions,agent:{trace,plan},itinerary,sources,feedbackDraft,posterDraft});
       revealIndex=state.messages.length-1;
     }catch(err){
       if(aiController!==ctrl)return;
@@ -423,20 +433,21 @@
     const proto=location.protocol;
     if(proto==='content:'||!window.isSecureContext){setVoiceText('当前页面无法使用麦克风，请使用文字或输入法语音输入。');return}
     if(!navigator.mediaDevices?.getUserMedia){setVoiceText('当前浏览器未提供麦克风采集接口，请更换浏览器或使用输入法的语音输入。');return}
-    state.voice='requesting';setVoiceText('正在申请麦克风权限…');try{
+    state.voice='requesting';renderAssistant();setVoiceText('正在申请麦克风权限…');try{
       micStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true},video:false});
-      if(!state.assistant){stopMic();return}
+      if(!state.assistant||state.voice!=='requesting'){stopMic();return}
       const Context=window.AudioContext||window.webkitAudioContext;
       if(Context){micCtx=new Context();if(micCtx.state==='suspended')await micCtx.resume();micSource=micCtx.createMediaStreamSource(micStream);analyser=micCtx.createAnalyser();analyser.fftSize=256;micSource.connect(analyser);meterLoop()}
       const Recognition=window.SpeechRecognition||window.webkitSpeechRecognition;
+      if(!Recognition&&state.assistant==='full'){stopMic();renderAssistant();setVoiceText('当前浏览器不支持语音转文字，可使用系统听写或输入法。');return}
       if(!Recognition){state.voice='meter';renderAssistant();setVoiceText('麦克风已接通，声纹会跟随真实音量变化；但当前浏览器没有语音转文字接口，请使用键盘语音输入。');return}
       const r=new Recognition();recognition=r;r.lang='zh-CN';r.interimResults=true;r.continuous=false;r.maxAlternatives=1;
-      r.onstart=()=>{if(recognition!==r)return;state.voice='listening';renderAssistant();setVoiceText('正在聆听，说完后将自动提交；声纹会随真实声音变化。')};
-      r.onresult=e=>{if(recognition!==r)return;const final=Array.from(e.results).filter(x=>x.isFinal).map(x=>x[0].transcript).join('').trim();const interim=Array.from(e.results).map(x=>x[0].transcript).join('').trim();if(interim){setVoiceText(`正在识别：${interim}`)}if(final){stopMic();const input=document.getElementById(state.assistant==='compact'?'compactInput':'chatInput');if(input){input.value=[input.value.trim(),final].filter(Boolean).join(' ');input.focus();setVoiceText('语音已转成文字，请检查内容后点击发送。')}else{setVoiceText('语音识别完成，请重新打开对话框查看。')}}};
-      r.onerror=e=>{if(recognition!==r)return;const reason={'not-allowed':'语音识别权限被拒绝','service-not-allowed':'识别服务不可用','network':'语音识别网络服务无法连接','no-speech':'未检测到语音，请重试','audio-capture':'无法采集麦克风声音'}[e.error]||`语音识别失败（${e.error||'未知'}）`;stopMic();setVoiceText(`${reason}。可改用手机输入法语音输入。`);notice(reason)};
-      r.onend=()=>{if(recognition!==r)return;stopMic();setVoiceText('语音识别已结束，您可以再次点击麦克风。')};
+      r.onstart=()=>{if(recognition!==r)return;state.voice='listening';renderAssistant();setVoiceText('正在聆听，说完后会填入输入框，请核对后发送。')};
+      r.onresult=e=>{if(recognition!==r)return;const final=Array.from(e.results).filter(x=>x.isFinal).map(x=>x[0].transcript).join('').trim();const interim=Array.from(e.results).map(x=>x[0].transcript).join('').trim();if(interim){setVoiceText('正在识别：'+interim)}if(final){stopMic();renderAssistant();const input=document.getElementById(state.assistant==='compact'?'compactInput':'chatInput');if(input){const limit=input.maxLength>0?input.maxLength:600;input.value=[input.value.trim(),final].filter(Boolean).join(' ').slice(0,limit);input.focus();setVoiceText('语音已转成文字，请检查后发送。')}}};
+      r.onerror=e=>{if(recognition!==r)return;const reason={'not-allowed':'语音识别权限被拒绝','service-not-allowed':'识别服务不可用','network':'语音识别网络服务无法连接','no-speech':'未检测到语音，请重试','audio-capture':'无法采集麦克风声音'}[e.error]||`语音识别失败（${e.error||'未知'}）`;stopMic();renderAssistant();setVoiceText(`${reason}。可改用手机输入法语音输入。`);notice(reason)};
+      r.onend=()=>{if(recognition!==r)return;stopMic();renderAssistant();setVoiceText('语音识别已结束，您可以再次点击麦克风。')};
       r.start();
-    }catch(err){stopMic();const refused=['NotAllowedError','PermissionDeniedError','SecurityError'].includes(err?.name);const tip=refused?'麦克风权限被拒绝，请在浏览器网站设置允许麦克风':'无法启动语音：'+(err?.name||'未知原因');setVoiceText(tip+'。也可直接输入文字。');notice(tip)}
+    }catch(err){stopMic();renderAssistant();const refused=['NotAllowedError','PermissionDeniedError','SecurityError'].includes(err?.name);const tip=refused?'麦克风权限被拒绝，请在浏览器网站设置允许麦克风':'无法启动语音：'+(err?.name||'未知原因');setVoiceText(tip+'。也可直接输入文字。');notice(tip)}
   }
   function tts(){const x=[...state.messages].reverse().find(m=>m.from==='assistant');if(!x)return;if(!('speechSynthesis'in window)){notice('当前设备不支持语音播报');return}speechSynthesis.cancel();const msg=new SpeechSynthesisUtterance(x.text);msg.lang='zh-CN';msg.rate=state.elder?.88:1;try{speechSynthesis.speak(msg);notice('正在播报文字回复')}catch{notice('未能启动播报，请检查系统中文语音引擎')}}
   function handleClick(e){const target=e.target.closest('button,[data-dismiss]');if(!target)return;
@@ -454,6 +465,12 @@
     const region=target.dataset.region;if(region){state.region=region;state.modal=null;persist();render();notice(`已切换到${region}`);return}
      const step=target.dataset.taskStep;
      if(step!==undefined){const i=Number(step);if(state.task&&Number.isInteger(i)&&i>=0&&i<state.task.checked.length){state.task.checked[i]=!state.task.checked[i];persistTask();render();}return}
+     const posterIndex=target.dataset.chatPoster;
+     if(posterIndex!==undefined){const d=state.messages[Number(posterIndex)]?.posterDraft;if(d){try{sessionStorage.setItem('jzzx-poster-draft-v1',JSON.stringify(d))}catch{notice('无法转交描述，请复制后手动填写。');return}state.studioPortal=true;state.onlinePortal=false;setTab('news');}return}
+     const feedbackIndex=target.dataset.chatFeedback;
+     if(feedbackIndex!==undefined){const d=state.messages[Number(feedbackIndex)]?.feedbackDraft,role=target.dataset.destination;if(d&&['tourist','online'].includes(role)){try{sessionStorage.setItem('jzzx-feedback-draft-v1',JSON.stringify(d))}catch{notice('无法转交草稿，请复制文字后手动填写。');return}state.studioPortal=false;state.onlinePortal=role==='online';if(!state.onlinePortal)state.portalRole='tourist';setTab('news');}return}
+     const tripIndex=target.dataset.openChatTrip;
+     if(tripIndex!==undefined){const p=state.messages[Number(tripIndex)]?.itinerary;if(p){setTab('home');window.JZZX_TRAVEL_HOME?.acceptPlan(p);}return}
      const planIndex=target.dataset.savePlan;
      if(planIndex!==undefined){savePlan(Number(planIndex));return}
      const p=target.dataset.prompt;if(p){ask(p);return}
@@ -464,6 +481,9 @@
       case 'ai-full':state.assistant='full';renderAssistant();break;
       case 'voice':startVoice();break;
       case 'voice-help':state.modal='voice-help';stopMic();state.assistant=null;renderAssistant();renderModal();break;
+      case 'online-portal':state.studioPortal=false;state.onlinePortal=true;render();break;
+      case 'studio-portal':state.onlinePortal=false;state.studioPortal=true;render();break;
+      case 'local-portal':state.onlinePortal=false;state.studioPortal=false;render();break;
       case 'task-open':if(state.task){state.modal='task';renderModal()}break;
       case 'task-delete':
         if(state.task&&window.confirm('清除当前设备保存的导办清单？')){state.task=null;persistTask();state.modal=null;render();notice('本机导办清单已清除')}break;

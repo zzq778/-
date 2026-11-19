@@ -4,7 +4,7 @@ import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const read=p=>readFileSync(path.join(root,p),'utf8');
-const entries={tourist:'public/portals/tourist/index.html',merchant:'public/portals/merchant/index.html',government:'public/portals/government/index.html',catalog:'public/wenlv-preview.html',itinerary:'public/itinerary-workspace.html'};
+const entries={tourist:'public/portals/tourist/index.html',merchant:'public/portals/merchant/index.html',government:'public/portals/government/index.html',catalog:'public/wenlv-preview.html',itinerary:'public/itinerary-workspace.html',online:'public/portals/online/index.html',studio:'public/portals/studio/index.html'};
 export function compile(readFile=read){
  const documents={};
  for(const [role,file] of Object.entries(entries)){

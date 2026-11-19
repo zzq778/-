@@ -18,3 +18,7 @@ Agent 到前端：`{ text, agent: { trace:[{label,detail}], plan:{id,title,steps
 5. 录入三份以上可溯源政策材料；现场真正完成知识导入与微调后重测，并记下操作步骤与截图作为内部验收记录。
 
 任何 LXClaw 平台凭证、DeepSeek 密钥都只能配置在服务端或官方平台，不提交到 GitHub。
+
+## 已具备的独立接入路径
+
+本工程提供真实 REST 服务及 OpenAPI 3.1 契约，参阅 JIXIAOZHI_API_V1.md。外部客户端可在获准环境通过独立服务码调用 `POST /api/v1/chat`；Node CLI `scripts/jixiaozhi-chat.mjs` 已通过实际本地 HTTP 集成测试（模型替身，非线上实测）。这证明本项目接口可用，不证明 LXClaw 支持该调用方式。不得将其他名称相近的平台文档当作 LXClaw 官方文档。

@@ -8,6 +8,10 @@ function safeTravelUrl(raw) {
   return domains.some(d=>host===d||host.endsWith('.'+d));
 }
 
+function safePublicSource(raw){
+ if(typeof raw!=='string'||/[\s\\\x00-\x1f]/.test(raw)||!/^https?:\/\/[a-z0-9-]+(?:\.[a-z0-9-]+)+(?:[/?#]|$)/i.test(raw))return false;
+ try{const u=new URL(raw);return !u.username&&!u.password&&!/^\d/.test(u.hostname)&&!/\.(local|internal|localhost)$/i.test(u.hostname)}catch{return false}
+}
 function normalizePlan(raw,catalog){
   if(!raw||!Number.isInteger(raw.days)||raw.days<1||raw.days>3||!Array.isArray(raw.plan)||raw.plan.length!==raw.days)return null;
   const entries=new Map((catalog?.attractions||[]).map(a=>[a.id,a])),seen=new Set(),plan=[];
@@ -91,10 +95,11 @@ function render(region,taskMarkup=''){
  if(!state.initialized){state.saved=readSaved();state.initialized=true;}
  const d=data(),areas=['全省',...new Set((d.attractions||[]).map(a=>a.area))];
  return '<div class="travel-home" id="travelHome"><header class="travel-top"><div class="travel-brand"><span class="travel-brandmark" aria-hidden="true">吉</span><div><strong>吉政知行</strong><small>吉林 · 旅行与便民服务</small></div></div><button type="button" class="travel-region" data-action="regions">⌖ '+esc(region||'吉林省')+' ▾</button></header>'+
+ '<section class="travel-conversation-entry"><div><span class="travel-kicker">吉小知</span><h1>今天想做什么？</h1><p>安排旅行、查询办事资料、创作吉林文旅内容。</p></div><button type="button" class="travel-primary" data-action="ai-full">与吉小知对话 <span>→</span></button></section>'+
  '<section class="travel-hero">'+landscape()+'<div class="travel-hero-content"><span class="travel-eyebrow">四季吉林</span><h1>山河之间，<br>遇见吉林。</h1><p>把想去的地方告诉吉小知。</p></div><span class="travel-hero-caption">长白山意象 · 插画</span></section>'+
  '<div class="travel-main"><section class="travel-planner" aria-label="吉小知智能行程规划"><div class="travel-planner-head"><div><span class="travel-kicker">行程规划</span><h2>今天想去哪里？</h2></div></div><form id="travelPlanForm"><label for="travelQuestion" class="travel-label">说说您的旅行想法（请勿填写个人敏感信息）</label><textarea id="travelQuestion" maxlength="100" rows="2" placeholder="比如：想看雾凇，带家人轻松玩两天">'+esc(state.query)+'</textarea><div class="travel-voice-row"><button type="button" data-travel-action="voice">语音输入</button><span id="travelVoiceStatus" role="status"></span></div><div class="travel-preferences"><label class="travel-label" for="travelDestination">目的地区</label><select id="travelDestination">'+areas.map(a=>'<option '+(a===state.destination?'selected':'')+'>'+esc(a)+'</option>').join('')+'</select><span class="travel-label">计划天数</span>'+choices('days',[0,1,2,3])+'<span class="travel-label">与谁同行</span>'+choices('companion',['不限','亲子','长辈','朋友'])+'<span class="travel-label">旅行季节</span>'+choices('season',['不限','春','夏','秋','冬'])+'</div><button class="travel-primary" type="submit" '+(state.busy?'disabled':'')+'>'+(state.busy?'正在规划…':'为我规划行程')+' <span>→</span></button></form><p class="travel-trust">景点开放与票价以官方公告为准</p></section><div id="travelOutcome" aria-live="polite">'+resultMarkup()+'</div>'+
  '<section class="travel-discover"><div class="travel-section-head"><div><span class="travel-kicker">旅行路线</span><h2>吉林，值得慢慢走</h2></div><button type="button" data-action="travel-tourist">更多线路 →</button></div><div class="travel-route-grid">'+routeCards()+'</div><details class="travel-more"><summary>展开全部精选线路</summary><div class="travel-route-grid">'+routeCards(true)+'</div></details></section>'+
- (taskMarkup||'')+'<section class="travel-connect"><h2>出游服务</h2><div><button type="button" data-action="travel-tourist"><strong>游客反馈</strong><small>本机反馈与答复 →</small></button><button type="button" data-action="roles"><strong>文旅协作</strong><small>游客、商户与管理工作台</small></button><button type="button" data-action="itinerary"><strong>行程卡片</strong><small>调整路线、查看依据、导出长图</small></button><button type="button" data-tab="services"><strong>便民服务</strong><small>政务资料与指南</small></button><button type="button" data-action="ai-full"><strong>办事咨询</strong><small>查询政策和办理步骤</small></button></div></section>'+
+ (taskMarkup||'')+'<section class="travel-connect"><h2>出游服务</h2><div><button type="button" data-action="travel-tourist"><strong>游客反馈</strong><small>本机反馈与答复 →</small></button><button type="button" data-action="roles"><strong>文旅协作</strong><small>游客、商户与管理工作台</small></button><button type="button" data-action="itinerary"><strong>行程卡片</strong><small>调整路线、查看依据、导出长图</small></button><button type="button" data-tab="services"><strong>便民服务</strong><small>政务资料与指南</small></button><button type="button" data-action="ai-full"><strong>吉小知对话</strong><small>旅行计划、政务资料与文旅创作</small></button></div></section>'+
  '<footer class="travel-footer"><span>'+ (d.attractions||[]).length +' 处景点 · '+(d.routes||[]).length+' 条线路 · 本地知识库</span><p>非政府官方应用。行程为参考，出发前请向景区核实；三端协作当前为本机联动。</p></footer></div></div>';
 }
 function refreshOutcome(focus){
@@ -178,5 +183,6 @@ if(typeof document!=='undefined'){
  document.addEventListener('change',e=>{if(e.target.id==='travelDestination')state.destination=e.target.value;});
  document.addEventListener('input',e=>{if(e.target.id==='travelQuestion')state.query=e.target.value.slice(0,140);});
 }
-root.JZZX_TRAVEL_HOME=Object.freeze({render,normalizePlan,fromRoute,planForStorage,safeTravelUrl,composeTravelQuestion,cleanPlanning,shareText});
+function acceptPlan(raw){const p=normalizePlan(raw,data());if(!p)return false;state.plan=p;state.planning=null;state.error='';state.clarify='';state.pendingQuestion='';state.trace=[];state.source='对话行程';state.answer='';state.notice='';refreshOutcome(true);return true;}
+root.JZZX_TRAVEL_HOME=Object.freeze({acceptPlan,safePublicSource,render,normalizePlan,fromRoute,planForStorage,safeTravelUrl,composeTravelQuestion,cleanPlanning,shareText});
 })(globalThis);
