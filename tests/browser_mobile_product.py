@@ -3,7 +3,7 @@ from pathlib import Path
 import re, json, base64, os
 root=Path(__file__).resolve().parents[1]/'mobile/site';html=(root/'index.html').read_text();css=(root/'art/design.css').read_text();html=html.replace('https://jizhengzhixing-mobile.zedi-li070614.workers.dev','null').replace('<link rel="stylesheet" href="./art/design.css" data-bundle-art>','<style>'+css+'</style>');assets={p.stem:'data:image/webp;base64,'+base64.b64encode(p.read_bytes()).decode() for p in (root/'art').glob('*.webp')};html=html.replace('./art/${art}.webp','${('+json.dumps(assets)+')[art]}');
 for name,uri in assets.items():html=html.replace('./art/'+name+'.webp',uri)
-mock="""<script>window.testStore=window.testStore||{};Object.defineProperty(window,'localStorage',{configurable:true,value:{getItem:k=>testStore[k]??null,setItem:(k,v)=>testStore[k]=String(v),removeItem:k=>delete testStore[k]}});window.testMode='normal';window.chatRequests=[];window.fetch=async (url,opts)=>{if(url.endsWith('/api/v1/chat')){if(opts.headers.authorization!=='Bearer test-team-code-123456')throw Error('auth mismatch');const body=JSON.parse(opts.body);chatRequests.push(body);if(testMode==='chat-pending')return new Promise((_,reject)=>opts.signal.addEventListener('abort',()=>reject(new DOMException('aborted','AbortError')),{once:true}));if(testMode==='network')throw new TypeError('offline');return {ok:true,status:200,json:async()=>({status:'complete',text:body.history.length?'已调整为一天。':'可以先去雾凇岛。',sources:[{label:'吉林市文旅局',url:'http://lyj.jlcity.gov.cn/'}],itinerary:{days:1,plan:[{day:1,nodes:[{attractionId:'wusongdao',slot:'上午'}]}]}})}}if(opts.headers.authorization!=='Bearer test-team-code-123456')throw Error('auth mismatch');if(testMode==='network')throw new TypeError('offline');if(testMode==='rate')return {ok:false,status:429,json:async()=>({error:'RATE_LIMIT'})};if(testMode==='auth')return {ok:false,status:401,json:async()=>({error:'ACCESS_CODE'})};if(testMode==='clarify')return {ok:true,json:async()=>({mode:'wenlv-agent',status:'clarify',text:'这次打算玩几天？',trace:[]})};if(testMode==='pending')return new Promise((_,reject)=>opts.signal.addEventListener('abort',()=>reject(new DOMException('aborted','AbortError')),{once:true}));return {ok:true,json:async()=>({mode:'wenlv-agent',status:'complete',degraded:testMode==='fallback',modelActions:testMode==='fallback'?0:1,text:'建议先游览雾凇岛，再去吉林市博物馆。',trace:[{tool:'search_places',detail:'检索候选',actor:'model'}],itinerary:{days:2,plan:[{day:1,nodes:[{attractionId:'wusongdao',slot:'上午'}]},{day:2,nodes:[{attractionId:'jilin-bowuguan',slot:'午后'}]}],warnings:testMode==='fallback'?[{type:'unsourced-facts',message:'开放时间与票价没有写进库'},{type:'thin-plan',message:'可用节点偏少'}]:[]}})}};</script>"""
+mock="""<script>window.testStore=window.testStore||{};Object.defineProperty(window,'localStorage',{configurable:true,value:{getItem:k=>testStore[k]??null,setItem:(k,v)=>testStore[k]=String(v),removeItem:k=>delete testStore[k]}});window.testMode='normal';window.chatRequests=[];window.fetch=async (url,opts)=>{if(url.endsWith('/api/v1/chat')){if(opts.headers.authorization!=='Bearer test-team-code-123456')throw Error('auth mismatch');const body=JSON.parse(opts.body);chatRequests.push(body);if(testMode==='chat-pending')return new Promise((_,reject)=>opts.signal.addEventListener('abort',()=>reject(new DOMException('aborted','AbortError')),{once:true}));if(testMode==='network')throw new TypeError('offline');return {ok:true,status:200,json:async()=>({status:'complete',text:body.history.length?'已调整为一天。':testMode==='motion'?'可以先去雾凇岛。早上出发，沿松花江欣赏自然景色，下午再前往市区。请提前核实景点开放时间。':'可以先去雾凇岛。',sources:[{label:'吉林市文旅局',url:'http://lyj.jlcity.gov.cn/'}],itinerary:{days:1,plan:[{day:1,nodes:[{attractionId:'wusongdao',slot:'上午'}]}]}})}}if(opts.headers.authorization!=='Bearer test-team-code-123456')throw Error('auth mismatch');if(testMode==='network')throw new TypeError('offline');if(testMode==='rate')return {ok:false,status:429,json:async()=>({error:'RATE_LIMIT'})};if(testMode==='auth')return {ok:false,status:401,json:async()=>({error:'ACCESS_CODE'})};if(testMode==='clarify')return {ok:true,json:async()=>({mode:'wenlv-agent',status:'clarify',text:'这次打算玩几天？',trace:[]})};if(testMode==='pending')return new Promise((_,reject)=>opts.signal.addEventListener('abort',()=>reject(new DOMException('aborted','AbortError')),{once:true}));return {ok:true,json:async()=>({mode:'wenlv-agent',status:'complete',degraded:testMode==='fallback',modelActions:testMode==='fallback'?0:1,text:'建议先游览雾凇岛，再去吉林市博物馆。',trace:[{tool:'search_places',detail:'检索候选',actor:'model'}],itinerary:{days:2,plan:[{day:1,nodes:[{attractionId:'wusongdao',slot:'上午'}]},{day:2,nodes:[{attractionId:'jilin-bowuguan',slot:'午后'}]}],warnings:testMode==='fallback'?[{type:'unsourced-facts',message:'开放时间与票价没有写进库'},{type:'thin-plan',message:'可用节点偏少'}]:[]}})}};</script>"""
 html=html.replace('<script>/* Deterministic',mock+'<script>/* Deterministic',1)
 with sync_playwright() as p:
  b=p.chromium.launch(executable_path=os.environ.get('CHROMIUM_PATH'),args=['--no-sandbox','--disable-dev-shm-usage']);
@@ -31,6 +31,8 @@ with sync_playwright() as p:
    page.locator('[data-act=back-trip]').click();page.evaluate("testMode='pending'");page.locator('#planner button[type=submit]').click();page.locator('[data-act=cancel]').click();assert '已取消等待' in page.locator('.cloud-error').inner_text();check('cancel');
    page.evaluate("testMode='clarify'");page.locator('#planner button[type=submit]').click();page.locator('#clarification').wait_for();assert '几天' in page.locator('#clarification').inner_text();check('clarification');
   if width==390:
+   page.locator('[data-tab=me]').click()
+   page.locator('[data-act=large]').click()
    page.locator('[data-tab=home]').click()
    page.evaluate("window.JZZXNativeVoice={start(id){window.testVoiceId=id}}")
    page.locator('#chatInput').fill('帮我安排')
@@ -41,13 +43,25 @@ with sync_playwright() as p:
    assert page.evaluate('chatRequests.length')==0
    assert page.locator('#chatMic').get_attribute('aria-pressed')=='false'
    assert '核对后发送' in page.locator('#chatVoiceMessage').inner_text()
+   page.evaluate("testMode='motion'")
    page.locator('#chatInput').fill('帮我安排吉林市的行程')
    page.locator('#conversationForm button[type=submit]').click()
-   page.locator('.conversation-reply').wait_for()
-   assert '雾凇岛' in page.locator('.conversation-reply').inner_text()
+   reply=page.locator('.conversation-reply').last
+   reply.wait_for()
+   assert reply.locator('.reply-breath-caret').count()==1
+   assert reply.locator('.chat-reply-copy').inner_text()!='可以先去雾凇岛。早上出发，沿松花江欣赏自然景色，下午再前往市区。请提前核实景点开放时间。'
+   assert reply.locator('.chat-reply-extras').is_hidden()
+   page.wait_for_function("document.querySelector('.chat-reply-copy').textContent.length>2")
+   reply.locator('[data-chat-reveal-all]').click()
+   assert reply.locator('.chat-reply-copy').inner_text()=='可以先去雾凇岛。早上出发，沿松花江欣赏自然景色，下午再前往市区。请提前核实景点开放时间。'
+   assert reply.locator('.reply-breath-caret').count()==0
+   assert reply.locator('.chat-reply-extras').is_visible()
+   assert page.evaluate("document.activeElement?.id!=='chatInput'")
    page.locator('#chatInput').fill('改成一天')
    page.locator('#conversationForm button[type=submit]').click()
    page.wait_for_function("chatRequests.length===2 && document.querySelectorAll('.conversation-reply').length===2")
+   page.locator('.conversation-reply').last.locator('.reply-breath-caret').wait_for(state='detached')
+   assert page.locator('.conversation-reply').last.locator('.chat-reply-copy').inner_text()=='已调整为一天。'
    assert page.evaluate('chatRequests[1].history.length')==2
    page.locator('[data-chat-trip]').last.click()
    assert '雾凇岛' in page.locator('#result').inner_text()
@@ -65,6 +79,13 @@ with sync_playwright() as p:
    assert loader.count()==0
    assert page.locator('#chatInput').input_value()=='取消测试'
    assert '已取消' in page.locator('.chat-error').inner_text()
+   page.emulate_media(reduced_motion='reduce')
+   page.evaluate("testMode='normal'")
+   page.locator('#chatInput').fill('无动效测试')
+   page.locator('#conversationForm button[type=submit]').click()
+   page.locator('.conversation-reply').wait_for()
+   assert page.locator('.reply-breath-caret').count()==0
+   assert page.locator('.chat-reply-copy').inner_text()=='可以先去雾凇岛。'
    check('conversation')
   print(width,'PASS',flush=True);page.close()
  b.close()

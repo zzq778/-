@@ -55,10 +55,16 @@ try:
             page.locator('.task-save').click()
             page.locator('[data-action=ai-close]').first.click()
             page.locator('.saved-task').wait_for()
+            page.emulate_media(reduced_motion='no-preference')
             page.locator('[data-action=ai-full]').first.click()
             page.locator('#chatInput').fill('帮我安排吉林市一天')
-            page.route('**/api/chat',lambda r:r.fulfill(json={'text':'可以先去雾凇岛。','itinerary':{'days':1,'plan':[{'day':1,'nodes':[{'attractionId':'wusongdao','slot':'上午'}]}]},'sources':[{'label':'吉林文旅','url':'http://lyj.jlcity.gov.cn/'}]}))
+            page.route('**/api/chat',lambda r:r.fulfill(json={'text':'可以先去雾凇岛。早上出发，沿松花江欣赏自然景色，下午再前往市区。请提前核实景点开放时间。','itinerary':{'days':1,'plan':[{'day':1,'nodes':[{'attractionId':'wusongdao','slot':'上午'}]}]},'sources':[{'label':'吉林文旅','url':'http://lyj.jlcity.gov.cn/'}]}))
             page.locator('#chatInput').press('Enter')
+            last=page.locator('.bubble.assistant').last
+            last.locator('.reveal-caret').wait_for()
+            assert last.locator('.bubble-copy').inner_text()!='可以先去雾凇岛。早上出发，沿松花江欣赏自然景色，下午再前往市区。请提前核实景点开放时间。'
+            last.locator('[data-action=skip-reveal]').click()
+            assert last.locator('.bubble-copy').inner_text()=='可以先去雾凇岛。早上出发，沿松花江欣赏自然景色，下午再前往市区。请提前核实景点开放时间。'
             page.locator('[data-open-chat-trip]').click()
             assert '雾凇岛' in page.locator('#travelResult').inner_text()
             page.locator('[data-action=task-open]').click()
