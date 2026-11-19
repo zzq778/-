@@ -37,7 +37,7 @@ const CATALOG=Object.freeze({
 const questions={destination:'您更想去吉林省哪个城市或片区？',days:'这次打算玩几天？目前支持 1–3 天。',theme:'更喜欢自然风光、民俗美食、历史文化，还是冰雪体验？'};
 const byId=new Map(ATTRACTIONS.map(a=>[a.id,a]));
 const nodes=p=>p.plan.flatMap(d=>d.nodes);
-function audit(p,intent,allowed){
+export function audit(p,intent,allowed){
  const issues=[],seen=new Set();
  if(!p||p.days<1||p.days>3||p.plan.length!==p.days)return {ok:false,issues:['行程结构无效']};
  for(const [i,d] of p.plan.entries()){
