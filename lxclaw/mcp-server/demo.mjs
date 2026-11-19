@@ -1,5 +1,5 @@
 import {DatabaseSync} from 'node:sqlite';
-import {readFileSync,mkdirSync} from 'node:fs';
+import {readFileSync,mkdirSync,existsSync} from 'node:fs';
 import {dirname,resolve,basename} from 'node:path';
 import {randomBytes,createHash} from 'node:crypto';
 import {handlePortal} from '../../src/portal-service.mjs';
@@ -16,7 +16,8 @@ export function demoPortal(path,role){
  if(!Object.hasOwn(ACTORS,role))throw Error('INVALID_DEMO_ROLE');
  const file=resolve(path);if(basename(file)!=='jzzx-demo.sqlite')throw Error('DEMO_DB_FILENAME_REQUIRED');
  mkdirSync(dirname(file),{recursive:true});
- const db=new DatabaseSync(file);
+ const existed=existsSync(file),db=new DatabaseSync(file);
+ if(existed){const marker=db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='jzzx_demo_marker'").get();if(!marker){db.close();throw Error('REFUSE_NON_DEMO_DATABASE');}}
  db.exec('PRAGMA busy_timeout=5000; PRAGMA foreign_keys=ON; PRAGMA journal_mode=WAL;');
  db.exec('CREATE TABLE IF NOT EXISTS jzzx_demo_marker (id INTEGER PRIMARY KEY CHECK(id=1));');
  // This filename and isolated directory are mandatory; no production DB is read or written.

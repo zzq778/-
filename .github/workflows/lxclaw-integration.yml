@@ -1,0 +1,49 @@
+name: LXClaw integration
+on:
+  push:
+    branches: ['feat/lxclaw-integration']
+  pull_request:
+    branches: ['feat/agent-native-product',main]
+    paths: ['lxclaw/**','src/**','migrations/**','.github/workflows/lxclaw-integration.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: lxclaw-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: true
+jobs:
+  integration:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: End-to-end MCP and actual SQLite business flow
+        run: node --test lxclaw/tests/integration.test.mjs
+      - name: Standard MCP SDK interoperability
+        run: |
+          npm install --prefix .mcp-smoke --no-package-lock --ignore-scripts @modelcontextprotocol/sdk@1.12.1
+          node lxclaw/tests/sdk-smoke.mjs
+      - name: Original product regression
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          npm run build:mobile
+          npm test
+      - name: Portable integration package
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          mkdir -p dist
+          git archive --format=zip --output=dist/JiZhengZhiXing-LXClaw.zip HEAD lxclaw src migrations/portal docs/LXCLAW_ADAPTER.md
+      - uses: actions/upload-artifact@v4
+        if: matrix.os == 'ubuntu-latest'
+        with:
+          name: JiZhengZhiXing-LXClaw
+          path: dist/JiZhengZhiXing-LXClaw.zip
+          if-no-files-found: error
+          retention-days: 14

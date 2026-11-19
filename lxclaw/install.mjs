@@ -30,11 +30,11 @@ if(v.help||!v.workspace){
   try{const current=await readFile(to);if(!current.equals(data))throw Error('SKILL_CONFLICT: '+to)}
   catch(e){if(e.code!=='ENOENT')throw e;writes.push({to,data})}
  }
- let config=null,configPath=null;
+ let config=null,configPath=null,originalConfig=null;
  if(v.config){
   configPath=resolve(v.config);
   // Intentionally reject JSON5 rather than corrupt comments or non-JSON configuration.
-  config=JSON.parse(await readFile(configPath,'utf8'));
+  originalConfig=await readFile(configPath,'utf8');config=JSON.parse(originalConfig);
   if(!config||typeof config!=='object'||Array.isArray(config))throw Error('INVALID_CONFIG');
   if(config.mcp!==undefined&&(!config.mcp||typeof config.mcp!=='object'||Array.isArray(config.mcp))||config.mcp?.servers!==undefined&&(!config.mcp.servers||typeof config.mcp.servers!=='object'||Array.isArray(config.mcp.servers)))throw Error('INVALID_MCP_CONFIG');
   const prev=config.mcp?.servers?.[name];if(prev&&JSON.stringify(prev)!==JSON.stringify(spec))throw Error('MCP_ENTRY_CONFLICT: use native MCP editor to change profile');
@@ -47,7 +47,7 @@ if(v.help||!v.workspace){
  try{await writeFile(snippet,content,{flag:'wx',mode:0o600})}catch(e){if(e.code!=='EEXIST'||await readFile(snippet,'utf8')!==content)throw e}
  if(configPath){
   const suffix=randomUUID(),backup=configPath+'.jzzx-backup-'+suffix,temp=configPath+'.jzzx-temp-'+suffix;
-  await copyFile(configPath,backup,1);await writeFile(temp,JSON.stringify(config,null,2)+'\n',{flag:'wx',mode:0o600});await rename(temp,configPath);
+  if(await readFile(configPath,'utf8')!==originalConfig)throw Error('CONFIG_CHANGED_RETRY');await copyFile(configPath,backup,1);await writeFile(temp,JSON.stringify(config,null,2)+'\n',{flag:'wx',mode:0o600});await rename(temp,configPath);
   console.log(JSON.stringify({workspace,skills:skills.filter(x=>x.isDirectory()).length,config:configPath,backup,snippet,mode:v.mode,role:v.role},null,2));
  }else console.log(JSON.stringify({workspace,skills:skills.filter(x=>x.isDirectory()).length,snippet,mode:v.mode,role:v.role,note:'在LXClaw的MCP配置中合并此片段的mcp.servers.jzzx；不要覆盖其他服务器。'},null,2));
 }
