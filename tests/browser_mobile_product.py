@@ -16,6 +16,31 @@ with sync_playwright() as p:
    text=page.locator('body').inner_text()
    assert not re.search(r'Agent|体验版|模型选择|系统执行|工作流|仓库记录|真实工具调用|未调用大模型|候选路线|生成插画|实际执行记录|三端体验|DISCOVER|EXPLORE JILIN',text),(width,label,text)
    assert not errors,(width,label,errors)
+  # Native Android bridge: the voice button must stay available even in a WebView.
+  if width==390:
+   page.evaluate("""Object.defineProperty(navigator,'userAgent',{configurable:true,value:'Mozilla/5.0 (Linux; Android 14; wv)'});window.JZZXNativeVoice={start(id){window.mockVoiceId=id}};render()""")
+   assert page.locator('[data-act=voice]').is_visible()
+   page.locator('[data-act=voice]').click()
+   assert page.locator('[data-act=voice]').get_attribute('aria-pressed')=='true'
+   page.evaluate("window.onJzzxVoiceResult(window.mockVoiceId,'长春亲子游','')")
+   assert page.locator('#q').input_value()=='长春亲子游'
+   assert page.locator('[data-act=voice]').get_attribute('aria-pressed')=='false'
+   assert '核对后规划' in page.locator('#voiceStatus').inner_text()
+   page.locator('[data-act=voice]').click()
+   page.locator('[data-act=voice]').click()
+   page.evaluate("window.onJzzxVoiceResult(window.mockVoiceId,'过期的识别内容','')")
+   assert page.locator('#q').input_value()=='长春亲子游'
+   # Browser Web Speech path: recognition populates text, not an automatic submit.
+   page.evaluate("""delete window.JZZXNativeVoice;window.webkitSpeechRecognition=class{
+    start(){window.mockBrowserSpeech=this;this.onstart?.()}
+    abort(){}
+   }""")
+   page.locator('[data-act=voice]').click()
+   page.evaluate("""window.mockBrowserSpeech.onresult({results:[{isFinal:true,0:{transcript:'计划两天'}}]})""")
+   assert page.locator('#q').input_value()=='长春亲子游 计划两天'
+   assert page.locator('[data-act=voice]').get_attribute('aria-pressed')=='false'
+   assert page.locator('#planner button[type=submit]').is_enabled()
+   check('native and browser voice transcription')
   check('home');assert page.locator('.cloud-panel').evaluate('e=>!e.open');page.locator('#q').fill('吉林市两天');page.locator('#planner button[type=submit]').click();assert page.locator('.cloud-panel').evaluate('e=>e.open');assert '访问码' in page.locator('.cloud-error').inner_text();page.locator('#accessCode').fill('test-team-code-123456');page.locator('#q').fill('吉林市冬天两天看雾凇，不想滑雪');page.locator('.cloud-panel summary').click();page.locator('#q').blur();page.evaluate('scrollTo(0,0)');
   page.locator('#planner button[type=submit]').click();page.locator('#result').wait_for();assert '联网规划' in page.locator('#result').inner_text();assert '雾凇岛' in page.locator('#result').inner_text();assert '检索候选' not in page.locator('body').inner_text();check('cloud trip')
   page.locator('[data-act=save]').click();assert '已保存' in page.locator('#notice').inner_text();assert page.locator('[data-act=save]').inner_text()=='已保存';page.locator('[data-act=back-trip]').click();assert page.locator('#result').count()==0;check('back home')
