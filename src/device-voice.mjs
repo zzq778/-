@@ -110,7 +110,19 @@ async function makeAudio(answer,env,dependencies){
  const get=dependencies.fetchAudio||fetch;
  const response=await get(u.href,{redirect:'error',signal:AbortSignal.timeout(18000)});
  if(!response.ok||Number(response.headers.get('content-length')||0)>2400000)throw Error('TTS_DOWNLOAD');
- const output=new Uint8Array(await response.arrayBuffer());
+ const reader=response.body?.getReader();
+ if(!reader)throw Error('TTS_NO_BODY');
+ const chunks=[];let total=0;
+ try{
+  for(;;){
+   const {done,value}=await reader.read();if(done)break;
+   total+=value.length;
+   if(total>2400000){await reader.cancel();throw Error('TTS_TOO_BIG')}
+   chunks.push(value);
+  }
+ }finally{reader.releaseLock()}
+ const output=new Uint8Array(total);let pos=0;
+ for(const chunk of chunks){output.set(chunk,pos);pos+=chunk.length}
  return wavToPcm16(output);
 }
 
@@ -138,8 +150,17 @@ export async function handleDeviceVoice(request,env,dependencies={}){
   if(request.headers.get('content-type')?.split(';')[0]!=='application/octet-stream')return error('CONTENT_TYPE',415);
   const n=Number(request.headers.get('content-length'));
   if(!Number.isInteger(n)||n<32000||n>DEVICE_MAX_INPUT_BYTES||n%2)return error('PCM_LENGTH',413);
-  const bytes=new Uint8Array(await request.arrayBuffer());
-  if(bytes.length!==n)return error('PCM_LENGTH',400);
+  const reader=request.body?.getReader();
+  if(!reader)return error('PCM_LENGTH',400);
+  const bytes=new Uint8Array(n);let copied=0,overflow=false;
+  try{
+   for(;;){
+    const {done,value}=await reader.read();if(done)break;
+    if(value.length>n-copied){overflow=true;await reader.cancel();break}
+    bytes.set(value,copied);copied+=value.length;
+   }
+  }finally{reader.releaseLock()}
+  if(overflow||copied!==n)return error('PCM_LENGTH',400);
   try{
    const wav=pcm16ToWav(bytes);
    const res=await env.AI.run(DEVICE_STT_MODEL,{
