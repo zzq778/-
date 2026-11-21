@@ -1,0 +1,52 @@
+name: ESP32-C3 voice companion
+on:
+  push:
+    branches: ['feat/esp32c3-voice-companion']
+    paths:
+      - 'device/esp32c3/**'
+      - 'src/device-voice.mjs'
+      - 'src/device-worker.mjs'
+      - 'wrangler.device.jsonc'
+      - 'tests/device_voice.test.mjs'
+      - '.github/workflows/device-voice.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'device/esp32c3/**'
+      - 'src/device-voice.mjs'
+      - 'src/device-worker.mjs'
+      - 'wrangler.device.jsonc'
+      - 'tests/device_voice.test.mjs'
+      - '.github/workflows/device-voice.yml'
+permissions:
+  contents: read
+jobs:
+  gateway-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm test
+  esp32c3-firmware:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Add synthetic build-only credentials
+        run: cp device/esp32c3/main/secrets.h.example device/esp32c3/main/secrets.h
+      - uses: espressif/esp-idf-ci-action@v1
+        with:
+          esp_idf_version: v5.3.6
+          target: esp32c3
+          path: device/esp32c3
+      - name: Upload flash-ready binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: jzzx-esp32c3-firmware
+          path: |
+            device/esp32c3/build/*.bin
+            device/esp32c3/build/bootloader/*.bin
+            device/esp32c3/build/partition_table/*.bin
+            device/esp32c3/build/flash_args
+          if-no-files-found: error
