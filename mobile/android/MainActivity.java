@@ -102,7 +102,7 @@ public final class MainActivity extends Activity {
     String text=resultCode==RESULT_OK&&texts!=null&&!texts.isEmpty()?texts.get(0):"";
     if(text==null)text="";
     text=text.trim();
-    deliverVoiceResult(id,text.substring(0,Math.min(text.length(),180)),text.isEmpty()?"语音输入已结束，未识别到内容。":"");
+    deliverVoiceResult(id,text.substring(0,Math.min(text.length(),180)),text.isEmpty()?"系统语音服务没有返回识别文字。若提示需要授权，请在手机系统语音引擎中完成授权；也可以使用输入法麦克风。":"");
   }
   @Override public void onBackPressed(){
     if(web==null){super.onBackPressed();return;}
