@@ -26,6 +26,15 @@ with sync_playwright() as p:
    assert page.locator('#q').input_value()=='长春亲子游'
    assert page.locator('[data-act=voice]').get_attribute('aria-pressed')=='false'
    assert '核对后规划' in page.locator('#voiceStatus').inner_text()
+   # When the phone's system recognizer fails authorization, offer IME voice input.
+   page.locator('[data-act=voice]').click()
+   page.evaluate("window.onJzzxVoiceResult(window.mockVoiceId,'','系统语音服务需要授权')")
+   assert '需要授权' in page.locator('#voiceStatus').inner_text()
+   assert page.locator('#q').input_value()=='长春亲子游'
+   assert page.locator('[data-act=voice-keyboard]').is_visible()
+   page.locator('[data-act=voice-keyboard]').click()
+   assert page.locator('#q').evaluate("e=>document.activeElement===e")
+   assert '键盘上的麦克风' in page.locator('#voiceStatus').inner_text()
    page.locator('[data-act=voice]').click()
    page.locator('[data-act=voice]').click()
    page.evaluate("window.onJzzxVoiceResult(window.mockVoiceId,'过期的识别内容','')")
