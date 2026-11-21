@@ -31,9 +31,14 @@ with sync_playwright() as p:
    page.evaluate("window.onJzzxVoiceResult(window.mockVoiceId,'过期的识别内容','')")
    assert page.locator('#q').input_value()=='长春亲子游'
    # Browser Web Speech path: recognition populates text, not an automatic submit.
-   page.evaluate("""delete window.JZZXNativeVoice;window.webkitSpeechRecognition=class{
-    start(){window.mockBrowserSpeech=this;this.onstart?.()}
-    abort(){}
+   page.evaluate("""() => {
+    delete window.JZZXNativeVoice;
+    const MockSpeechRecognition=class {
+     start(){window.mockBrowserSpeech=this;this.onstart?.()}
+     abort(){}
+    };
+    window.SpeechRecognition=MockSpeechRecognition;
+    window.webkitSpeechRecognition=MockSpeechRecognition;
    }""")
    page.locator('[data-act=voice]').click()
    page.evaluate("""window.mockBrowserSpeech.onresult({results:[{isFinal:true,0:{transcript:'计划两天'}}]})""")
