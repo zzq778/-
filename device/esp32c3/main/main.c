@@ -250,6 +250,7 @@ void app_main(void){
             vTaskDelay(pdMS_TO_TICKS(40)); // Debounce
             if(gpio_get_level(PIN_BUTTON)==0){
                 if(record_three_seconds())ask_cloud();
+                remove(RECORDING_FILE); // Do not retain the user's previous question.
                 // One request per press: wait for release before accepting another.
                 while(gpio_get_level(PIN_BUTTON)==0)vTaskDelay(pdMS_TO_TICKS(30));
             }
