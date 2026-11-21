@@ -1,0 +1,10 @@
+{
+  "name": "jizhengzhixing-voice",
+  "main": "src/device-worker.mjs",
+  "compatibility_date": "2026-11-21",
+  "workers_dev": true,
+  "ai": { "binding": "AI" },
+  "ratelimits": [
+    { "name": "LIMITER", "namespace_id": "1092", "simple": { "limit": 3, "period": 60 } }
+  ]
+}
