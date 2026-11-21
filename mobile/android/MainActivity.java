@@ -5,7 +5,11 @@ import android.os.Bundle;
 import android.graphics.Color;
 import android.content.Intent;
 import android.net.Uri;
+import android.webkit.JavascriptInterface;
 import android.webkit.WebChromeClient;
+import android.speech.RecognizerIntent;
+import org.json.JSONObject;
+import java.util.ArrayList;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
@@ -14,9 +18,11 @@ import java.io.InputStream;
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 
-/** Hybrid application shell. Only first-party HTTPS API requests; no JS-to-native bridge. */
+/** Hybrid application shell. Only a user-visible Android speech recognition action is exposed to the bundled UI. */
 public final class MainActivity extends Activity {
+  private static final int VOICE_REQUEST_CODE=702;
   private WebView web;
+  private int pendingVoiceId=0;
   @Override public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     getWindow().setStatusBarColor(Color.rgb(250,249,245));
@@ -36,6 +42,7 @@ public final class MainActivity extends Activity {
     s.setJavaScriptCanOpenWindowsAutomatically(false);
     s.setAllowFileAccessFromFileURLs(false);
     s.setAllowUniversalAccessFromFileURLs(false);
+    web.addJavascriptInterface(new NativeVoice(),"JZZXNativeVoice");
     web.setWebChromeClient(new WebChromeClient());
     web.setWebViewClient(new WebViewClient(){
       @Override public boolean shouldOverrideUrlLoading(WebView v, WebResourceRequest request) {
@@ -62,11 +69,46 @@ public final class MainActivity extends Activity {
     try{startActivity(new Intent(Intent.ACTION_VIEW,uri));}catch(Exception ignored){}
     return true;
   }
+  private void deliverVoiceResult(int id,String text,String error){
+    if(web==null||isFinishing())return;
+    web.evaluateJavascript("typeof window.onJzzxVoiceResult === 'function' && window.onJzzxVoiceResult("+id+","+JSONObject.quote(text)+","+JSONObject.quote(error)+")",null);
+  }
+  private final class NativeVoice {
+    @JavascriptInterface public void start(int id){
+      if(id<=0)return;
+      runOnUiThread(()->{
+        if(web==null||isFinishing())return;
+        if(pendingVoiceId!=0){deliverVoiceResult(id,"","请先完成当前语音输入。");return;}
+        Intent intent=new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE,"zh-CN");
+        intent.putExtra(RecognizerIntent.EXTRA_PROMPT,"请说出您的出行需求");
+        intent.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS,1);
+        pendingVoiceId=id;
+        try{startActivityForResult(intent,VOICE_REQUEST_CODE);}
+        catch(Exception e){
+          pendingVoiceId=0;
+          deliverVoiceResult(id,"","手机没有可用的系统语音识别服务，请使用输入法麦克风。");
+        }
+      });
+    }
+  }
+  @Override protected void onActivityResult(int requestCode,int resultCode,Intent data){
+    super.onActivityResult(requestCode,resultCode,data);
+    if(requestCode!=VOICE_REQUEST_CODE)return;
+    int id=pendingVoiceId;pendingVoiceId=0;
+    if(id<=0)return;
+    ArrayList<String> texts=data==null?null:data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
+    String text=resultCode==RESULT_OK&&texts!=null&&!texts.isEmpty()?texts.get(0):"";
+    if(text==null)text="";
+    text=text.trim();
+    deliverVoiceResult(id,text.substring(0,Math.min(text.length(),180)),text.isEmpty()?"语音输入已结束，未识别到内容。":"");
+  }
   @Override public void onBackPressed(){
     if(web==null){super.onBackPressed();return;}
     web.evaluateJavascript("typeof window.onNativeBack === 'function' && window.onNativeBack()", result->{
       if(!"true".equals(result))super.onBackPressed();
     });
   }
-  @Override protected void onDestroy(){if(web!=null){web.destroy();web=null;}super.onDestroy();}
+  @Override protected void onDestroy(){pendingVoiceId=0;if(web!=null){web.removeJavascriptInterface("JZZXNativeVoice");web.destroy();web=null;}super.onDestroy();}
 }
