@@ -2,8 +2,8 @@
 
 ## 目标结构
 
-- `https://createmore.asia`：吉政知行官方介绍网站，面向搜索引擎收录。
-- `https://www.createmore.asia`：301 跳转到主域名。
+- `https://createmore.asia`：吉政知行项目官网，面向搜索引擎收录。
+- `https://www.createmore.asia`：通过 Cloudflare Redirect Rule 301 跳转到主域名。
 - `https://app.createmore.asia`：吉小知在线应用入口。
 - `https://createmore.asia/app`：跳转到在线应用子域名。
 
@@ -12,14 +12,14 @@
 ## 部署前提
 
 1. 在 Cloudflare 中添加 `createmore.asia` 为一个 Zone。
-2. Cloudflare 会给出该 Zone 专属的两个 Nameserver。
+2. Cloudflare 会给出该 Zone 专属的 Nameserver。
 3. 登录域名注册商控制台，把域名 Nameserver 改为 Cloudflare 给出的值。
 4. 等待 Cloudflare 将 Zone 状态变为 Active。
 5. 检查原 DNS 记录是否完整导入。若域名正在用于邮箱或其他网站，必须先保留并核对 MX、TXT、A、AAAA、CNAME 等记录，不能直接清空。
 
 ## 官网部署
 
-在仓库根目录安装依赖后，先运行静态文件检查，再部署独立官网 Worker：
+在仓库根目录安装依赖后，部署独立官网 Worker：
 
 ```sh
 npm install
@@ -28,15 +28,27 @@ npx wrangler deploy --config wrangler.site.jsonc
 
 该配置只创建/更新 `jizhengzhixing-site`，使用 `website/` 静态资源，不修改现有 `jizhengzhixing` 应用 Worker。
 
+静态文件默认由 Cloudflare Static Assets 直接响应；只有 `/app` 与 `/app/*` 跳转路径会先执行 Worker，避免所有图片、样式和 HTML 请求都额外触发 Worker 逻辑。
+
 部署后检查：
 
 - `https://createmore.asia/`
-- `https://www.createmore.asia/` 是否 301 跳转到主域名
 - `https://createmore.asia/robots.txt`
 - `https://createmore.asia/sitemap.xml`
 - `https://createmore.asia/about/`
 - `https://createmore.asia/features/`
 - `https://createmore.asia/privacy/`
+- `https://createmore.asia/app` 是否跳转到应用子域名
+
+## www 主域名归一
+
+`www.createmore.asia` 已作为官网 Worker 的 Custom Domain 预留。Zone 激活后，在 Cloudflare Dashboard：
+
+1. 确认 DNS 中存在 `www` 的代理记录（橙色云朵）。
+2. Rules → Redirect Rules → Create rule。
+3. 条件匹配主机名 `www.createmore.asia`。
+4. 目标为 `https://createmore.asia`，保留原路径和查询参数，状态码使用 301。
+5. 验证 `https://www.createmore.asia/features/?from=share` 会跳转到主域名对应路径。
 
 ## 在线应用子域名
 
