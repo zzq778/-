@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { runTravelAgent, PROMPT_VERSION, MAX_TURNS } from '../src/wenlv/travel-agent.mjs';
 import { handleApi } from '../src/worker.mjs';
+import { handleMobile } from '../src/mobile-worker.mjs';
 const now=new Date('2026-11-18T12:00:00Z');
 const call=(name,args={},id='test')=>({choices:[{message:{tool_calls:[{id,type:'function',function:{name,arguments:JSON.stringify(args)}}]}}]});
 test('model chooses actual tools, receives observations and controls selected nodes',async()=>{
@@ -55,4 +56,52 @@ test('Worker endpoint gates model by limiter and supports local agent without AI
  const seq=[call('search_places'),call('draft_itinerary'),call('review_itinerary'),call('finish')];
  const cloud=await handleApi(req(),{AI:{run:async(_model,options)=>{assert.ok(options.tools.length);return seq[calls++];}},LIMITER:{limit:async()=>({success:true})}});
  assert.equal(cloud.status,200);const data=await cloud.json();assert.equal(data.status,'complete');assert.equal(data.modelCalls,4);assert.equal(data.degraded,false);
+});
+
+test('conversation follow-ups retain validated travel constraints and apply new exclusions',async()=>{
+ const first=await runTravelAgent({question:'吉林市冬天两天看雾凇',now});
+ assert.equal(first.intent.days,2);
+ assert.ok(first.intent.areas.includes('吉林市'));
+ const follow=await runTravelAgent({question:'第二天不要滑雪',previousIntent:first.intent,now});
+ assert.equal(follow.intent.days,2);
+ assert.ok(follow.intent.areas.includes('吉林市'));
+ assert.ok(follow.intent.exclusions.includes('滑雪'));
+ assert.equal(follow.status,'complete');
+});
+test('conversation history is passed to the model as bounded prior turns',async()=>{
+ const history=[{role:'user',content:'吉林市冬天两天看雾凇'},{role:'assistant',content:'已安排雾凇岛和博物馆。'}];
+ let first=true;
+ const out=await runTravelAgent({question:'第二天安排轻松一点',history,previousIntent:{days:2,areas:['吉林市'],clusters:['wusong'],themes:['雾凇'],companions:[],season:'winter',month:11,exclusions:[]},now,invoke:async(messages,tools)=>{
+  if(first){
+   first=false;
+   assert.equal(messages[1].role,'user');
+   assert.match(messages[1].content,/吉林市冬天两天看雾凇/);
+   assert.equal(messages[2].role,'assistant');
+   assert.match(messages[2].content,/雾凇岛/);
+   const current=JSON.parse(messages.at(-1).content);
+   assert.equal(current.constraints.days,2);
+   assert.ok(current.constraints.areas.includes('吉林市'));
+   return call('search_places');
+  }
+  if(tools.some(t=>t.function.name==='draft_itinerary'))return call('draft_itinerary');
+  if(tools.some(t=>t.function.name==='review_itinerary'))return call('review_itinerary');
+  return call('finish',{summary:'建议游览雾凇岛和吉林市博物馆，出发前核实开放情况。'});
+ }});
+ assert.equal(out.status,'complete');
+});
+test('mobile endpoint forwards prior turns and merges validated travel constraints',async()=>{
+ const code='mobile-preview-code-123456';
+ const sequence=[call('search_places'),call('draft_itinerary'),call('review_itinerary'),call('finish',{summary:'建议游览雾凇岛和吉林市博物馆，出发前核实开放情况。'})];
+ let firstMessages=null;
+ const env={TRAVEL_PREVIEW_CODE:code,LIMITER:{limit:async()=>({success:true})},AI:{run:async(_model,options)=>{if(!firstMessages)firstMessages=options.messages;return sequence.shift();}},ASSETS:{fetch:async()=>new Response('asset')}};
+ const request=new Request('https://mobile.example/api/travel',{method:'POST',headers:{origin:'https://mobile.example',authorization:'Bearer '+code,'content-type':'application/json'},body:JSON.stringify({question:'第二天不要滑雪',history:[{role:'user',content:'吉林市冬天两天看雾凇'},{role:'assistant',content:'已安排雾凇岛。'}],previousIntent:{days:2,areas:['吉林市'],clusters:['wusong'],themes:['雾凇'],season:'winter',month:11,exclusions:[]}})});
+ const response=await handleMobile(request,env);assert.equal(response.status,200);
+ const body=await response.json();assert.equal(body.status,'complete');assert.equal(body.intent.days,2);assert.ok(body.intent.areas.includes('吉林市'));assert.ok(body.intent.exclusions.includes('滑雪'));
+ assert.equal(firstMessages[1].role,'user');assert.match(firstMessages[1].content,/吉林市冬天两天看雾凇/);assert.equal(firstMessages[2].role,'assistant');
+});
+test('mobile endpoint rejects an oversized conversation payload',async()=>{
+ const code='mobile-preview-code-123456';
+ const env={TRAVEL_PREVIEW_CODE:code,LIMITER:{limit:async()=>({success:true})},AI:{run:async()=>{throw Error('must not run')}},ASSETS:{fetch:async()=>new Response('asset')}};
+ const response=await handleMobile(new Request('https://mobile.example/api/travel',{method:'POST',headers:{origin:'https://mobile.example',authorization:'Bearer '+code,'content-type':'application/json'},body:JSON.stringify({question:'长春两天',history:[{role:'user',content:'x'.repeat(9000)}]})}),env);
+ assert.equal(response.status,400);
 });
