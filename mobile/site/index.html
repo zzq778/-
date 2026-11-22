@@ -144,7 +144,8 @@ function resultCore(){
  return `<section class="result" id="result"><div class="result-head"><div><span class="result-meta">${esc(source)} / ${plan.nodes.length} 天 / ${count} 处</span><h1>${esc(plan.title)}</h1></div><button class="secondary save-btn" data-act="save">${savedTrips.some(t=>tripSignature(t)===tripSignature(plan))?'已保存':'保存'}</button></div>${rt?`<div class="trip-art">${routeIllustration(rt)}</div>`:''}${source==='资料规划'?'<p class="subtle-notice">智能规划暂不可用，本次依据景点资料安排。</p>':''}${source==='联网规划'&&plan.answer&&!/Agent|工作流|候选|知识库|复核|系统|模型|工具|原型|演示|未调用|待完善|Markdown|demo/i.test(plan.answer)?`<details class="trip-notes"><summary>行程建议</summary><p class="trip-advice">${esc(plan.answer.replace(/\*\*|`/g,''))}</p></details>`:''}${plan.warnings?.length?`<div class="agent-warnings">${plan.warnings.map(w=>`<p>${esc(w)}</p>`).join('')}</div>`:''}${plan.nodes.map((day,i)=>`<section class="day"><h2 class="day-title"><span>第 ${i+1} 天</span><small>${day.length?day.length+' 处景点':'机动安排'}</small></h2>${day.length?day.map((id,j)=>{const a=byId[id];if(!a)return '';return `<article class="node"><span class="dot"></span><div><small>${esc(plan.slots?.[i]?.[j]||['上午','午后','傍晚'][j])} / ${esc(a.city)}</small><h3>${esc(a.name)}</h3><p>${esc(a.tags.replaceAll(' ',' · '))}</p><details class="place-source"><summary>景点资料与出行提醒</summary><p>请以景区或当地文旅部门的最新公告为准。</p><p>资料日期：${esc(a.verified)}</p><a href="${esc(a.url)}" target="_blank" rel="noopener noreferrer">查看资料 ↗</a></details></div></article>`}).join(''):'<p class="fine">当天留作休息或自由活动。</p>'}</section>`).join('')}<details class="trip-notes"><summary>出发前请确认</summary><p>本行程提供建议游览顺序，不含实时交通、开放时间、预约或购票结果。出发前请查询景区最新公告、天气与交通信息。</p>${plan.reason?`<p>${esc(plan.reason)}</p>`:''}</details><div class="actions"><button class="secondary" data-act="speak">朗读</button><button class="secondary" data-act="share">分享</button><button class="secondary" data-act="adjust">调整</button></div><p class="notice" id="notice" role="status">${esc(status)}</p>${rt?`<button type="button" class="primary" data-act="customize-route">定制这条路线 →</button>`:''}</section>`;
 }
 function trip(){
- const bubbles=chatMessages.map((m,i)=>'<article class="chat-message '+m.role+'" data-message-index="'+i+'">'+esc(m.content)+'</article>').join('');
+ const visibleMessages=chatMessages.filter((m,i)=>!(i===chatMessages.length-1&&m.role==='assistant'&&(m.content===clarification||m.content===status)));
+ const bubbles=visibleMessages.map((m,i)=>'<article class="chat-message '+m.role+'" data-message-index="'+i+'">'+esc(m.content)+'</article>').join('');
  const empty=!chatMessages.length&&!plan?'<div class="chat-empty">告诉吉小知你的目的地、同行人和旅行偏好，也可以直接选择一条路线开始。</div>':'';
  const clarificationCard=clarification?'<section class="agent-chat" id="clarification"><h3>'+esc(clarification)+'</h3><div class="inline"><button class="secondary" data-act="answer">继续补充</button><button class="text-button" data-act="reset">重新开始</button></div></section>':'';
  const statusCard=status&&!plan?'<div class="agent-chat" role="status"><h3>'+esc(status)+'</h3><button class="secondary" data-act="reset">重新开始</button></div>':'';
@@ -327,7 +328,7 @@ function finishVoiceInput(id,text,error=''){
   const value=[input.value.trim(),text.trim()].filter(Boolean).join(' ').slice(0,180);
   input.value=value;
   if(tab==='trip')chatDraft=value;else q=value;
-  input.focus();voiceNotice('语音已转成文字，请核对后发送。');
+  input.focus();voiceNotice(tab==='trip'?'语音已转成文字，请核对后发送。':'语音已转成文字，请核对后规划。');
  }else voiceNotice(error||'未识别到语音，请重试。');
 }
 window.onJzzxVoiceResult=(id,text,error)=>finishVoiceInput(id,text,error);
