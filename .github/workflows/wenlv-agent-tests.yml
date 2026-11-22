@@ -1,7 +1,7 @@
 name: Wenlv Agent regression
 on:
   push:
-    branches: ['feat/wenlv-art-v094', 'feat/wenlv-product-v1', 'feat/wenlv-product-v097', 'feat/unified-product', 'feat/agent-native-product']
+    branches: ['feat/wenlv-art-v094', 'feat/wenlv-product-v1', 'feat/wenlv-product-v097', 'feat/unified-product', 'feat/agent-native-product', 'fix/mobile-chat-multitool']
   pull_request:
     branches: [main]
     paths:
