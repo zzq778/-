@@ -1,0 +1,25 @@
+{
+  "name": "吉政知行 · 政务智能导办",
+  "short_name": "吉政知行",
+  "description": "吉林省政务信息查询、智能导办和便民服务入口",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f2f7ff",
+  "theme_color": "#e5f2ff",
+  "lang": "zh-CN",
+  "icons": [
+    {
+      "src": "./assets/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./assets/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
