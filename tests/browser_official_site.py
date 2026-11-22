@@ -48,7 +48,7 @@ async def run_browser(base_url):
                     assert not overflow, f"{path}: horizontal overflow at {width}px"
 
                     if path == "/":
-                        assert await page.locator('a[href="/app"]').count() >= 1
+                        assert await page.locator('a[href="https://jizhengzhixing.zedi-li070614.workers.dev"]').count() >= 1
                         await page.locator(".faq-list summary").first.click()
                         opened = await page.locator(".faq-list details").first.evaluate(
                             "(element) => element.open"
