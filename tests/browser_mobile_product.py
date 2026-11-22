@@ -73,6 +73,6 @@ with sync_playwright() as p:
    for mode0,message in [('network','网络连接失败'),('rate','请求过多'),('auth','访问码不正确')]:
     page.locator('[data-act=back-trip]').click();page.evaluate('(m)=>testMode=m',mode0);page.locator('#planner button[type=submit]').click();page.locator('.cloud-error').wait_for();assert message in page.locator('.cloud-error').inner_text();assert page.locator('[data-act=current]').count()==1;check(mode0);page.locator('[data-act=current]').click();page.locator('#result').wait_for();
    page.locator('[data-act=back-trip]').click();page.evaluate("testMode='pending'");page.locator('#planner button[type=submit]').click();page.locator('[data-act=cancel]').click();assert '已取消等待' in page.locator('.cloud-error').inner_text();check('cancel');
-   page.evaluate("testMode='clarify'");page.locator('#planner button[type=submit]').click();page.locator('#clarification').wait_for();assert '几天' in page.locator('#clarification').inner_text();check('clarification');
+   page.evaluate("testMode='clarify'");page.locator('#chatInput').fill('这次打算玩几天？');page.locator('#chatForm button[type=submit]').click();page.locator('#clarification').wait_for();assert '几天' in page.locator('#clarification').inner_text();check('clarification');
   print(width,'PASS',flush=True);page.close()
  b.close()
