@@ -76,8 +76,11 @@ test('conversation history is passed to the model as bounded prior turns',async(
    first=false;
    assert.equal(messages[1].role,'user');
    assert.match(messages[1].content,/吉林市冬天两天看雾凇/);
-   assert.equal(messages[2].role,'assistant');
-   assert.match(messages[2].content,/雾凇岛/);
+   assert.match(messages[1].content,/此前对话记录/);
+   assert.match(messages[1].content,/吉林市冬天两天看雾凇/);
+   assert.match(messages[1].content,/雾凇岛/);
+   const prior=JSON.parse(messages[1].content.slice(messages[1].content.indexOf('：')+1));
+   assert.equal(prior[1].speaker,'assistant');
    const current=JSON.parse(messages.at(-1).content);
    assert.equal(current.constraints.days,2);
    assert.ok(current.constraints.areas.includes('吉林市'));
@@ -97,7 +100,9 @@ test('mobile endpoint forwards prior turns and merges validated travel constrain
  const request=new Request('https://mobile.example/api/travel',{method:'POST',headers:{origin:'https://mobile.example',authorization:'Bearer '+code,'content-type':'application/json'},body:JSON.stringify({question:'第二天不要滑雪',history:[{role:'user',content:'吉林市冬天两天看雾凇'},{role:'assistant',content:'已安排雾凇岛。'}],previousIntent:{days:2,areas:['吉林市'],clusters:['wusong'],themes:['雾凇'],season:'winter',month:11,exclusions:[]}})});
  const response=await handleMobile(request,env);assert.equal(response.status,200);
  const body=await response.json();assert.equal(body.status,'complete');assert.equal(body.intent.days,2);assert.ok(body.intent.areas.includes('吉林市'));assert.ok(body.intent.exclusions.includes('滑雪'));
- assert.equal(firstMessages[1].role,'user');assert.match(firstMessages[1].content,/吉林市冬天两天看雾凇/);assert.equal(firstMessages[2].role,'assistant');
+ assert.equal(firstMessages[1].role,'user');assert.match(firstMessages[1].content,/吉林市冬天两天看雾凇/);assert.match(firstMessages[1].content,/此前对话记录/);
+ assert.match(firstMessages[1].content,/吉林市冬天两天看雾凇/);
+ const prior=JSON.parse(firstMessages[1].content.slice(firstMessages[1].content.indexOf('：')+1));assert.equal(prior[1].speaker,'assistant');
 });
 test('mobile endpoint rejects an oversized conversation payload',async()=>{
  const code='mobile-preview-code-123456';
