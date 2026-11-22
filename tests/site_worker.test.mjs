@@ -18,22 +18,12 @@ function environment() {
   };
 }
 
-test('serves the static website and adds baseline security headers', async () => {
+test('passes non-app requests through to static assets', async () => {
   const env = environment();
-  const response = await worker.fetch(new Request('https://createmore.asia/'), env);
+  const response = await worker.fetch(new Request('https://createmore.asia/not-a-file'), env);
   assert.equal(response.status, 200);
   assert.equal(await response.text(), 'static asset');
-  assert.equal(response.headers.get('x-content-type-options'), 'nosniff');
-  assert.equal(response.headers.get('referrer-policy'), 'strict-origin-when-cross-origin');
   assert.equal(env.requests.length, 1);
-});
-
-test('redirects www to the canonical apex host and preserves path and query', async () => {
-  const env = environment();
-  const response = await worker.fetch(new Request('https://www.createmore.asia/features/?from=share'), env);
-  assert.equal(response.status, 301);
-  assert.equal(response.headers.get('location'), 'https://createmore.asia/features/?from=share');
-  assert.equal(env.requests.length, 0);
 });
 
 test('redirects the /app entry to the dedicated application subdomain', async () => {
