@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://jizhengzhixing-official.pages.dev/sitemap.xml
