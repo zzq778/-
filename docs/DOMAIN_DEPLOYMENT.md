@@ -1,79 +1,60 @@
-# createmore.asia 域名与官网部署
+# 吉政知行官网：Cloudflare Pages 免费部署
 
-## 目标结构
+## 目标
 
-- `https://createmore.asia`：吉政知行项目官网，面向搜索引擎收录。
-- `https://www.createmore.asia`：通过 Cloudflare Redirect Rule 301 跳转到主域名。
-- `https://app.createmore.asia`：吉小知在线应用入口。
-- `https://createmore.asia/app`：跳转到在线应用子域名。
+先使用 Cloudflare Pages 免费子域名发布官网，不迁移或修改 `createmore.asia` 的 DNS。
 
-官网与现有应用使用独立 Worker，避免营销页面改动影响应用 API。官网静态文件位于 `website/`，应用继续使用现有 `public/` 与 `src/worker.mjs`。
+- Pages 项目建议名称：`jizhengzhixing-official`
+- 预期公开地址：`https://jizhengzhixing-official.pages.dev`
+- GitHub 仓库：`zzq778/-`
+- 生产分支：`main`
+- 构建命令：`exit 0`
+- 构建输出目录：`website`
+- 根目录：仓库根目录（留空）
 
-## 部署前提
+项目名称必须在 Cloudflare Pages 全局可用；若不可用，选一个新的项目名，并同步修改所有页面的 canonical、Open Graph URL、robots.txt 与 sitemap.xml。
 
-1. 在 Cloudflare 中添加 `createmore.asia` 为一个 Zone。
-2. Cloudflare 会给出该 Zone 专属的 Nameserver。
-3. 登录域名注册商控制台，把域名 Nameserver 改为 Cloudflare 给出的值。
-4. 等待 Cloudflare 将 Zone 状态变为 Active。
-5. 检查原 DNS 记录是否完整导入。若域名正在用于邮箱或其他网站，必须先保留并核对 MX、TXT、A、AAAA、CNAME 等记录，不能直接清空。
+## 创建 Pages 项目
 
-## 官网部署
+1. 登录 Cloudflare Dashboard，进入 Workers & Pages。
+2. 选择 Create application → Pages → Connect to Git。
+3. 授权 GitHub，并选择 `zzq778/-` 仓库。
+4. Production branch 选择 `main`。
+5. Framework preset 选择 None。
+6. Build command 填 `exit 0`。
+7. Build output directory 填 `website`。
+8. 保存并部署。
 
-在仓库根目录安装依赖后，部署独立官网 Worker：
+Git 集成会在 `main` 后续更新时自动重新构建部署。不要选择 Direct Upload：Direct Upload 项目之后不能直接切换为 Git integration，需要另建项目。
 
-```sh
-npm install
-npx wrangler deploy --config wrangler.site.jsonc
-```
+## 应用入口
 
-该配置只创建/更新 `jizhengzhixing-site`，使用 `website/` 静态资源，不修改现有 `jizhengzhixing` 应用 Worker。
+官网的「进入吉小知」链接指向当前已部署的 Web Worker 应用：
 
-静态文件默认由 Cloudflare Static Assets 直接响应；只有 `/app` 与 `/app/*` 跳转路径会先执行 Worker，避免所有图片、样式和 HTML 请求都额外触发 Worker 逻辑。
+`https://jizhengzhixing.zedi-li070614.workers.dev`
 
-部署后检查：
+该应用与 Pages 官网独立部署。不要把官网部署到现有 `jizhengzhixing` Worker 上，也不要覆盖其生产版本。
 
-- `https://createmore.asia/`
-- `https://createmore.asia/robots.txt`
-- `https://createmore.asia/sitemap.xml`
-- `https://createmore.asia/about/`
-- `https://createmore.asia/features/`
-- `https://createmore.asia/privacy/`
-- `https://createmore.asia/app` 是否跳转到应用子域名
+## 搜索引擎
 
-## www 主域名归一
+部署成功并确认 `pages.dev` 地址可公开访问后：
 
-`www.createmore.asia` 已作为官网 Worker 的 Custom Domain 预留。Zone 激活后，在 Cloudflare Dashboard：
+1. 打开 `https://jizhengzhixing-official.pages.dev/robots.txt`，确认允许抓取并指向 sitemap。
+2. 打开 `https://jizhengzhixing-official.pages.dev/sitemap.xml`，确认页面地址均使用实际生产域名。
+3. 在 Google Search Console 添加该站点并提交 sitemap。
+4. 在 Bing Webmaster Tools 添加站点并提交 sitemap。
+5. 百度搜索资源平台是否支持该站点类型及 sitemap 提交，以平台当时的规则为准。
+6. 检查搜索平台的抓取错误、规范 URL 与收录状态。提交不保证立即收录或获得排名。
 
-1. 确认 DNS 中存在 `www` 的代理记录（橙色云朵）。
-2. Rules → Redirect Rules → Create rule。
-3. 条件匹配主机名 `www.createmore.asia`。
-4. 目标为 `https://createmore.asia`，保留原路径和查询参数，状态码使用 301。
-5. 验证 `https://www.createmore.asia/features/?from=share` 会跳转到主域名对应路径。
+## 以后绑定 createmore.asia
 
-## 在线应用子域名
+当前先不改阿里云 DNS、Nameserver 或 DS 记录。
 
-现有应用 Worker 名称为 `jizhengzhixing`。在确认当前线上应用版本、API 与多轮对话回归通过后，再到 Cloudflare Dashboard：
+以后可在 Pages 项目的 Custom domains 中添加自定义域名。添加根域名 `createmore.asia` 时，需要该域名作为 Zone 位于创建 Pages 项目的同一个 Cloudflare 账户中；若原 Zone 属于另一个账户，应先确认账户归属和迁移方案，不能直接改 Nameserver。绑定完成后，把页面 canonical、Open Graph URL、robots.txt 与 sitemap.xml 统一更新为最终主域名。
 
-1. Workers & Pages → `jizhengzhixing`
-2. Settings → Domains & Routes → Add → Custom Domain
-3. 输入 `app.createmore.asia`
-4. 等待 DNS 与证书自动配置完成
+## 发布安全边界
 
-不要在尚未核对原 DNS、应用版本和必要绑定时覆盖现有 Worker。官网的“进入吉小知”按钮与 `/app` 路径均指向这个子域名。
-
-## 搜索引擎收录
-
-网站上线并可通过 HTTPS 正常访问后：
-
-1. 在 Google Search Console 添加 `createmore.asia` 域名资源并完成 DNS 验证。
-2. 在 Bing Webmaster Tools 添加站点并提交 `https://createmore.asia/sitemap.xml`。
-3. 在百度搜索资源平台验证站点，并提交 Sitemap 或页面链接（以平台当前支持方式为准）。
-4. 确保首页、关于、产品能力和隐私说明页面可被匿名访问；不要给公开页面添加登录墙或 `noindex`。
-5. 定期检查搜索平台的抓取错误、规范 URL 与收录状态。提交不保证立即收录或获得排名。
-
-## 发布边界
-
-- 当前阶段只准备官网代码与独立部署配置；不会自动修改注册商 Nameserver、Cloudflare DNS、现有 Worker 生产版本或搜索引擎账号。
-- Cloudflare Custom Domain 要求域名已在当前 Cloudflare 账户中成为 Active Zone。添加 Custom Domain 后，Cloudflare 会自动创建相应 DNS 记录并签发证书。
-- 吉政知行必须在网站显著位置说明其为独立项目、非政府官方网站。不得将项目描述成政府授权平台。
-- 行程内容不得承诺实时交通、票价、开放状态、预约或支付能力。
+- 不修改现有 `jizhengzhixing` 和 `jizhengzhixing-mobile` Workers。
+- 不修改阿里云 Nameserver、DNS 解析记录或 DNSSEC。
+- 不要求提供 Cloudflare API Token、账户密码或其他秘密。
+- 官网明确声明吉政知行为独立项目，非政府官方网站或授权政务平台。
