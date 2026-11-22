@@ -10,7 +10,6 @@ on:
       - 'public/**'
       - 'tests/**'
       - 'website/**'
-      - 'wrangler.site.jsonc'
       - 'docs/DOMAIN_DEPLOYMENT.md'
       - '.github/workflows/wenlv-agent-tests.yml'
 permissions:
