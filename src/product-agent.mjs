@@ -117,7 +117,7 @@ export async function runProductAgent({question,history=[],region='长春市',in
  for(let step=0;step<6;step++){
   const remaining=deadline-Date.now();if(remaining<500){reason='budget';failedStep=step;break;}
   const available=step===5||count>=MAX_TOOL_CALLS?[byTool.get('reply')]:analysisOnly?[...dynamic,byTool.get('reply')]:[...tools,...dynamic];
-  const maxCalls=Math.min(MAX_CALLS_PER_TURN,MAX_TOOL_CALLS-count);
+  const maxCalls=Math.max(1,Math.min(MAX_CALLS_PER_TURN,MAX_TOOL_CALLS-count));
   let calls;try{calls=parseCalls(await bounded(Promise.resolve(invoke(messages,available)),Math.min(remaining,28000)),available,step,maxCalls)}catch(e){reason=e?.message==='timeout'?'model-timeout':'model-error';failedStep=step;break}
   if(!calls){reason='invalid-tool';failedStep=step;break;}
   const reply=calls.find(call=>call.name==='reply');
