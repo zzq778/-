@@ -47,7 +47,7 @@ export async function handleMobile(request,env){
   if(chat){
    const payload=cleanChatPayload(await readPayload(request,65536));if(!payload)return json({error:'INVALID_CHAT'},400);
    const invoke=workersModel(env,MOBILE_MODEL,'chat',850,.2);
-   const outcome=await runProductAgent({...payload,invoke,runtime:runtimeTools(env)});if(outcome.status==='unavailable')console.warn(JSON.stringify({event:'jzzx-chat-unavailable',reason:outcome.reason,toolCount:outcome.toolCount}));return json(outcome,outcome.status==='unavailable'?503:200);
+   const outcome=await runProductAgent({...payload,invoke,runtime:runtimeTools(env)});if(outcome.status==='unavailable')console.warn(JSON.stringify({event:'jzzx-chat-unavailable',reason:outcome.reason,failedStep:outcome.failedStep,toolCount:outcome.toolCount}));return json(outcome,outcome.status==='unavailable'?503:200);
   }
   const payload=await readPayload(request);const question=typeof payload?.question==='string'?payload.question.trim():'';if(!question||question.length>300)return json({error:'INVALID_QUESTION'},400);
   const invoke=workersModel(env,MOBILE_MODEL,'travel',450,.1);
