@@ -145,11 +145,13 @@ function animateChatReveal(){
 
 let voiceSession=null,voiceMessage='',voiceSequence=0;
 const voiceIcon='<svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="9" y="3" width="6" height="12" rx="3" stroke="currentColor" stroke-width="1.6"/><path d="M5 11v1a7 7 0 0 0 14 0v-1M12 19v3m-3 0h6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>';
+window.onJzzxVoiceStatus=(id,text)=>{if(voiceSession?.id===id)voiceNotice(text)};
 function voiceNotice(text){voiceMessage=text;const n=$('#chatVoiceMessage');if(n){n.textContent=text;n.hidden=!text}}
 function paintVoice(){const b=$('#chatMic');if(b){b.classList.toggle('recording',!!voiceSession);b.setAttribute('aria-pressed',String(!!voiceSession));b.setAttribute('aria-label',voiceSession?'停止语音输入':'语音转文字');b.title=voiceSession?'停止语音输入':'语音转文字'}}
 function stopChatVoice(message=''){
  const v=voiceSession;voiceSession=null;
  if(v?.recognizer){try{v.recognizer.abort()}catch{}}
+ if(v&&!v.recognizer&&window.JZZXNativeVoice?.stop){try{window.JZZXNativeVoice.stop(v.id)}catch{}}
  paintVoice();voiceNotice(message);
 }
 function finishChatVoice(id,text,error){
@@ -160,7 +162,7 @@ function finishChatVoice(id,text,error){
   const input=$('#chatInput');chatDraft=[(input?.value??chatDraft).trim(),text.trim()].filter(Boolean).join(' ').slice(0,600);
   if(input){input.value=chatDraft;input.focus()}
   voiceNotice('语音已转成文字，请核对后发送。');
- }else voiceNotice(error||'未识别到语音，请重试。');
+ }else {voiceNotice(error||'未识别到语音，请重试。');if(error&&/输入法|不可用|连接失败|权限/.test(error))$('#chatInput')?.focus();}
 }
 window.onJzzxVoiceResult=(id,text,error)=>finishChatVoice(id,text,error);
 function startChatVoice(){
