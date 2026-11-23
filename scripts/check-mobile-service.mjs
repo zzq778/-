@@ -12,7 +12,7 @@ console.log(JSON.stringify({statusHttp:status.status,version:status.data?.versio
 if(status.status!==200||!status.data?.chatReady||contract.status!==200||!contract.data?.paths?.['/api/v1/chat']?.post){console.error('Mobile chat backend not ready');process.exit(1)}
 const code=process.env.TRAVEL_PREVIEW_CODE;
 if(code){
- const r=await call('/api/v1/chat',{method:'POST',headers:{'content-type':'application/json',origin:base,authorization:'Bearer '+code},body:JSON.stringify({question:'你好，请简短介绍你能做什么。'})});
+ const r=await call('/api/v1/chat',{method:'POST',headers:{'content-type':'application/json',origin:base,authorization:'Bearer '+code},body:JSON.stringify({question:'你好'})});
  console.log(JSON.stringify({authenticatedChatHttp:r.status,status:r.data?.status,hasText:!!r.data?.text,reason:r.data?.reason,failedStep:r.data?.failedStep,toolCount:r.data?.toolCount,version:r.data?.version,diagnostics:r.data?.diagnostics}));
  if(r.status!==200||r.data?.status!=='complete'||typeof r.data?.text!=='string'||!r.data.text.trim())process.exit(1);
 }else console.log('Only route/readiness checked. No authenticated model call (preview secret unavailable).');
