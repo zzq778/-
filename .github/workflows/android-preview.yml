@@ -1,33 +1,62 @@
-name: Android online preview
+name: Android multi-turn preview APK
 on:
   push:
-    branches: ['feat/wenlv-product-v1', 'feat/wenlv-art-v094', 'feat/wenlv-product-v097']
+    branches: ['fix/mobile-chat-multitool']
     paths:
+      - 'src/**'
       - 'mobile/site/**'
       - 'mobile/android/**'
-      - '.github/workflows/android-preview.yml'
-  pull_request:
-    branches: [main]
-    paths:
-      - 'mobile/site/**'
-      - 'mobile/android/**'
+      - 'wrangler.mobile-preview.jsonc'
+      - 'scripts/check-mobile-service.mjs'
+      - 'scripts/build-mobile-workspaces.mjs'
+      - 'tests/**'
       - '.github/workflows/android-preview.yml'
 permissions:
   contents: read
 concurrency:
-  group: android-preview-${{ github.event_name }}-${{ github.ref }}
+  group: jzzx-multitool-preview-\${{ github.ref }}
   cancel-in-progress: true
 jobs:
-  apk:
+  preview-apk:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify preview deployment credentials
+        env:
+          CLOUDFLARE_API_TOKEN: \${{ secrets.CLOUDFLARE_API_TOKEN }}
+          TRAVEL_PREVIEW_CODE: \${{ secrets.TRAVEL_PREVIEW_CODE }}
+        run: |
+          set -euo pipefail
+          test -n "$CLOUDFLARE_API_TOKEN" || { echo "::error::Missing CLOUDFLARE_API_TOKEN repository secret"; exit 1; }
+          test -n "$TRAVEL_PREVIEW_CODE" || { echo "::error::Missing TRAVEL_PREVIEW_CODE repository secret"; exit 1; }
+          test "\${#TRAVEL_PREVIEW_CODE}" -ge 16 || { echo "::error::TRAVEL_PREVIEW_CODE must contain at least 16 characters"; exit 1; }
+      - name: Run build and regression tests
+        run: |
+          npm run build:mobile
+          npm test
+      - name: Deploy isolated preview Worker
+        env:
+          CLOUDFLARE_API_TOKEN: \${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: '8181cde33c60feace3f3eee52ee2c207'
+          TRAVEL_PREVIEW_CODE: \${{ secrets.TRAVEL_PREVIEW_CODE }}
+        run: |
+          set -euo pipefail
+          npx --yes wrangler@4 deploy --config wrangler.mobile-preview.jsonc --keep-vars
+          printf '%s' "$TRAVEL_PREVIEW_CODE" | npx --yes wrangler@4 secret put TRAVEL_PREVIEW_CODE --config wrangler.mobile-preview.jsonc
+      - name: Verify isolated preview chat service
+        env:
+          MOBILE_SERVICE_BASE: 'https://jizhengzhixing-mobile-preview.zedi-li070614.workers.dev'
+          TRAVEL_PREVIEW_CODE: \${{ secrets.TRAVEL_PREVIEW_CODE }}
+        run: node scripts/check-mobile-service.mjs
       - name: Install Android SDK components
         shell: bash
         run: |
           set -euo pipefail
-          SDK="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-$RUNNER_TEMP/android-sdk}}"
+          SDK="\${ANDROID_HOME:-\${ANDROID_SDK_ROOT:-$RUNNER_TEMP/android-sdk}}"
           mkdir -p "$SDK"
           if [ ! -x "$SDK/build-tools/35.0.0/aapt2" ] || [ ! -f "$SDK/platforms/android-35/android.jar" ]; then
             if [ -x "$SDK/cmdline-tools/latest/bin/sdkmanager" ]; then
@@ -47,11 +76,13 @@ jobs:
           fi
           echo "ANDROID_HOME=$SDK" >> "$GITHUB_ENV"
           echo "ANDROID_SDK_ROOT=$SDK" >> "$GITHUB_ENV"
-      - name: Build and verify hybrid APK
-        run: bash mobile/android/build.sh
+      - name: Build and verify Android APK
+        run: |
+          bash mobile/android/build.sh
+          sha256sum dist/JiZhengZhiXing-v1.0.4-multitool-preview.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: jizheng-v097-android
-          path: dist/JiZhengZhiXing-v0.9.7-online-preview.apk
+          name: jizheng-v1.0.4-multitool-preview
+          path: dist/JiZhengZhiXing-v1.0.4-multitool-preview.apk
           if-no-files-found: error
-          retention-days: 7
+          retention-days: 14
