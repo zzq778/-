@@ -26,7 +26,7 @@ import java.util.Locale;
 /** Trusted bundled UI. External navigation opens in the browser; native interfaces only offer
  * user-mediated document export and speech, with no arbitrary file reads or credential access. */
 public final class MainActivity extends Activity {
-  private static final String HOST="jizhengzhixing-mobile.zedi-li070614.workers.dev";
+  private static final String HOST="jizhengzhixing-mobile-preview.zedi-li070614.workers.dev";
   private static final int SAVE_DOCUMENT=701;
   private static final int RECOGNIZE_VOICE=702;
   private static final int MAX_FILE_BYTES=3*1024*1024;
