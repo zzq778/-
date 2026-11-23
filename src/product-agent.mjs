@@ -108,7 +108,7 @@ export async function runProductAgent({question,history=[],region='长春市',in
  const scenic=scenicGrounding(question,history);
  const greeting=/^(?:你好|您好|嗨|哈喽|hi|hello)[！!。.\s]*$/i.test(question);
  const grounding=scenic?{area:scenic.area,places:scenic.locations.map(({id,name,area,kind,tags,season,caveat})=>({id,name,area,kind,tags,season,caveat}))}:null;
- const messages=[{role:'system',content:prompt+capabilities+'\n当前默认办事地区：'+region+pageContext+(grounding?'\n已按用户问题从本地景点目录核对以下候选资料，请直接使用 reply 工具回答，不能添加未经核实的票价或营业时间。'+JSON.stringify(grounding):'')},...history,{role:'user',content:question}];
+ const messages=[{role:'system',content:prompt+capabilities+'\n当前默认办事地区：'+region+pageContext+(grounding?'\n已按用户问题从本地景点目录核对以下候选资料。'+JSON.stringify(grounding):'')+(scenic||greeting?'\n本次只需要直接输出最终简体中文正文，不要尝试调用工具、不要输出 call:reply、<|tool_call>、JSON、代码或 Markdown 标记；回答以本次已核对的资料为依据。':'')},...history,{role:'user',content:question}];
  const sources=new Map(),placesFound=new Map(),placeDetails=[];
  let itinerary=null,planText='',count=0,service=null,serviceGuide=null,serviceSearchPerformed=false,placeSearchPerformed=false,feedbackDraft=null,posterDraft=null,reason='step-limit',failedStep=null;
  const addSources=list=>{for(const s of list||[]){if(s&&typeof s.url==='string'&&/^https?:\/\//i.test(s.url)&&!sources.has(s.url)&&sources.size<12)sources.set(s.url,{label:s.label||s.name||'官方资料',url:s.url});}};
