@@ -14,7 +14,7 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: jzzx-multitool-preview-\${{ github.ref }}
+  group: jzzx-multitool-preview-${{ github.ref }}
   cancel-in-progress: true
 jobs:
   preview-apk:
@@ -27,22 +27,22 @@ jobs:
           node-version: '22'
       - name: Verify preview deployment credentials
         env:
-          CLOUDFLARE_API_TOKEN: \${{ secrets.CLOUDFLARE_API_TOKEN }}
-          TRAVEL_PREVIEW_CODE: \${{ secrets.TRAVEL_PREVIEW_CODE }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          TRAVEL_PREVIEW_CODE: ${{ secrets.TRAVEL_PREVIEW_CODE }}
         run: |
           set -euo pipefail
           test -n "$CLOUDFLARE_API_TOKEN" || { echo "::error::Missing CLOUDFLARE_API_TOKEN repository secret"; exit 1; }
           test -n "$TRAVEL_PREVIEW_CODE" || { echo "::error::Missing TRAVEL_PREVIEW_CODE repository secret"; exit 1; }
-          test "\${#TRAVEL_PREVIEW_CODE}" -ge 16 || { echo "::error::TRAVEL_PREVIEW_CODE must contain at least 16 characters"; exit 1; }
+          test "${#TRAVEL_PREVIEW_CODE}" -ge 16 || { echo "::error::TRAVEL_PREVIEW_CODE must contain at least 16 characters"; exit 1; }
       - name: Run build and regression tests
         run: |
           npm run build:mobile
           npm test
       - name: Deploy isolated preview Worker
         env:
-          CLOUDFLARE_API_TOKEN: \${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: '8181cde33c60feace3f3eee52ee2c207'
-          TRAVEL_PREVIEW_CODE: \${{ secrets.TRAVEL_PREVIEW_CODE }}
+          TRAVEL_PREVIEW_CODE: ${{ secrets.TRAVEL_PREVIEW_CODE }}
         run: |
           set -euo pipefail
           npx --yes wrangler@4 deploy --config wrangler.mobile-preview.jsonc --keep-vars
@@ -50,13 +50,13 @@ jobs:
       - name: Verify isolated preview chat service
         env:
           MOBILE_SERVICE_BASE: 'https://jizhengzhixing-mobile-preview.zedi-li070614.workers.dev'
-          TRAVEL_PREVIEW_CODE: \${{ secrets.TRAVEL_PREVIEW_CODE }}
+          TRAVEL_PREVIEW_CODE: ${{ secrets.TRAVEL_PREVIEW_CODE }}
         run: node scripts/check-mobile-service.mjs
       - name: Install Android SDK components
         shell: bash
         run: |
           set -euo pipefail
-          SDK="\${ANDROID_HOME:-\${ANDROID_SDK_ROOT:-$RUNNER_TEMP/android-sdk}}"
+          SDK="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-$RUNNER_TEMP/android-sdk}}"
           mkdir -p "$SDK"
           if [ ! -x "$SDK/build-tools/35.0.0/aapt2" ] || [ ! -f "$SDK/platforms/android-35/android.jar" ]; then
             if [ -x "$SDK/cmdline-tools/latest/bin/sdkmanager" ]; then
