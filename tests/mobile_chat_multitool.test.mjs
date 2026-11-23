@@ -157,3 +157,10 @@ test('invalid model output on second-turn sightseeing request yields sourced par
  assert.ok(outcome.sources.length>0);
  assert.match(outcome.text,/吉林/);
 });
+
+test('a reply-only model may produce ordinary text without a function call',async()=>{
+ const result=await runProductAgent({question:'吉林市有什么好玩的',invoke:async()=>({choices:[{message:{role:'assistant',content:'松花湖和雾凇岛都是吉林市的候选去处。'}}]})});
+ assert.equal(result.status,'complete');
+ assert.match(result.text,/松花湖/);
+ assert.ok(result.sources.length>0);
+});
