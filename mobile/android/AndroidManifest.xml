@@ -2,7 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="cn.jzzx.travel.online" android:versionCode="21" android:versionName="1.0.4-multitool-preview">
   <uses-sdk android:minSdkVersion="24" android:targetSdkVersion="34" />
   <uses-permission android:name="android.permission.INTERNET"/>
-  <queries><intent><action android:name="android.intent.action.TTS_SERVICE"/></intent><intent><action android:name="android.speech.action.RECOGNIZE_SPEECH"/></intent></queries>
+  <uses-permission android:name="android.permission.RECORD_AUDIO"/>
+  <queries><intent><action android:name="android.intent.action.TTS_SERVICE"/></intent><intent><action android:name="android.speech.RecognitionService"/></intent><intent><action android:name="android.speech.action.RECOGNIZE_SPEECH"/></intent></queries>
   <application android:label="吉政知行" android:icon="@drawable/ic_launcher" android:theme="@android:style/Theme.Material.Light.NoActionBar" android:allowBackup="false" android:usesCleartextTraffic="false" android:supportsRtl="true">
     <activity android:name=".MainActivity" android:exported="true" android:configChanges="orientation|screenSize" android:windowSoftInputMode="adjustResize">
       <intent-filter>
