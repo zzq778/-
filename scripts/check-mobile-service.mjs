@@ -1,6 +1,6 @@
 // Public, read-only readiness check; optional authenticated smoke test.
 // Never prints credentials or full model responses.
-const base='https://jizhengzhixing-mobile.zedi-li070614.workers.dev';
+const base=(process.env.MOBILE_SERVICE_BASE||'https://jizhengzhixing-mobile.zedi-li070614.workers.dev').replace(/\/$/,'');
 const signal=()=>AbortSignal.timeout(45000);
 async function call(path,options={}){
  const r=await fetch(base+path,{...options,redirect:'error',signal:signal()});
