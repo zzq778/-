@@ -1,3 +1,4 @@
+import { visibleChatText } from './chat-output.mjs';
 import { parseIntent } from './wenlv/intent.mjs';
 import { retrieve } from './wenlv/search.mjs';
 import { ATTRACTIONS } from './wenlv/attractions.mjs';
@@ -149,14 +150,14 @@ export async function runProductAgent({question,history=[],region='长春市',in
   let calls;try{const raw=await bounded(Promise.resolve(invoke(messages,available)),Math.min(remaining,28000));calls=parseCalls(raw,available,step,maxCalls);
    if(!calls&&available.length===1&&available[0].function.name==='reply'){
     const msg=raw?.choices?.[0]?.message??raw?.message??raw;
-    const text=typeof msg?.content==='string'?msg.content:typeof raw?.response==='string'?raw.response:null;
+    const text=visibleChatText(typeof msg?.content==='string'?msg.content:typeof raw?.response==='string'?raw.response:'');
     const declaredCalls=msg?.tool_calls??raw?.tool_calls;
-    if((!Array.isArray(declaredCalls)||declaredCalls.length===0)&&text?.trim()&&text.length<=1800)calls=[{id:'plain_reply_'+step,name:'reply',args:{text}}];
+    if((!Array.isArray(declaredCalls)||declaredCalls.length===0)&&text)calls=[{id:'plain_reply_'+step,name:'reply',args:{text}}];
    }
   }catch(e){reason=e?.message==='timeout'?'model-timeout':'model-error';failedStep=step;break}
   if(!calls){reason='invalid-tool';failedStep=step;break;}
   const reply=calls.find(call=>call.name==='reply');
-  if(reply)return result('complete',reply.args.text.trim().replace(/https?:\/\/[^\s，。；、）)\]}]+/g,'（请查看参考资料）').slice(0,1800));
+  if(reply){const display=visibleChatText(reply.args.text);if(display)return result('complete',display);reason='invalid-reply';failedStep=step;break;}
   const toolMessages=[];
   for(const call of calls){
    const {name,args,id}=call;
