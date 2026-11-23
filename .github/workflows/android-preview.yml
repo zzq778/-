@@ -79,10 +79,10 @@ jobs:
       - name: Build and verify Android APK
         run: |
           bash mobile/android/build.sh
-          sha256sum dist/JiZhengZhiXing-v1.0.4-multitool-preview.apk
+          sha256sum dist/JiZhengZhiXing-v1.0.5-chat-voice-preview.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: jizheng-v1.0.4-multitool-preview
-          path: dist/JiZhengZhiXing-v1.0.4-multitool-preview.apk
+          name: jizheng-v1.0.5-chat-voice-preview
+          path: dist/JiZhengZhiXing-v1.0.5-chat-voice-preview.apk
           if-no-files-found: error
           retention-days: 14
