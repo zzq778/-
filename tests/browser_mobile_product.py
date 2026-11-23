@@ -56,6 +56,10 @@ with sync_playwright() as p:
    assert reply.locator('.chat-reply-copy').inner_text()=='可以先去雾凇岛。早上出发，沿松花江欣赏自然景色，下午再前往市区。请提前核实景点开放时间。'
    assert reply.locator('.reply-breath-caret').count()==0
    assert reply.locator('.chat-reply-extras').is_visible()
+   page.evaluate("window.JZZXNativeLinks={open(url){window.openedSourceUrl=url}}")
+   reply.locator('.chat-sources summary').click()
+   reply.locator('.chat-source-link').first.click()
+   assert page.evaluate('openedSourceUrl')=='http://lyj.jlcity.gov.cn/'
    assert page.evaluate("document.activeElement?.id!=='chatInput'")
    page.locator('#chatInput').fill('改成一天')
    page.locator('#conversationForm button[type=submit]').click()
