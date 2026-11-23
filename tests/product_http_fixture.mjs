@@ -36,7 +36,7 @@ async function start(dir,handler,mobile){
    }
    const name=resolve(root,'.'+decodeURIComponent(url.pathname==='/'?'/index.html':url.pathname));if(!name.startsWith(root+sep)){res.writeHead(403);res.end();return}
    let file=await readFile(name);
-   if(mobile&&name===resolve(root,'index.html'))file=Buffer.from(file.toString().replaceAll('https://jizhengzhixing-mobile.zedi-li070614.workers.dev',origin));
+   if(mobile&&name===resolve(root,'index.html'))file=Buffer.from(file.toString().replaceAll('https://jizhengzhixing-mobile-preview.zedi-li070614.workers.dev',origin));
    res.writeHead(200,{'content-type':types[extname(name)]||'application/octet-stream','cache-control':'no-store'});res.end(file);
   }catch(e){res.writeHead(404);res.end('Not available')}
  });
