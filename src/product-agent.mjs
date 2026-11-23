@@ -67,6 +67,28 @@ function parseCalls(raw,available,step,maxCalls=MAX_CALLS_PER_TURN){
  if(parsed.some(call=>call.name==='reply')&&parsed.length!==1)return null;
  return parsed;
 }
+// A catalogue-grounded direct-answer path prevents a simple sightseeing question from
+// consuming the entire latency budget in successive model tool-selection rounds.
+// It still uses the real model for phrasing and preserves the actual conversation history.
+function scenicGrounding(question,history){
+ const scenic=/(好玩|景点|值得去|游玩|去哪玩|哪里玩|旅游推荐|旅行推荐|景区推荐|推荐.*(?:地方|去处|玩))/;
+ const followup=/^(?:那|那么|如果|还有|适合|改成|换成|有没有|能不能|可以|冬天|夏天|春天|秋天)/;
+ const civic=/(政务|办理|申请|证件|身份证|营业执照|社保|公积金|投诉|反馈|手续|材料|政策)/;
+ const previous=[...history].reverse().find(x=>x.role==='user')?.content||'';
+ const next=followup.test(question)&&scenic.test(previous)&&!civic.test(question);
+ if(!scenic.test(question)&&!next)return null;
+ const query=next?previous+'，'+question:question;
+ const intent=parseIntent(query);
+ const found=retrieve(intent,{limit:6,routeLimit:2,eventLimit:2});
+ const locations=found.attractions.slice(0,6).map(a=>{
+  const item=places.get(a.id);
+  return item?{id:item.id,name:item.name,area:item.area,kind:item.kind,tags:item.tags,season:item.season?.note||null,caveat:item.caveat||null,sources:item.sources||[]}:null;
+ }).filter(Boolean);
+ if(!locations.length)return null;
+ const area=intent.areas?.length===1?intent.areas[0]:'吉林省';
+ return {area,locations};
+}
+
 async function bounded(promise,ms){let timer;try{return await Promise.race([promise,new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('timeout')),ms)})]);}finally{clearTimeout(timer)}}
 export function cleanChatPayload(data){
  if(!data||typeof data!=='object'||Array.isArray(data)||typeof data.question!=='string')return null;
@@ -82,10 +104,13 @@ export function cleanChatPayload(data){
 export async function runProductAgent({question,history=[],region='长春市',invoke,budgetMs=35000,pageContext='',runtime=[],analysisOnly=false}){
  const dynamic=runtime.map(t=>t.schema);
  const capabilities=analysisOnly?'\n本次仅允许读取已授权反馈分类统计并回答问题，不提供联网检索、其他业务工具或写入操作。':dynamic.length?'\n本次已配置额外工具：'+dynamic.map(t=>t.function.name).join('、')+'。涉及天气和检索时应使用这些实际工具，并注明来源和范围。':'\n本次未配置实时天气和公开网页检索服务。';
- const messages=[{role:'system',content:prompt+capabilities+'\n当前默认办事地区：'+region+pageContext},...history,{role:'user',content:question}];
+ const scenic=scenicGrounding(question,history);
+ const grounding=scenic?{area:scenic.area,places:scenic.locations.map(({id,name,area,kind,tags,season,caveat})=>({id,name,area,kind,tags,season,caveat}))}:null;
+ const messages=[{role:'system',content:prompt+capabilities+'\n当前默认办事地区：'+region+pageContext+(grounding?'\n已按用户问题从本地景点目录核对以下候选资料，请直接使用 reply 工具回答，不能添加未经核实的票价或营业时间。'+JSON.stringify(grounding):'')},...history,{role:'user',content:question}];
  const sources=new Map(),placesFound=new Map(),placeDetails=[];
  let itinerary=null,planText='',count=0,service=null,serviceGuide=null,serviceSearchPerformed=false,placeSearchPerformed=false,feedbackDraft=null,posterDraft=null,reason='step-limit',failedStep=null;
  const addSources=list=>{for(const s of list||[]){if(s&&typeof s.url==='string'&&/^https?:\/\//i.test(s.url)&&!sources.has(s.url)&&sources.size<12)sources.set(s.url,{label:s.label||s.name||'官方资料',url:s.url});}};
+ if(scenic){placeSearchPerformed=true;for(const item of scenic.locations){placesFound.set(item.id,item);addSources(item.sources);}}
  const result=(status,text)=>({status,text,itinerary,sources:[...sources.values()],toolCount:count,...(status==='complete'?{}:{reason,...(failedStep===null?{}:{failedStep})}),version:PRODUCT_AGENT_VERSION,feedbackDraft,posterDraft,...(service?{actions:actionBundle([service]).actions,agent:{plan:visiblePlan(service)}}:{})});
  const partialAnswer=()=>{
   if(planText)return planText;
@@ -115,9 +140,10 @@ export async function runProductAgent({question,history=[],region='长春市',in
  };
  const deadline=Date.now()+budgetMs;
  for(let step=0;step<6;step++){
+  if(scenic&&step>0)break;
   const remaining=deadline-Date.now();if(remaining<500){reason='budget';failedStep=step;break;}
-  const available=step===5||count>=MAX_TOOL_CALLS?[byTool.get('reply')]:analysisOnly?[...dynamic,byTool.get('reply')]:[...tools,...dynamic];
-  const maxCalls=Math.max(1,Math.min(MAX_CALLS_PER_TURN,MAX_TOOL_CALLS-count));
+  const available=scenic||step===5||count>=MAX_TOOL_CALLS?[byTool.get('reply')]:analysisOnly?[...dynamic,byTool.get('reply')]:[...tools,...dynamic];
+  const maxCalls=scenic?1:Math.max(1,Math.min(MAX_CALLS_PER_TURN,MAX_TOOL_CALLS-count));
   let calls;try{calls=parseCalls(await bounded(Promise.resolve(invoke(messages,available)),Math.min(remaining,28000)),available,step,maxCalls)}catch(e){reason=e?.message==='timeout'?'model-timeout':'model-error';failedStep=step;break}
   if(!calls){reason='invalid-tool';failedStep=step;break;}
   const reply=calls.find(call=>call.name==='reply');
