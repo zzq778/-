@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 import {createContext,runInContext} from 'node:vm';
 import {handleMobile,MOBILE_MODEL} from '../src/mobile-worker.mjs';
 
-const ORIGIN='https://jizhengzhixing-mobile.zedi-li070614.workers.dev';
+const ORIGIN='https://jizhengzhixing-mobile-preview.zedi-li070614.workers.dev';
 const CODE='test-team-code-123456';
 const QUESTION='吉林市冬天两天看雾凇，不想滑雪';
 function modelCall(name,args={},id=name){
