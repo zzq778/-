@@ -79,14 +79,14 @@ export function cleanChatPayload(data){
  if(!REGIONS.includes(region))return null;
  return {question,history:history.map(({role,content})=>({role,content})),region};
 }
-export async function runProductAgent({question,history=[],region='长春市',invoke,budgetMs=35000,pageContext='',runtime=[],analysisOnly=false,diagnosticsEnabled=false}){
+export async function runProductAgent({question,history=[],region='长春市',invoke,budgetMs=35000,pageContext='',runtime=[],analysisOnly=false}){
  const dynamic=runtime.map(t=>t.schema);
  const capabilities=analysisOnly?'\n本次仅允许读取已授权反馈分类统计并回答问题，不提供联网检索、其他业务工具或写入操作。':dynamic.length?'\n本次已配置额外工具：'+dynamic.map(t=>t.function.name).join('、')+'。涉及天气和检索时应使用这些实际工具，并注明来源和范围。':'\n本次未配置实时天气和公开网页检索服务。';
  const messages=[{role:'system',content:prompt+capabilities+'\n当前默认办事地区：'+region+pageContext},...history,{role:'user',content:question}];
  const sources=new Map(),placesFound=new Map(),placeDetails=[];
- let itinerary=null,planText='',count=0,service=null,serviceGuide=null,serviceSearchPerformed=false,placeSearchPerformed=false,feedbackDraft=null,posterDraft=null,reason='step-limit',failedStep=null,modelDiagnostics=null,toolHistory=[];
+ let itinerary=null,planText='',count=0,service=null,serviceGuide=null,serviceSearchPerformed=false,placeSearchPerformed=false,feedbackDraft=null,posterDraft=null,reason='step-limit',failedStep=null;
  const addSources=list=>{for(const s of list||[]){if(s&&typeof s.url==='string'&&/^https?:\/\//i.test(s.url)&&!sources.has(s.url)&&sources.size<12)sources.set(s.url,{label:s.label||s.name||'官方资料',url:s.url});}};
- const result=(status,text)=>({status,text,itinerary,sources:[...sources.values()],toolCount:count,...(status==='complete'?{}:{reason,...(failedStep===null?{}:{failedStep})}),...(diagnosticsEnabled&&modelDiagnostics?{diagnostics:modelDiagnostics}:{}),version:PRODUCT_AGENT_VERSION,feedbackDraft,posterDraft,...(service?{actions:actionBundle([service]).actions,agent:{plan:visiblePlan(service)}}:{})});
+ const result=(status,text)=>({status,text,itinerary,sources:[...sources.values()],toolCount:count,...(status==='complete'?{}:{reason,...(failedStep===null?{}:{failedStep})}),version:PRODUCT_AGENT_VERSION,feedbackDraft,posterDraft,...(service?{actions:actionBundle([service]).actions,agent:{plan:visiblePlan(service)}}:{})});
  const partialAnswer=()=>{
   if(planText)return planText;
   if(itinerary?.plan?.length){
@@ -118,14 +118,13 @@ export async function runProductAgent({question,history=[],region='长春市',in
   const remaining=deadline-Date.now();if(remaining<500){reason='budget';failedStep=step;break;}
   const available=step===5||count>=MAX_TOOL_CALLS?[byTool.get('reply')]:analysisOnly?[...dynamic,byTool.get('reply')]:[...tools,...dynamic];
   const maxCalls=Math.max(1,Math.min(MAX_CALLS_PER_TURN,MAX_TOOL_CALLS-count));
-  let raw,calls;const modelStepStarted=Date.now();try{raw=await bounded(Promise.resolve(invoke(messages,available)),Math.min(remaining,28000));calls=parseCalls(raw,available,step,maxCalls)}catch(e){reason=e?.message==='timeout'?'model-timeout':'model-error';failedStep=step;if(diagnosticsEnabled)modelDiagnostics={executedTools:toolHistory.slice(0,6),failedStep:step,elapsedMs:Date.now()-modelStepStarted};break}
-  if(!calls){reason='invalid-tool';failedStep=step;if(diagnosticsEnabled){const msg=raw?.choices?.[0]?.message??raw?.message??raw;const rawCalls=msg?.tool_calls??raw?.tool_calls;modelDiagnostics={executedTools:toolHistory.slice(0,6),failedStep:step,elapsedMs:Date.now()-modelStepStarted,rawType:typeof raw,rawKeys:raw&&typeof raw==='object'?Object.keys(raw).slice(0,12):[],choiceCount:Array.isArray(raw?.choices)?raw.choices.length:0,finishReason:typeof raw?.choices?.[0]?.finish_reason==='string'?raw.choices[0].finish_reason:null,messageKeys:msg&&typeof msg==='object'?Object.keys(msg).slice(0,12):[],contentType:typeof msg?.content,contentLength:typeof msg?.content==='string'?msg.content.length:null,toolCallCount:Array.isArray(rawCalls)?rawCalls.length:0,toolCalls:Array.isArray(rawCalls)?rawCalls.slice(0,3).map(c=>({name:String(c?.function?.name??c?.name??'').slice(0,80),idType:typeof c?.id,argumentsType:typeof(c?.function?.arguments??c?.arguments),argumentsLength:typeof(c?.function?.arguments??c?.arguments)==='string'?(c?.function?.arguments??c?.arguments).length:null})):[]};}break;}
+  let calls;try{calls=parseCalls(await bounded(Promise.resolve(invoke(messages,available)),Math.min(remaining,28000)),available,step,maxCalls)}catch(e){reason=e?.message==='timeout'?'model-timeout':'model-error';failedStep=step;break}
+  if(!calls){reason='invalid-tool';failedStep=step;break;}
   const reply=calls.find(call=>call.name==='reply');
   if(reply)return result('complete',reply.args.text.trim().replace(/https?:\/\/[^\s，。；、）)\]}]+/g,'（请查看参考资料）').slice(0,1800));
   const toolMessages=[];
   for(const call of calls){
    const {name,args,id}=call;
-   toolHistory.push(name);
    let value;
    if(name==='find_places'){
     placeSearchPerformed=true;
