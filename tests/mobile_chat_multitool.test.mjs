@@ -87,7 +87,7 @@ test('mobile HTTP API preserves first-turn history and completes a second turn w
   AI:{run:async(model,input)=>{
    assert.equal(model,MOBILE_MODEL);
    assert.equal(input.tool_choice,'required');
-   assert.equal(input.parallel_tool_calls,true);
+   assert.equal(input.parallel_tool_calls,false);
    const last=input.messages.at(-1);
    if(last.role==='user'&&last.content==='你好')return toolCalls([{name:'reply',args:{text:'你好，我是吉小知。'}}]);
    if(last.role==='user'&&last.content===question2){
