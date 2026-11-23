@@ -6,6 +6,7 @@
   "ai": {
     "binding": "AI"
   },
+  "vars": {"MOBILE_CHAT_MODEL": "@cf/google/gemma-4-26b-a4b-it"},
   "assets": {
     "directory": "./mobile/site",
     "binding": "ASSETS",
