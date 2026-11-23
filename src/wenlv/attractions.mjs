@@ -12,7 +12,7 @@
 const S = (label, url, kind = 'gov') => ({ label, url, kind });
 const HALL = S('吉林省文化和旅游厅', 'https://whhlyt.jl.gov.cn/');
 const CC = S('长春市文化广播电视和旅游局', 'http://wglj.changchun.gov.cn/');
-const JL = S('吉林市文化广播电视和旅游局', 'http://lyj.jlcity.gov.cn/');
+const JL = S('吉林市文化广播电视和旅游局', 'https://www.jlcity.gov.cn/bmwz/lyj/');
 const CBS = S('长白山保护开发区管委会', 'http://www.changbaishan.gov.cn/');
 
 export const ATTRACTIONS = Object.freeze([
