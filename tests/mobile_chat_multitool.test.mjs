@@ -88,13 +88,15 @@ test('mobile HTTP API preserves real history and returns the second-turn sightse
   LIMITER:{limit:async()=>({success:true})},
   AI:{run:async(model,input)=>{
    assert.equal(model,MOBILE_MODEL);
-   assert.equal(input.tool_choice,'required');
-   assert.equal(input.parallel_tool_calls,false);
+   if(input.messages.at(-1)?.role==='user'&&['你好',question2].includes(input.messages.at(-1)?.content)){
+    assert.equal(input.tool_choice,undefined);
+    assert.equal(input.tools,undefined);
+   }
    const last=input.messages.at(-1);
    if(last.role==='user'&&last.content==='你好')return toolCalls([{name:'reply',args:{text:'你好，我是吉小知。'}}]);
    if(last.role==='user'&&last.content===question2){
     secondTurnMessages=structuredClone(input.messages);
-    assert.deepEqual(input.tools.map(tool=>tool.function.name),['reply']);
+    assert.equal(input.tools,undefined);
     assert.match(input.messages[0].content,/本地景点目录/);
     return toolCalls([{name:'reply',args:{text:'吉林市可以先了解雾凇岛、松花湖等地点。'}}]);
    }
