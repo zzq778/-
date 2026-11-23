@@ -146,7 +146,14 @@ export async function runProductAgent({question,history=[],region='长春市',in
   const remaining=deadline-Date.now();if(remaining<500){reason='budget';failedStep=step;break;}
   const available=scenic||greeting||step===5||count>=MAX_TOOL_CALLS?[byTool.get('reply')]:analysisOnly?[...dynamic,byTool.get('reply')]:[...tools,...dynamic];
   const maxCalls=scenic||greeting?1:Math.max(1,Math.min(MAX_CALLS_PER_TURN,MAX_TOOL_CALLS-count));
-  let calls;try{calls=parseCalls(await bounded(Promise.resolve(invoke(messages,available)),Math.min(remaining,28000)),available,step,maxCalls)}catch(e){reason=e?.message==='timeout'?'model-timeout':'model-error';failedStep=step;break}
+  let calls;try{const raw=await bounded(Promise.resolve(invoke(messages,available)),Math.min(remaining,28000));calls=parseCalls(raw,available,step,maxCalls);
+   if(!calls&&available.length===1&&available[0].function.name==='reply'){
+    const msg=raw?.choices?.[0]?.message??raw?.message??raw;
+    const text=typeof msg?.content==='string'?msg.content:typeof raw?.response==='string'?raw.response:null;
+    const declaredCalls=msg?.tool_calls??raw?.tool_calls;
+    if((!Array.isArray(declaredCalls)||declaredCalls.length===0)&&text?.trim()&&text.length<=1800)calls=[{id:'plain_reply_'+step,name:'reply',args:{text}}];
+   }
+  }catch(e){reason=e?.message==='timeout'?'model-timeout':'model-error';failedStep=step;break}
   if(!calls){reason='invalid-tool';failedStep=step;break;}
   const reply=calls.find(call=>call.name==='reply');
   if(reply)return result('complete',reply.args.text.trim().replace(/https?:\/\/[^\s，。；、）)\]}]+/g,'（请查看参考资料）').slice(0,1800));
