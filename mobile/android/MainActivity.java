@@ -13,6 +13,13 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.speech.tts.TextToSpeech;
 import android.speech.RecognizerIntent;
+import android.speech.SpeechRecognizer;
+import android.speech.RecognitionListener;
+import android.Manifest;
+import android.content.pm.PackageManager;
+import android.os.Build;
+import android.os.Handler;
+import android.os.Looper;
 import org.json.JSONObject;
 import java.util.ArrayList;
 import android.widget.Toast;
@@ -29,12 +36,15 @@ public final class MainActivity extends Activity {
   private static final String HOST="jizhengzhixing-mobile-preview.zedi-li070614.workers.dev";
   private static final int SAVE_DOCUMENT=701;
   private static final int RECOGNIZE_VOICE=702;
+  private static final int VOICE_PERMISSION=703;
   private static final int MAX_FILE_BYTES=3*1024*1024;
   private WebView web;
   private volatile TextToSpeech tts;
   private volatile boolean speechReady=false;
   private byte[] pendingFile;
   private int voiceRequest=0;
+  private SpeechRecognizer activeRecognizer;
+  private final Handler voiceHandler=new Handler(Looper.getMainLooper());
   @Override public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     getWindow().setStatusBarColor(Color.rgb(250,249,245));
@@ -132,32 +142,107 @@ public final class MainActivity extends Activity {
   private void voiceResult(int id,String text,String error){
     if(web!=null&&!isFinishing())web.evaluateJavascript("typeof window.onJzzxVoiceResult === 'function' && window.onJzzxVoiceResult("+id+","+JSONObject.quote(text)+","+JSONObject.quote(error)+")",null);
   }
+  private void voiceStatus(int id,String message){
+    if(web!=null&&!isFinishing())web.evaluateJavascript("typeof window.onJzzxVoiceStatus === 'function' && window.onJzzxVoiceStatus("+id+","+JSONObject.quote(message)+")",null);
+  }
+  private void releaseRecognizer(){
+    SpeechRecognizer previous=activeRecognizer;activeRecognizer=null;
+    if(previous!=null){try{previous.cancel();previous.destroy();}catch(Exception ignored){}}
+  }
+  private void completeVoice(int id,String text,String error){
+    if(voiceRequest!=id)return;
+    voiceRequest=0;
+    releaseRecognizer();
+    if(error!=null&&!error.isEmpty()){
+      // Keep the editable input visible even if the device has no functioning speech engine.
+      voiceResult(id,"",error);
+      return;
+    }
+    voiceResult(id,text==null?"":text.trim().substring(0,Math.min(text.trim().length(),600)),"");
+  }
+  private static String voiceError(int code){
+    switch(code){
+      case SpeechRecognizer.ERROR_NETWORK:
+      case SpeechRecognizer.ERROR_NETWORK_TIMEOUT:
+        return "系统语音服务连接失败（"+code+"）。可使用输入法上的麦克风继续输入。";
+      case SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS:
+        return "请允许吉政知行使用麦克风，然后重试。";
+      case SpeechRecognizer.ERROR_NO_MATCH:
+      case SpeechRecognizer.ERROR_SPEECH_TIMEOUT:
+        return "未识别到语音，请重试或使用输入法麦克风。";
+      case SpeechRecognizer.ERROR_RECOGNIZER_BUSY:
+        return "语音识别服务正忙，请稍后再试。";
+      default:
+        return "系统语音识别不可用（"+code+"），请使用输入法麦克风。";
+    }
+  }
+  private void listenForVoice(int id){
+    if(isFinishing()||web==null||voiceRequest!=id)return;
+    try{
+      if(!SpeechRecognizer.isRecognitionAvailable(this)){
+        completeVoice(id,"","设备未安装可用的语音识别引擎，请使用输入法麦克风。");
+        return;
+      }
+      // Prefer an on-device engine to avoid launching a vendor's unreliable popup.
+      boolean onDevice=Build.VERSION.SDK_INT>=31&&SpeechRecognizer.isOnDeviceRecognitionAvailable(this);
+      activeRecognizer=onDevice?SpeechRecognizer.createOnDeviceSpeechRecognizer(this):SpeechRecognizer.createSpeechRecognizer(this);
+      activeRecognizer.setRecognitionListener(new RecognitionListener(){
+        @Override public void onReadyForSpeech(Bundle params){voiceStatus(id,"正在聆听…");}
+        @Override public void onBeginningOfSpeech(){voiceStatus(id,"正在录入语音…");}
+        @Override public void onRmsChanged(float rmsdB){}
+        @Override public void onBufferReceived(byte[] buffer){}
+        @Override public void onEndOfSpeech(){voiceStatus(id,"正在识别…");}
+        @Override public void onError(int error){completeVoice(id,"",voiceError(error));}
+        @Override public void onResults(Bundle results){
+          ArrayList<String> words=results==null?null:results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
+          String spoken=words==null||words.isEmpty()?"":words.get(0);
+          completeVoice(id,spoken,spoken.isEmpty()?"未识别到语音，可使用输入法麦克风。":"");
+        }
+        @Override public void onPartialResults(Bundle partialResults){}
+        @Override public void onEvent(int eventType,Bundle params){}
+      });
+      Intent intent=new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+      intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+      intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE,"zh-CN");
+      intent.putExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE,onDevice);
+      intent.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS,1);
+      activeRecognizer.startListening(intent);
+      voiceStatus(id,onDevice?"正在启动本机语音识别…":"正在启动语音识别…");
+    }catch(Exception e){
+      completeVoice(id,"","设备语音识别服务无法启动，请使用输入法麦克风。");
+    }
+  }
   private final class NativeVoice {
     @JavascriptInterface public void start(int id){
       if(id<=0)return;
       runOnUiThread(()->{
         if(isFinishing()||web==null)return;
         if(voiceRequest!=0){voiceResult(id,"","请先结束当前语音输入。");return;}
-        Intent intent=new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
-        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
-        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE,"zh-CN");
-        intent.putExtra(RecognizerIntent.EXTRA_PROMPT,"请说出想咨询的问题");
-        intent.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS,1);
         voiceRequest=id;
-        try{startActivityForResult(intent,RECOGNIZE_VOICE);}
-        catch(Exception e){voiceRequest=0;voiceResult(id,"","手机未安装可用的语音识别服务，请使用输入法语音输入。");}
+        if(Build.VERSION.SDK_INT>=23&&checkSelfPermission(Manifest.permission.RECORD_AUDIO)!=PackageManager.PERMISSION_GRANTED){
+          requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO},VOICE_PERMISSION);
+          voiceStatus(id,"请允许麦克风权限…");
+          return;
+        }
+        listenForVoice(id);
+      });
+    }
+    @JavascriptInterface public void stop(int id){
+      runOnUiThread(()->{
+        if(voiceRequest==id){voiceRequest=0;releaseRecognizer();}
       });
     }
   }
+  @Override public void onRequestPermissionsResult(int requestCode,String[] permissions,int[] grantResults){
+    super.onRequestPermissionsResult(requestCode,permissions,grantResults);
+    if(requestCode!=VOICE_PERMISSION)return;
+    int id=voiceRequest;
+    if(id==0)return;
+    if(grantResults.length>0&&grantResults[0]==PackageManager.PERMISSION_GRANTED)listenForVoice(id);
+    else completeVoice(id,"","麦克风权限未开启，请在系统权限设置中允许或使用输入法麦克风。");
+  }
   @Override protected void onActivityResult(int request,int result,Intent data){
     super.onActivityResult(request,result,data);
-    if(request==RECOGNIZE_VOICE){
-      int id=voiceRequest;voiceRequest=0;if(id<=0)return;
-      ArrayList<String> results=data==null?null:data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
-      String text=result==RESULT_OK&&results!=null&&!results.isEmpty()?results.get(0):"";
-      if(text==null)text="";
-      voiceResult(id,text.substring(0,Math.min(text.length(),600)),text.isEmpty()?"语音输入已结束，未识别到内容。":"");return;
-    }
     if(request!=SAVE_DOCUMENT)return;
     byte[] bytes=pendingFile;pendingFile=null;
     if(result!=RESULT_OK||data==null||data.getData()==null||bytes==null){toast("未保存文件");return;}
@@ -188,6 +273,7 @@ public final class MainActivity extends Activity {
   @Override protected void onDestroy(){
     speechReady=false;TextToSpeech current=tts;tts=null;if(current!=null){current.stop();current.shutdown();}
     pendingFile=null;
+    voiceRequest=0;releaseRecognizer();voiceHandler.removeCallbacksAndMessages(null);
     if(web!=null){web.removeJavascriptInterface("JZZXNativeFiles");web.removeJavascriptInterface("JZZXNativeSpeech");web.removeJavascriptInterface("JZZXNativeVoice");web.destroy();web=null;}
     super.onDestroy();
   }
