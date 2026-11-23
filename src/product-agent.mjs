@@ -105,6 +105,7 @@ export async function runProductAgent({question,history=[],region='长春市',in
  const dynamic=runtime.map(t=>t.schema);
  const capabilities=analysisOnly?'\n本次仅允许读取已授权反馈分类统计并回答问题，不提供联网检索、其他业务工具或写入操作。':dynamic.length?'\n本次已配置额外工具：'+dynamic.map(t=>t.function.name).join('、')+'。涉及天气和检索时应使用这些实际工具，并注明来源和范围。':'\n本次未配置实时天气和公开网页检索服务。';
  const scenic=scenicGrounding(question,history);
+ const greeting=/^(?:你好|您好|嗨|哈喽|hi|hello)[！!。.\s]*$/i.test(question);
  const grounding=scenic?{area:scenic.area,places:scenic.locations.map(({id,name,area,kind,tags,season,caveat})=>({id,name,area,kind,tags,season,caveat}))}:null;
  const messages=[{role:'system',content:prompt+capabilities+'\n当前默认办事地区：'+region+pageContext+(grounding?'\n已按用户问题从本地景点目录核对以下候选资料，请直接使用 reply 工具回答，不能添加未经核实的票价或营业时间。'+JSON.stringify(grounding):'')},...history,{role:'user',content:question}];
  const sources=new Map(),placesFound=new Map(),placeDetails=[];
@@ -113,6 +114,7 @@ export async function runProductAgent({question,history=[],region='长春市',in
  if(scenic){placeSearchPerformed=true;for(const item of scenic.locations){placesFound.set(item.id,item);addSources(item.sources);}}
  const result=(status,text)=>({status,text,itinerary,sources:[...sources.values()],toolCount:count,...(status==='complete'?{}:{reason,...(failedStep===null?{}:{failedStep})}),version:PRODUCT_AGENT_VERSION,feedbackDraft,posterDraft,...(service?{actions:actionBundle([service]).actions,agent:{plan:visiblePlan(service)}}:{})});
  const partialAnswer=()=>{
+  if(greeting)return '你好，我是吉小知。云端模型本次响应超时，但你仍可以继续提问。有关吉林景点的查询，我会优先提供已收录的本地资料。';
   if(planText)return planText;
   if(itinerary?.plan?.length){
    const days=itinerary.plan.map(day=>'第'+day.day+'天：'+(day.nodes.map(node=>node.name).join('、')||'自由活动')).join('；');
@@ -140,10 +142,10 @@ export async function runProductAgent({question,history=[],region='长春市',in
  };
  const deadline=Date.now()+budgetMs;
  for(let step=0;step<6;step++){
-  if(scenic&&step>0)break;
+  if((scenic||greeting)&&step>0)break;
   const remaining=deadline-Date.now();if(remaining<500){reason='budget';failedStep=step;break;}
-  const available=scenic||step===5||count>=MAX_TOOL_CALLS?[byTool.get('reply')]:analysisOnly?[...dynamic,byTool.get('reply')]:[...tools,...dynamic];
-  const maxCalls=scenic?1:Math.max(1,Math.min(MAX_CALLS_PER_TURN,MAX_TOOL_CALLS-count));
+  const available=scenic||greeting||step===5||count>=MAX_TOOL_CALLS?[byTool.get('reply')]:analysisOnly?[...dynamic,byTool.get('reply')]:[...tools,...dynamic];
+  const maxCalls=scenic||greeting?1:Math.max(1,Math.min(MAX_CALLS_PER_TURN,MAX_TOOL_CALLS-count));
   let calls;try{calls=parseCalls(await bounded(Promise.resolve(invoke(messages,available)),Math.min(remaining,28000)),available,step,maxCalls)}catch(e){reason=e?.message==='timeout'?'model-timeout':'model-error';failedStep=step;break}
   if(!calls){reason='invalid-tool';failedStep=step;break;}
   const reply=calls.find(call=>call.name==='reply');
