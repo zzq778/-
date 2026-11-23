@@ -6,9 +6,6 @@
   "ai": {
     "binding": "AI"
   },
-  "vars": {
-    "AGENT_DIAGNOSTICS": "true"
-  },
   "assets": {
     "directory": "./mobile/site",
     "binding": "ASSETS",
