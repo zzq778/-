@@ -46,7 +46,7 @@ test('tool budget still leaves one final reply call after six successful tools',
   {name:'read_place',args:{id:'songhuahu'}}
  ];
  const result=await runProductAgent({
-  question:'介绍几个吉林景点',
+  question:'请汇总多项公共服务事项',
   invoke:async(_messages,available)=>{
    if(turn++<2){
     assert.ok(available.some(tool=>tool.function.name==='read_place'));
@@ -67,18 +67,20 @@ test('a reply-model failure after place retrieval returns a grounded partial ans
  let calls=0;
  const result=await runProductAgent({
   question,
-  invoke:async()=>{
-   if(calls++===0)return toolCalls([{name:'find_places',args:{query:question}}]);
-   throw new Error('simulated model outage after successful retrieval');
+  invoke:async(_messages,available)=>{
+   calls++;
+   assert.deepEqual(available.map(x=>x.function.name),['reply']);
+   throw new Error('simulated model outage during grounded answer');
   }
  });
+ assert.equal(calls,1);
  assert.equal(result.status,'partial');
  assert.match(result.text,new RegExp(expected));
  assert.ok(result.sources.length>0);
  assert.equal(result.reason,'model-error');
 });
 
-test('mobile HTTP API preserves first-turn history and completes a second turn with multiple native tool calls',async()=>{
+test('mobile HTTP API preserves real history and returns the second-turn sightseeing answer with one grounded model call',async()=>{
  const question2='吉林市有什么好玩的地方';
  let secondTurnMessages=null;
  const binding={
@@ -92,12 +94,10 @@ test('mobile HTTP API preserves first-turn history and completes a second turn w
    if(last.role==='user'&&last.content==='你好')return toolCalls([{name:'reply',args:{text:'你好，我是吉小知。'}}]);
    if(last.role==='user'&&last.content===question2){
     secondTurnMessages=structuredClone(input.messages);
-    return toolCalls([
-     {name:'find_places',args:{query:question2}},
-     {name:'read_place',args:{id:'wusongdao'}}
-    ]);
+    assert.deepEqual(input.tools.map(tool=>tool.function.name),['reply']);
+    assert.match(input.messages[0].content,/本地景点目录/);
+    return toolCalls([{name:'reply',args:{text:'吉林市可以先了解雾凇岛、松花湖等地点。'}}]);
    }
-   if(last.role==='tool')return toolCalls([{name:'reply',args:{text:'吉林市可以优先了解雾凇岛、松花湖等地点。'}}]);
    throw new Error('unexpected model turn');
   }}
  };
@@ -118,8 +118,42 @@ test('mobile HTTP API preserves first-turn history and completes a second turn w
  assert.equal(secondResponse.status,200);
  const second=await secondResponse.json();
  assert.equal(second.status,'complete');
- assert.equal(second.toolCount,2);
+ assert.equal(second.toolCount,0);
+ assert.ok(second.sources.length>0);
  assert.match(second.text,/雾凇岛/);
  assert.ok(secondTurnMessages.some(message=>message.role==='user'&&message.content==='你好'));
  assert.ok(secondTurnMessages.some(message=>message.role==='assistant'&&message.content===first.text));
+});
+
+test('sightseeing follow-up uses prior destination when the new question is elliptical',async()=>{
+ const history=[
+  {role:'user',content:'吉林市有什么好玩的地方？'},
+  {role:'assistant',content:'可以先去松花湖和雾凇岛。'}
+ ];
+ let modelMessages;
+ const outcome=await runProductAgent({
+  question:'那冬天适合去哪？',
+  history,
+  invoke:async(messages,available)=>{
+   modelMessages=messages;
+   assert.deepEqual(available.map(x=>x.function.name),['reply']);
+   return toolCalls([{name:'reply',args:{text:'冬天可以考虑雾凇岛，开放情况请核实。'}}]);
+  }
+ });
+ assert.equal(outcome.status,'complete');
+ assert.equal(outcome.toolCount,0);
+ assert.ok(outcome.sources.length>0);
+ assert.ok(modelMessages.some(m=>m.role==='user'&&m.content==='吉林市有什么好玩的地方？'));
+ assert.match(modelMessages[0].content,/吉林市/);
+});
+
+test('invalid model output on second-turn sightseeing request yields sourced partial, not 503',async()=>{
+ const outcome=await runProductAgent({
+  question:'吉林市有什么好玩的？',
+  history:[{role:'user',content:'你好'},{role:'assistant',content:'你好，我是吉小知'}],
+  invoke:async()=>({choices:[{message:{content:'',tool_calls:[]}}]})
+ });
+ assert.equal(outcome.status,'partial');
+ assert.ok(outcome.sources.length>0);
+ assert.match(outcome.text,/吉林/);
 });
