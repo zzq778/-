@@ -14,7 +14,8 @@
   if (!P || !app) { app.innerHTML = '<p class="p-empty">暂时无法打开工作台，请重新进入。</p>'; return; }
   var U = P.utils;
   var W = window.WENLV || { routes: [], calendar: [], attractions: [] };
-  var state = { tab: 'explore', category: P.FEEDBACK_CATEGORIES[0], flash: '' };
+  var state = { tab: 'explore', category: P.FEEDBACK_CATEGORIES[0], flash: '', draft: null };
+  try { var raw=sessionStorage.getItem('jzzx-feedback-draft-v1');if(raw){sessionStorage.removeItem('jzzx-feedback-draft-v1');var draft=JSON.parse(raw);if(P.FEEDBACK_CATEGORIES.includes(draft.category)&&typeof draft.text==='string'&&draft.text.trim()){state.tab='feedback';state.category=draft.category;state.draft=draft.text.slice(0,400);state.flash='请核对草稿后确认提交；仅保存于本机。';}} } catch(e) {}
   var TABS = [{ id: 'explore', label: '去哪玩' }, { id: 'feedback', label: '反馈问题' }];
 
   function header() {
@@ -81,7 +82,7 @@
     return '<section class="p-card"><h3>向商户反馈</h3><p class="p-hint">反馈对象：' + U.esc(merchant.name) + '（' + U.esc(merchant.type) + ' · ' + U.esc(merchant.address) + '）</p>' +
       '<form class="p-form" id="feedbackForm"><div class="p-field"><span class="p-label">问题类型</span><div class="p-chips" id="fbCats">' + cats + '</div></div>' +
       '<div class="p-field"><label class="p-label" for="fbText">具体描述</label>' +
-      '<textarea class="p-textarea" id="fbText" name="text" maxlength="400" required placeholder="例如：10 月 3 日中午，停车引导不清，等了 20 分钟"></textarea></div>' +
+      '<textarea class="p-textarea" id="fbText" name="text" maxlength="400" required placeholder="例如：10 月 3 日中午，停车引导不清，等了 20 分钟">' + U.esc(state.draft||'') + '</textarea></div>' +
       '<div class="p-field"><label class="p-label" for="fbName">称呼（选填）</label>' +
       '<input class="p-input" id="fbName" name="fromName" maxlength="20" placeholder="例如：李女士" /></div>' +
       '<button class="p-btn" type="submit">提交反馈</button>' +
@@ -104,7 +105,7 @@
     var tab = event.target.closest('[data-tab]');
     if (tab) { state.tab = tab.getAttribute('data-tab'); render(); return; }
     var cat = event.target.closest('[data-fb-cat]');
-    if (cat) { state.category = cat.getAttribute('data-fb-cat'); render(); }
+    if (cat) { var field=document.getElementById('fbText');if(field)state.draft=field.value;state.category = cat.getAttribute('data-fb-cat'); render(); }
   });
 
   document.addEventListener('submit', function (event) {
@@ -113,8 +114,9 @@
     var data = new FormData(event.target);
     var text = String(data.get('text') || '').trim();
     if (!text) return;
-    P.feedback.add({ category: state.category, text: text, fromName: data.get('fromName') });
-    state.flash = '已提交，等待商户或政府答复。';
+    var saved=P.feedback.add({ category: state.category, text: text, fromName: data.get('fromName') });
+    if(!saved){state.draft=text;state.flash='无法保存，请检查设备存储。';var msg=document.getElementById('fbMsg');if(msg)msg.textContent=state.flash;return;}state.draft=null;
+    state.flash = '已保存至本机工作台。';
     state.tab = 'feedback';
     render();
   });
