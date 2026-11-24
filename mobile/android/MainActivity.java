@@ -250,7 +250,7 @@ public final class MainActivity extends Activity {
             if(recognized.length()>600)recognized=recognized.substring(0,600);
           }
           if(recognized.isEmpty())error="未能识别出文字，请重试或使用输入法麦克风。";
-        else if(status==429)error="语音识别请求过多，请稍后再试。";
+        }else if(status==429)error="语音识别请求过多，请稍后再试。";
         else error="云端语音识别暂不可用（"+status+"），可使用输入法麦克风。";
       }catch(Exception e){
         error="云端语音识别连接失败，请检查网络或使用输入法麦克风。";
