@@ -1,6 +1,6 @@
 {
   "name": "jizhengzhixing-mobile",
-  "main": "src/mobile-worker.mjs",
+  "main": "src/mobile-entry.mjs",
   "compatibility_date": "2026-11-13",
   "workers_dev": true,
   "ai": {
@@ -19,6 +19,14 @@
       "namespace_id": "1091",
       "simple": {
         "limit": 3,
+        "period": 60
+      }
+    },
+    {
+      "name": "PORTAL_LIMITER",
+      "namespace_id": "1092",
+      "simple": {
+        "limit": 60,
         "period": 60
       }
     }

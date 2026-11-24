@@ -332,7 +332,7 @@
     var answered = P.issues.add({ category: 'policy', title: '冬季营业补贴怎么申请', detail: '想了解今年冬季营业的补贴口径与材料清单', location: '吉林市龙潭区', createdAt: ago(26) });
     P.feedback.add({ category: '价格与收费', text: '同一项目现场价格和线上展示不一致', fromName: '游客 A', createdAt: ago(2) });
     P.feedback.add({ category: '设施与环境', text: '休息区座椅偏少，老人排队时没有地方坐', fromName: '游客 B', createdAt: ago(50) });
-    P.government.reply('issue', answered.id, L.draft(answered));
+    if(answered)P.government.reply('issue', answered.id, L.draft(answered));
     toast('已载入 5 条示例待办');
     render();
   }
@@ -340,6 +340,9 @@
   function download(name, text, type) {
     try {
       var blob = new Blob(['\ufeff' + text], { type: type || 'text/csv;charset=utf-8' });
+      if(window.JZZXNativeFiles&&typeof FileReader!=='undefined'){
+        var reader=new FileReader();reader.onerror=function(){toast('无法读取导出内容');};reader.onload=function(){try{window.JZZXNativeFiles.save('text/csv',name,String(reader.result).split(',')[1]);toast('请在系统保存窗口选择位置');}catch(e){toast('系统保存不可用');}};reader.readAsDataURL(blob);return;
+      }
       var url = URL.createObjectURL(blob);
       var a = document.createElement('a');
       a.href = url;
@@ -348,7 +351,7 @@
       a.click();
       document.body.removeChild(a);
       setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
-      toast('已导出 ' + name);
+      toast('已发起下载 ' + name);
     } catch (e) {
       toast('当前浏览器不支持下载');
     }

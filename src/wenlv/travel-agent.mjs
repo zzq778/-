@@ -72,7 +72,7 @@ function safeSummary(s,plan){
  if(r.issues.length||!nodes(plan).some(n=>r.patched.includes(n.name)))return templateAnswer(plan);
  return r.patched;
 }
-export async function runTravelAgent({question,invoke=null,now=new Date(),budgetMs=32000}){
+export async function runTravelAgent({question,invoke=null,now=new Date(),budgetMs=36000,compact=false}){
  const intent=parseIntent(question,{now});
  let retrieval=null,itinerary=null,checked=null,inspected=0,modelCalls=0,modelActions=0,reason=null;
  const trace=[];
@@ -121,13 +121,44 @@ export async function runTravelAgent({question,invoke=null,now=new Date(),budget
   if(missing)return result('clarify',questions[missing],{questionField:missing,reason:'no-model',degraded:true});
   return fallback('no-model');
  }
+ if(compact){
+  // Search and review are deterministic mandatory steps; the model makes the real choice.
+  if(missing)return result('clarify',questions[missing],{questionField:missing,reason:null});
+  const candidates=search('system');
+  const candidateIds=new Set(candidates.attractions.map(a=>a.id));
+  if(!candidateIds.size)return fallback('no-match');
+  const selection=tool('draft_itinerary','选择用户行程中的真实景点。ids 必须逐字复制候选 ID（由枚举限定）；不要写景点名称或自造 ID。空数组表示明确选择现有系统路线。',{ids:{type:'array',items:{type:'string',enum:[...candidateIds]},maxItems:9},summary:{type:'string',maxLength:220}},['ids']);
+  const compactPrompt='你是吉小知，负责吉林文旅行程选择。依据用户约束和真实候选景点调用 draft_itinerary 一次。选择合适数量的不同景点；只使用候选 ID，不编造地点，不承诺实时营业、交通、票价或预约。summary 可简要描述安排。不输出内部过程。';
+  const user=JSON.stringify({question:String(question).slice(0,300),constraints:{days:intent.days,areas:intent.areas,clusters:intent.clusters,themes:intent.themes,companions:intent.companions,season:intent.season,exclusions:intent.exclusions},candidates});
+  let choice,validatedIds=null;
+  const deadline=Date.now()+Math.min(budgetMs,32000);
+  const candidateNames=new Map();
+  for(const a of candidates.attractions){if(candidateNames.has(a.name))candidateNames.set(a.name,null);else candidateNames.set(a.name,a.id);}
+  for(let attempt=0;attempt<2;attempt++){
+   const remaining=deadline-Date.now();if(remaining<500)return fallback('model-timeout');
+   const instruction=attempt?compactPrompt+' 上次结果不合法；只允许使用给定枚举中的 ID。请重新选择，不确定时可返回空数组。':compactPrompt;
+   try{modelCalls++;choice=toolCall(await bounded(Promise.resolve(invoke([{role:'system',content:instruction},{role:'user',content:user}],[selection])),Math.min(remaining,30000)));}catch(e){return fallback(e?.message==='model-timeout'?'model-timeout':'model-error')}
+   if(!choice||choice.name!=='draft_itinerary')return fallback('invalid-tool');
+   let ids=choice.args.ids;
+   if(typeof ids==='string'){try{ids=JSON.parse(ids)}catch{ids=null}}
+   // Accept an exact, unique catalog name as an alias, never an invented location.
+   if(Array.isArray(ids)){ids=ids.map(id=>candidateIds.has(id)?id:candidateNames.get(id));if(ids.length<=9&&ids.every(id=>typeof id==='string'&&candidateIds.has(id))&&new Set(ids).size===ids.length){validatedIds=ids;break;}}
+  }
+  if(validatedIds===null)return fallback('unknown-id');
+  const prepared=draft(validatedIds,'model');
+  if(prepared?.error)return fallback(prepared.error);
+  modelActions++;review('system');
+  if(!checked.ok)return fallback('review-failed');
+  note('finish','交付已核对行程','system');
+  return result('complete',safeSummary(choice.args.summary,itinerary));
+ }
  const messages=[{role:'system',content:SYSTEM_PROMPT},{role:'user',content:JSON.stringify({question:String(question).slice(0,300),constraints:{days:intent.days,areas:intent.areas,clusters:intent.clusters,themes:intent.themes,companions:intent.companions,season:intent.season,exclusions:intent.exclusions}})}];
  const deadline=Date.now()+budgetMs;
  for(let turn=0;turn<MAX_TURNS;turn++){
   const remaining=deadline-Date.now();if(remaining<500)return fallback('budget');
   const names=!retrieval?['search_places',...(missing?['ask_user']:[])]:!itinerary?['draft_itinerary',...(inspected<1?['inspect_place']:[])]:!checked?['review_itinerary']:checked.ok?['finish',...(turn<MAX_TURNS-2?['draft_itinerary']:[])]:['draft_itinerary'];
   let choice;
-  try{modelCalls++;choice=toolCall(await bounded(Promise.resolve(invoke(messages,names.map(n=>CATALOG[n]))),Math.min(remaining,10000)));}catch{return fallback('model-error')}
+  try{modelCalls++;choice=toolCall(await bounded(Promise.resolve(invoke(messages,names.map(n=>CATALOG[n]))),Math.min(remaining,18000)));}catch(e){return fallback(e?.message==='model-timeout'?'model-timeout':'model-error')}
   if(!choice||!names.includes(choice.name))return fallback('invalid-tool');
   const {name,args,id}=choice;
   let value;

@@ -19,3 +19,37 @@
 .workspace-tabs button[aria-pressed=true]{background:#17594d;border-color:#17594d;color:white}
 .workspace-frame{display:block;width:100%;border:1px solid #dce2da;border-radius:9px;background:#f6f5f0;height:max(520px,calc(100dvh - 240px))}
 .workspace-page{min-width:0}.big .workspace-tabs button{font-size:16px}
+
+/* Conversation is the first home interaction; existing itinerary and role pages remain independent. */
+.conversation{margin:0 20px 24px;padding:19px 18px 16px;background:var(--surface);border:1px solid var(--edge);border-radius:12px}.conversation-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.conversation-head h1{font-size:26px;letter-spacing:0;margin-bottom:5px}.conversation-head p{font-size:14px;color:var(--muted)}.conversation-thread{max-height:60vh;overflow-y:auto;overscroll-behavior:contain;margin:12px 0;display:flex;flex-direction:column;gap:14px}.conversation-thread:empty{display:none}.conversation-user{align-self:flex-end;max-width:88%;background:var(--wash);border-radius:10px 10px 2px 10px;padding:10px 12px}.conversation-user p,.conversation-reply p{white-space:pre-wrap;overflow-wrap:anywhere}.conversation-reply{padding:0 2px 10px;border-bottom:1px solid var(--edge)}.reply-name{font-size:12px;color:var(--jade);display:block;margin:0 0 6px}.conversation-reply p{font-size:15px;line-height:1.75}.conversation-compose{display:flex;align-items:flex-end;gap:10px;border:1px solid #b9c9bc;padding:8px;border-radius:9px;margin:14px 0 8px}.conversation-compose textarea{border:0;background:transparent;resize:vertical;padding:5px;min-width:0;width:100%;min-height:56px;outline-offset:0}.chat-send{background:var(--jade);color:#fff;border:0;padding:10px 13px;border-radius:7px;white-space:nowrap;min-height:42px}.conversation-suggestions{display:flex;gap:7px;flex-wrap:wrap}.conversation-suggestions button{background:none;border:0;border-bottom:1px solid #b9c9bc;color:var(--jade);padding:7px 3px;font-size:13px}.chat-privacy{font-size:11px;color:var(--muted);margin-top:12px}.chat-trip{display:flex;align-items:center;justify-content:space-between;gap:8px;text-align:left;width:100%;margin-top:12px;padding:12px;background:var(--wash);border:0;border-radius:7px}.chat-trip span{font-size:12px;color:var(--jade)}.chat-sources{font-size:13px;margin-top:10px;color:var(--muted)}.chat-sources a{display:block;padding:4px 0;overflow-wrap:anywhere}.chat-error{color:var(--danger);font-size:13px;margin:9px 0}.conversation-wait{font-size:13px;color:var(--muted)}@media(max-width:360px){.conversation{margin-left:12px;margin-right:12px;padding:15px 12px}}.big .conversation-reply p,.big .conversation-head p{font-size:18px}
+
+.chat-draft{margin-top:12px;border-top:1px solid var(--edge);padding-top:12px}.chat-draft p{margin:7px 0}.chat-draft>div{display:flex;flex-wrap:wrap;gap:8px}.chat-draft button{flex:1;min-height:42px}
+
+/* Reduce redundant chrome on the conversation entry, especially on narrow phones. */
+.conversation{border:0;border-bottom:1px solid var(--edge);border-radius:0;background:transparent;padding:6px 0 18px}.conversation-head>div{min-width:0}.conversation-head>button{white-space:nowrap;flex:none;min-height:42px}.conversation-compose{background:var(--surface);border-radius:10px}.conversation-suggestions{gap:15px}.hero{min-height:132px;margin-bottom:20px}.hero-copy{padding-top:17px;padding-bottom:19px}.hero h1{font-size:25px}.hero-copy p{max-width:180px;font-size:13px}.chat-draft>button{min-height:44px}.workspace-tabs{flex-wrap:wrap}.conversation-thread{scroll-padding:10px}
+
+/* Quiet orbital motion + light sweep, inspired by modern chat waiting indicators. */
+.jzzx-thinking{display:flex;align-items:center;gap:10px;min-height:40px;color:#466f60}
+.jzzx-orbit{display:inline-flex;flex:none;width:27px;height:27px;color:#4a7969}
+.jzzx-orbit svg{width:100%;height:100%;overflow:visible}
+.orbit-ring{transform-origin:16px 16px;animation:jzzx-orbit 1.8s linear infinite}
+.jzzx-thinking-label{font-size:14px;font-weight:600;color:#466f60}
+@supports ((-webkit-background-clip:text) or (background-clip:text)){.jzzx-thinking-label{background:linear-gradient(100deg,#466f60 20%,#a1b3a3 43%,#e1b96f 50%,#466f60 68%);background-size:260% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:jzzx-sweep 2.5s ease-in-out infinite}}
+.jzzx-thinking .thinking-content{min-width:0;display:grid;gap:3px}
+.jzzx-thinking small{color:#68776f;font-size:12px}
+@keyframes jzzx-orbit{to{transform:rotate(360deg)}}@keyframes jzzx-sweep{0%{background-position:100% 0}100%{background-position:-80% 0}}
+@media(prefers-reduced-motion:reduce){.orbit-ring,.jzzx-thinking-label{animation:none}.jzzx-thinking-label{color:#466f60;background:none}}
+
+.conversation-wait.jzzx-thinking{margin:10px 0;padding:3px 0}.conversation-wait .text-button{margin-left:auto}.chat-mic{flex:none;display:grid;place-items:center;width:42px;height:42px;background:transparent;color:var(--jade);border:0;border-radius:7px}.chat-mic.recording{background:#e0e9df;color:#255e4b}.chat-mic:disabled{opacity:.4}.chat-voice-message{font-size:12px;color:var(--muted);line-height:1.5;margin:0 0 8px}.chat-voice-message[hidden]{display:none}.conversation-compose{gap:6px}.conversation-compose textarea{flex:1}.chat-mic:focus-visible{outline:2px solid #a58348;outline-offset:2px}
+
+/* Keep layout stable; only the new word has a short opacity transition. */
+.reply-fresh{animation:jzzx-token-in .14s ease-out both}
+@keyframes jzzx-token-in{from{opacity:.48}to{opacity:1}}
+@keyframes jzzx-reply-breath{0%,100%{opacity:.42;transform:scaleY(.82)}50%{opacity:.95;transform:scaleY(1)}}
+@media(prefers-reduced-motion:reduce){.reply-fresh,.reply-breath-caret{animation:none!important}}
+
+.reply-breath-caret{display:inline-block;vertical-align:-.12em;width:3px;height:.93em;margin-left:3px;background:#4a7969;border-radius:3px;transform-origin:center;animation:jzzx-reply-breath 1.35s ease-in-out infinite}
+.chat-reveal-controls{display:flex;justify-content:flex-end;margin-top:5px;min-height:34px}
+.chat-reveal-controls button{font-size:12px;padding:7px 4px;color:var(--jade);min-height:34px}
+.chat-reply-extras[hidden]{display:none!important}
+.conversation-reply p{margin:0}
