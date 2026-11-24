@@ -29,6 +29,6 @@ else
   keytool -genkeypair -keyalg RSA -keysize 2048 -validity 3650 -keystore "$WORK/debug.jks" -storepass android -keypass android -alias preview -dname "CN=JiZheng Online Preview" -noprompt
   ALIAS=preview; STOREPASS=android; KEYPASS=android
 fi
-"$BT/apksigner" sign --ks "$KEYSTORE" --ks-key-alias "$ALIAS" --ks-pass "pass:$STOREPASS" --key-pass "pass:$KEYPASS" --out "$ROOT/dist/JiZhengZhiXing-v1.0.5-chat-voice-preview.apk" "$WORK/aligned.apk"
-"$BT/apksigner" verify --verbose --print-certs "$ROOT/dist/JiZhengZhiXing-v1.0.5-chat-voice-preview.apk"
-"$BT/aapt" dump badging "$ROOT/dist/JiZhengZhiXing-v1.0.5-chat-voice-preview.apk" | head -15 || true
+"$BT/apksigner" sign --ks "$KEYSTORE" --ks-key-alias "$ALIAS" --ks-pass "pass:$STOREPASS" --key-pass "pass:$KEYPASS" --out "$ROOT/dist/JiZhengZhiXing-v1.0.6-no-code-preview.apk" "$WORK/aligned.apk"
+"$BT/apksigner" verify --verbose --print-certs "$ROOT/dist/JiZhengZhiXing-v1.0.6-no-code-preview.apk"
+"$BT/aapt" dump badging "$ROOT/dist/JiZhengZhiXing-v1.0.6-no-code-preview.apk" | head -15 || true

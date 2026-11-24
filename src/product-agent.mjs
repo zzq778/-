@@ -107,15 +107,18 @@ export async function runProductAgent({question,history=[],region='长春市',in
  const capabilities=analysisOnly?'\n本次仅允许读取已授权反馈分类统计并回答问题，不提供联网检索、其他业务工具或写入操作。':dynamic.length?'\n本次已配置额外工具：'+dynamic.map(t=>t.function.name).join('、')+'。涉及天气和检索时应使用这些实际工具，并注明来源和范围。':'\n本次未配置实时天气和公开网页检索服务。';
  const scenic=scenicGrounding(question,history);
  const greeting=/^(?:你好|您好|嗨|哈喽|hi|hello)[！!。.\s]*$/i.test(question);
+ const actionRequested=/(?:规划|安排行程|路线|制定|改成.*天|怎么办理|办理|政务|身份证|营业执照|申请|投诉|反馈|宣传海报|生成图片|生成海报|统计|提交)/.test(question);
+ const directChat=!analysisOnly&&!actionRequested&&(history.length>0||/^(?:吉小知|我想|hi|你好|请问|你|可以|怎么|为什么|那|能不能|我|说说|聊聊)/i.test(question));
  const grounding=scenic?{area:scenic.area,places:scenic.locations.map(({id,name,area,kind,tags,season,caveat})=>({id,name,area,kind,tags,season,caveat}))}:null;
- const messages=[{role:'system',content:prompt+capabilities+'\n当前默认办事地区：'+region+pageContext+(grounding?'\n已按用户问题从本地景点目录核对以下候选资料。'+JSON.stringify(grounding):'')+(scenic||greeting?'\n本次只需要直接输出最终简体中文正文，不要尝试调用工具、不要输出 call:reply、<|tool_call>、JSON、代码或 Markdown 标记；回答以本次已核对的资料为依据。':'')},...history,{role:'user',content:question}];
+ const messages=[{role:'system',content:prompt+capabilities+'\n当前默认办事地区：'+region+pageContext+(grounding?'\n已按用户问题从本地景点目录核对以下候选资料。'+JSON.stringify(grounding):'')+(scenic||greeting||directChat?'\n本次只需要直接输出最终简体中文正文，不要尝试调用工具、不要输出 call:reply、<|tool_call>、JSON、代码或 Markdown 标记；回答以本次已核对的资料为依据。':'')},...history,{role:'user',content:question}];
  const sources=new Map(),placesFound=new Map(),placeDetails=[];
  let itinerary=null,planText='',count=0,service=null,serviceGuide=null,serviceSearchPerformed=false,placeSearchPerformed=false,feedbackDraft=null,posterDraft=null,reason='step-limit',failedStep=null;
  const addSources=list=>{for(const s of list||[]){if(s&&typeof s.url==='string'&&/^https?:\/\//i.test(s.url)&&!sources.has(s.url)&&sources.size<12)sources.set(s.url,{label:s.label||s.name||'官方资料',url:s.url});}};
  if(scenic){placeSearchPerformed=true;for(const item of scenic.locations){placesFound.set(item.id,item);addSources(item.sources);}}
  const result=(status,text)=>({status,text,itinerary,sources:[...sources.values()],toolCount:count,...(status==='complete'?{}:{reason,...(failedStep===null?{}:{failedStep})}),version:PRODUCT_AGENT_VERSION,feedbackDraft,posterDraft,...(service?{actions:actionBundle([service]).actions,agent:{plan:visiblePlan(service)}}:{})});
  const partialAnswer=()=>{
-  if(greeting)return '你好，我是吉小知。云端模型本次响应超时，但你仍可以继续提问。有关吉林景点的查询，我会优先提供已收录的本地资料。';
+  if(greeting)return '你好，我是吉小知。云端回答暂时不稳定，可以继续提问。';
+  if(directChat&&!scenic)return '我收到了这条消息，但云端模型未能完成回复。对话内容仍然保留，你可以重新发送或换个问法。';
   if(planText)return planText;
   if(itinerary?.plan?.length){
    const days=itinerary.plan.map(day=>'第'+day.day+'天：'+(day.nodes.map(node=>node.name).join('、')||'自由活动')).join('；');
@@ -143,10 +146,10 @@ export async function runProductAgent({question,history=[],region='长春市',in
  };
  const deadline=Date.now()+budgetMs;
  for(let step=0;step<6;step++){
-  if((scenic||greeting)&&step>0)break;
+  if((scenic||greeting||directChat)&&step>0)break;
   const remaining=deadline-Date.now();if(remaining<500){reason='budget';failedStep=step;break;}
-  const available=scenic||greeting||step===5||count>=MAX_TOOL_CALLS?[byTool.get('reply')]:analysisOnly?[...dynamic,byTool.get('reply')]:[...tools,...dynamic];
-  const maxCalls=scenic||greeting?1:Math.max(1,Math.min(MAX_CALLS_PER_TURN,MAX_TOOL_CALLS-count));
+  const available=scenic||greeting||directChat||step===5||count>=MAX_TOOL_CALLS?[byTool.get('reply')]:analysisOnly?[...dynamic,byTool.get('reply')]:[...tools,...dynamic];
+  const maxCalls=scenic||greeting||directChat?1:Math.max(1,Math.min(MAX_CALLS_PER_TURN,MAX_TOOL_CALLS-count));
   let calls,raw;
   try{
    raw=await bounded(Promise.resolve(invoke(messages,available)),Math.min(remaining,28000));
