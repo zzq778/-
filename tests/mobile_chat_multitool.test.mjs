@@ -84,7 +84,7 @@ test('mobile HTTP API preserves real history and returns the second-turn sightse
  const question2='吉林市有什么好玩的地方';
  let secondTurnMessages=null;
  const binding={
-  TRAVEL_PREVIEW_CODE:CODE,
+  PUBLIC_CHAT:'true',
   LIMITER:{limit:async()=>({success:true})},
   AI:{run:async(model,input)=>{
    assert.equal(model,MOBILE_MODEL);
@@ -105,7 +105,7 @@ test('mobile HTTP API preserves real history and returns the second-turn sightse
  };
  const send=async(body)=>handleMobile(new Request(ORIGIN+'/api/v1/chat',{
   method:'POST',
-  headers:{'content-type':'application/json',authorization:'Bearer '+CODE,origin:ORIGIN},
+  headers:{'content-type':'application/json',origin:ORIGIN},
   body:JSON.stringify(body)
  }),binding);
  const firstResponse=await send({question:'你好',history:[]});

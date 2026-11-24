@@ -7,7 +7,7 @@ import {environment} from './portal_fixture.mjs';
 import {handleMobile} from '../src/mobile-worker.mjs';
 import {handleApi} from '../src/worker.mjs';
 const base=fileURLToPath(new URL('../',import.meta.url));
-const env=environment();env.TRAVEL_PREVIEW_CODE='team-preview-test-123456';env.AGENT_CLIENT_CODE='agent-client-test-123456';env.LIMITER={limit:async()=>({success:true})};
+const env=environment();env.PUBLIC_CHAT='true';env.AGENT_CLIENT_CODE='agent-client-test-123456';env.LIMITER={limit:async()=>({success:true})};
 env.IMAGE_GENERATION_ENABLED='true';env.IMAGE_ACCESS_CODE='test-image-code-00000000000000000000';
 // Valid 32x32 JPEG test fixture; not an actual generated travel image.
 const testJpeg="/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAgACADASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwCnRRRWR4IUUUUAFFFFABRRRQB//9k=";

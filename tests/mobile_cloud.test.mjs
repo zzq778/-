@@ -22,23 +22,22 @@ function env(){
   const result=sequence[observed.length-1];if(!result)throw Error('too many calls');
   assert.ok(options.tools.some(t=>t.function.name===result.choices[0].message.tool_calls[0].function.name));
   return result;
- }},LIMITER:{limit:async()=>({success:true})},TRAVEL_PREVIEW_CODE:CODE};
+ }},LIMITER:{limit:async()=>({success:true})},PUBLIC_CHAT:'true'};
  return {binding,observed};
 }
 function req(question=QUESTION,code=CODE,origin=ORIGIN){
- return new Request(ORIGIN+'/api/travel',{method:'POST',headers:{'content-type':'application/json','authorization':'Bearer '+code,origin},body:JSON.stringify({question})});
+ return new Request(ORIGIN+'/api/travel',{method:'POST',headers:{'content-type':'application/json',origin},body:JSON.stringify({question})});
 }
 test('configuration health does not call any model and missing configuration denies generation',async()=>{
  const e=env();const status=await handleMobile(new Request(ORIGIN+'/api/status'),e.binding);
  assert.equal((await status.json()).ready,true);assert.equal(e.observed.length,0);
- delete e.binding.TRAVEL_PREVIEW_CODE;
+ delete e.binding.AI;
  assert.equal((await handleMobile(req(),e.binding)).status,503);
  assert.equal(e.observed.length,0);
 });
-test('cross-origin, incorrect password, oversized payload and rate limit never call AI',async()=>{
+test('cross-origin, oversized payload and rate limit never call AI',async()=>{
  const e=env();
  assert.equal((await handleMobile(req(QUESTION,CODE,'https://evil.test'),e.binding)).status,403);
- assert.equal((await handleMobile(req(QUESTION,'bad-code'),e.binding)).status,401);
  assert.equal((await handleMobile(req('长'.repeat(2000)),e.binding)).status,400);
  assert.equal((await handleMobile(req(''),e.binding)).status,400);
  e.binding.LIMITER={limit:async()=>({success:false})};
@@ -71,10 +70,9 @@ function browser(origin,fetch,seed={}){
 test('actual bundled UI connects to the isolated Worker and preserves results on connection loss',async()=>{
  const e=env();let request,offline=false;
  const b=browser(ORIGIN,async(url,opts)=>{request={url,opts};if(offline)throw new TypeError('network');return handleMobile(new Request(url,opts),e.binding);});
- assert.match(b.els['#screen'].innerHTML,/团队访问码/);
- runInContext('accessCode='+JSON.stringify(CODE),b.box);
+ assert.doesNotMatch(b.els['#screen'].innerHTML,/团队访问码/);
  await runInContext('runCloud('+JSON.stringify(QUESTION)+',null)',b.box);
- assert.equal(request.url,ORIGIN+'/api/travel');assert.equal(request.opts.headers.authorization,'Bearer '+CODE);
+ assert.equal(request.url,ORIGIN+'/api/travel');assert.equal(request.opts.headers.authorization,undefined);
  assert.match(b.els['#screen'].innerHTML,/联网规划/);assert.equal(runInContext('plan.source',b.box),'联网规划');
  assert.match(b.els['#screen'].innerHTML,/雾凇岛/);assert.doesNotMatch(b.els['#screen'].innerHTML,/模型选择|实际执行记录|工作流/);assert.equal(runInContext('taskTrace.length',b.box),4);
  const first=runInContext('JSON.stringify(plan.nodes)',b.box);
