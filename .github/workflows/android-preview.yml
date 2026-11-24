@@ -28,12 +28,9 @@ jobs:
       - name: Verify preview deployment credentials
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          TRAVEL_PREVIEW_CODE: ${{ secrets.TRAVEL_PREVIEW_CODE }}
         run: |
           set -euo pipefail
           test -n "$CLOUDFLARE_API_TOKEN" || { echo "::error::Missing CLOUDFLARE_API_TOKEN repository secret"; exit 1; }
-          test -n "$TRAVEL_PREVIEW_CODE" || { echo "::error::Missing TRAVEL_PREVIEW_CODE repository secret"; exit 1; }
-          test "${#TRAVEL_PREVIEW_CODE}" -ge 16 || { echo "::error::TRAVEL_PREVIEW_CODE must contain at least 16 characters"; exit 1; }
       - name: Run build and regression tests
         run: |
           npm run build:mobile
@@ -42,15 +39,12 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: '8181cde33c60feace3f3eee52ee2c207'
-          TRAVEL_PREVIEW_CODE: ${{ secrets.TRAVEL_PREVIEW_CODE }}
         run: |
           set -euo pipefail
           npx --yes wrangler@4 deploy --config wrangler.mobile-preview.jsonc --keep-vars
-          printf '%s' "$TRAVEL_PREVIEW_CODE" | npx --yes wrangler@4 secret put TRAVEL_PREVIEW_CODE --config wrangler.mobile-preview.jsonc
       - name: Verify isolated preview chat service
         env:
           MOBILE_SERVICE_BASE: 'https://jizhengzhixing-mobile-preview.zedi-li070614.workers.dev'
-          TRAVEL_PREVIEW_CODE: ${{ secrets.TRAVEL_PREVIEW_CODE }}
         run: node scripts/check-mobile-service.mjs
       - name: Install Android SDK components
         shell: bash
@@ -79,10 +73,10 @@ jobs:
       - name: Build and verify Android APK
         run: |
           bash mobile/android/build.sh
-          sha256sum dist/JiZhengZhiXing-v1.0.5-chat-voice-preview.apk
+          sha256sum dist/JiZhengZhiXing-v1.0.6-no-code-preview.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: jizheng-v1.0.5-chat-voice-preview
-          path: dist/JiZhengZhiXing-v1.0.5-chat-voice-preview.apk
+          name: jizheng-v1.0.6-no-code-preview
+          path: dist/JiZhengZhiXing-v1.0.6-no-code-preview.apk
           if-no-files-found: error
           retention-days: 14
