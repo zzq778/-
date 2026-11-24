@@ -54,7 +54,8 @@ export async function handleMobile(request,env){
  const url=new URL(request.url);
  if(url.pathname.startsWith('/api/v1/images'))return handleImage(request,env);
  if(url.pathname.startsWith('/api/v1/portal/'))return handlePortal(request,env,analyzeFeedback);
- const ready=!!env.AI&&!!env.LIMITER&&typeof env.TRAVEL_PREVIEW_CODE==='string'&&env.TRAVEL_PREVIEW_CODE.length>=16&&env.TRAVEL_PREVIEW_CODE.length<=160;
+ const publicChat=env.PUBLIC_CHAT==='true';
+ const ready=!!env.AI&&!!env.LIMITER&&(publicChat||configured(env.TRAVEL_PREVIEW_CODE));
  if(url.pathname==='/api/status'&&request.method==='GET')return json({service:'jzzx-mobile',version:'1.0.1-preview',ready,model:MOBILE_MODEL,promptVersion:PROMPT_VERSION,chatReady:ready,externalChatReady:!!env.AI&&!!env.LIMITER&&configured(env.AGENT_CLIENT_CODE),chatModel:env.MOBILE_CHAT_MODEL==='@cf/google/gemma-4-26b-a4b-it'?env.MOBILE_CHAT_MODEL:MOBILE_MODEL,runtime:runtimeStatus(env)});
  if(url.pathname==='/api/v1/openapi.json'&&request.method==='GET')return json({...CHAT_CONTRACT,servers:[{url:url.origin}]});
  if(!url.pathname.startsWith('/api/'))return env.ASSETS.fetch(request);
@@ -65,21 +66,23 @@ export async function handleMobile(request,env){
  // A native WebView can omit Origin. It is not an authentication factor.
  // Both credentials authorize read-only chat, but the external key is accepted only without Origin.
  const secrets=[env.TRAVEL_PREVIEW_CODE,...((chat||transcribe)&&!origin?[env.AGENT_CLIENT_CODE]:[])].filter(configured);
- if(!env.AI||!env.LIMITER||!secrets.length)return json({error:'SERVER_NOT_READY'},503);
+ if(!env.AI||!env.LIMITER||(!publicChat&&!secrets.length))return json({error:'SERVER_NOT_READY'},503);
  try{
   const ip=request.headers.get('cf-connecting-ip')||'unknown';
   if(!(await env.LIMITER.limit({key:(transcribe?'voice:':'')+ip})).success)return json({error:'RATE_LIMIT'},429);
   const header=request.headers.get('authorization')||'';
-  if(!header.startsWith('Bearer '))return json({error:'ACCESS_CODE'},401);
-  const valid=(await Promise.all(secrets.map(s=>equalSecret(header.slice(7),s)))).some(Boolean);
-  if(!valid)return json({error:'ACCESS_CODE'},401);
+  if(!publicChat){
+   if(!header.startsWith('Bearer '))return json({error:'ACCESS_CODE'},401);
+   const valid=(await Promise.all(secrets.map(s=>equalSecret(header.slice(7),s)))).some(Boolean);
+   if(!valid)return json({error:'ACCESS_CODE'},401);
+  }
   if(transcribe){
    if(request.headers.get('content-type')?.split(';')[0].trim().toLowerCase()!=='audio/mp4')return json({error:'UNSUPPORTED_AUDIO'},415);
    const clip=await readAudioClip(request,320000);
    if(!clip)return json({error:'INVALID_AUDIO'},400);
    const audio=encodeAudioBase64(clip);
    try{
-    const response=await env.AI.run('@cf/openai/whisper-large-v3-turbo',{audio,task:'transcribe',language:'zh',vad_filter:true});
+    const response=await env.AI.run('@cf/openai/whisper-large-v3-turbo',{audio,task:'transcribe',language:'zh',vad_filter:true,initial_prompt:'吉林、长春、吉林市、雾凇岛、松花湖、净月潭、长白山、延边、吉小知、文旅、行程。'});
     const text=typeof response?.text==='string'?response.text.trim().slice(0,600):'';
     return text?json({text}):json({error:'NO_SPEECH'},422);
    }catch(e){
