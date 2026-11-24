@@ -22,11 +22,10 @@
 - `assets/brand-mark.svg`
 - `404.html`
 - `robots.txt`
-- `sitemap.xml`
 
 ## 与正式官网的差异
 
-- 所有页面使用 `noindex,nofollow`，并且 `robots.txt` 禁止抓取，避免测试镜像被搜索引擎收录。
+- 所有页面使用 `noindex,nofollow`；`robots.txt` 允许爬虫读取页面元数据，以便识别 noindex。测试镜像不提供 sitemap。
 - Canonical 仍指向 Cloudflare Pages 正式官网。
 - 首页及各页中原本跳转到 `workers.dev` 的吉小知入口改为站内「了解吉小知」功能介绍锚点，避免测试首页把访客诱导到非热铁盒托管的应用页面。
 - 因此，这个镜像只测试静态官网，不代表吉小知应用已迁移或已在大陆可用。
