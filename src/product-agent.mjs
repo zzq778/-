@@ -107,7 +107,7 @@ export async function runProductAgent({question,history=[],region='长春市',in
  const capabilities=analysisOnly?'\n本次仅允许读取已授权反馈分类统计并回答问题，不提供联网检索、其他业务工具或写入操作。':dynamic.length?'\n本次已配置额外工具：'+dynamic.map(t=>t.function.name).join('、')+'。涉及天气和检索时应使用这些实际工具，并注明来源和范围。':'\n本次未配置实时天气和公开网页检索服务。';
  const scenic=scenicGrounding(question,history);
  const greeting=/^(?:你好|您好|嗨|哈喽|hi|hello)[！!。.\s]*$/i.test(question);
- const actionRequested=/(?:规划|安排行程|路线|制定|改成.*天|怎么办理|办理|政务|身份证|营业执照|申请|投诉|反馈|宣传海报|生成图片|生成海报|统计|提交)/.test(question);
+ const actionRequested=/(?:规划|安排行程|路线|制定|改成.*天|怎么办理|办理|政务|身份证|营业执照|申请|投诉|反馈|宣传海报|宣传图|制作.*(?:插画|图片|图)|生成图片|生成海报|统计|提交)/.test(question);
  const directChat=!analysisOnly&&!actionRequested&&(history.length>0||/^(?:吉小知|我想|hi|你好|请问|你|可以|怎么|为什么|那|能不能|我|说说|聊聊)/i.test(question));
  const grounding=scenic?{area:scenic.area,places:scenic.locations.map(({id,name,area,kind,tags,season,caveat})=>({id,name,area,kind,tags,season,caveat}))}:null;
  const messages=[{role:'system',content:prompt+capabilities+'\n当前默认办事地区：'+region+pageContext+(grounding?'\n已按用户问题从本地景点目录核对以下候选资料。'+JSON.stringify(grounding):'')+(scenic||greeting||directChat?'\n本次只需要直接输出最终简体中文正文，不要尝试调用工具、不要输出 call:reply、<|tool_call>、JSON、代码或 Markdown 标记；回答以本次已核对的资料为依据。':'')},...history,{role:'user',content:question}];
