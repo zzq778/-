@@ -6,7 +6,7 @@
   "ai": {
     "binding": "AI"
   },
-  "vars": {"MOBILE_CHAT_MODEL": "@cf/qwen/qwen3.8-27b", "PUBLIC_CHAT": "true"},
+  "vars": {"MOBILE_CHAT_MODEL": "@cf/meta/llama-3.3-70b-instruct-fp8-fast", "PUBLIC_CHAT": "true"},
   "assets": {
     "directory": "./mobile/site",
     "binding": "ASSETS",
