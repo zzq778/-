@@ -18,7 +18,7 @@ export function workersModel(env,model,route,maxTokens,temperature){
   const begin=Date.now(),names=tools.map(t=>t.function.name);
   try{
    const finalReply=tools.length===1&&tools[0]?.function?.name==='reply';
-   const input={messages,...(finalReply?{}:{tools,tool_choice:'required',parallel_tool_calls:false}),max_completion_tokens:maxTokens,temperature,...(model.includes('glm-4.7-flash')?{chat_template_kwargs:{enable_thinking:false}}:{})};
+   const input={messages,...(finalReply?{}:{tools,tool_choice:'required',parallel_tool_calls:false}),max_completion_tokens:maxTokens,temperature,...(model.includes('glm-4.7-flash')?{chat_template_kwargs:{enable_thinking:false}}:{}),...(model.includes('qwen3.8')?{reasoning_effort:'low'}:{})};
    let output;
    try{output=await env.AI.run(model,input)}
    catch(e){

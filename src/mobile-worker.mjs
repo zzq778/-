@@ -56,7 +56,7 @@ export async function handleMobile(request,env){
  if(url.pathname.startsWith('/api/v1/portal/'))return handlePortal(request,env,analyzeFeedback);
  const publicChat=env.PUBLIC_CHAT==='true';
  const ready=!!env.AI&&!!env.LIMITER&&(publicChat||configured(env.TRAVEL_PREVIEW_CODE));
- if(url.pathname==='/api/status'&&request.method==='GET')return json({service:'jzzx-mobile',version:'1.0.1-preview',ready,model:MOBILE_MODEL,promptVersion:PROMPT_VERSION,chatReady:ready,externalChatReady:!!env.AI&&!!env.LIMITER&&configured(env.AGENT_CLIENT_CODE),chatModel:env.MOBILE_CHAT_MODEL==='@cf/google/gemma-4-26b-a4b-it'?env.MOBILE_CHAT_MODEL:MOBILE_MODEL,runtime:runtimeStatus(env)});
+ if(url.pathname==='/api/status'&&request.method==='GET')return json({service:'jzzx-mobile',version:'1.0.1-preview',ready,model:MOBILE_MODEL,promptVersion:PROMPT_VERSION,chatReady:ready,externalChatReady:!!env.AI&&!!env.LIMITER&&configured(env.AGENT_CLIENT_CODE),chatModel:env.MOBILE_CHAT_MODEL==='@cf/qwen/qwen3.8-27b'?env.MOBILE_CHAT_MODEL:MOBILE_MODEL,runtime:runtimeStatus(env)});
  if(url.pathname==='/api/v1/openapi.json'&&request.method==='GET')return json({...CHAT_CONTRACT,servers:[{url:url.origin}]});
  if(!url.pathname.startsWith('/api/'))return env.ASSETS.fetch(request);
  const chat=url.pathname==='/api/v1/chat';
@@ -92,7 +92,7 @@ export async function handleMobile(request,env){
   }
   if(chat){
    const payload=cleanChatPayload(await readPayload(request,65536));if(!payload)return json({error:'INVALID_CHAT'},400);
-   const chatModel=env.MOBILE_CHAT_MODEL==='@cf/google/gemma-4-26b-a4b-it'?env.MOBILE_CHAT_MODEL:MOBILE_MODEL;
+   const chatModel=env.MOBILE_CHAT_MODEL==='@cf/qwen/qwen3.8-27b'?env.MOBILE_CHAT_MODEL:MOBILE_MODEL;
    const invoke=workersModel(env,chatModel,'chat',650,.15);
    const outcome=await runProductAgent({...payload,invoke,runtime:runtimeTools(env)});if(outcome.status==='unavailable')console.warn(JSON.stringify({event:'jzzx-chat-unavailable',reason:outcome.reason,failedStep:outcome.failedStep,toolCount:outcome.toolCount}));return json(outcome,outcome.status==='unavailable'?503:200);
   }
