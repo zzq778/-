@@ -20,6 +20,6 @@ if(status.status!==200||!status.data?.chatReady||contract.status!==200||!contrac
  if(second.status!==200||second.data?.status!=='complete'||typeof second.data?.text!=='string'||!second.data.text.trim()||((value)=>value.includes('<|')||value.includes('call:reply'))(second.data.text)||!Array.isArray(second.data?.sources)||!second.data.sources.length)process.exit(1);
 }
 
-const third=await call('/api/v1/chat',{method:'POST',headers:{'content-type':'application/json',origin:base},body:JSON.stringify({question:'谢谢，能不能用一句话鼓励我？',history:[{role:'user',content:'吉林市有什么好玩的地方？'},{role:'assistant',content:'吉林市可以考虑雾凇岛和松花湖。'}]})});
+const third=await call('/api/v1/chat',{method:'POST',headers:{'content-type':'application/json',origin:base},body:JSON.stringify({question:'那冬天带父母去呢？',history:[{role:'user',content:'你好'},{role:'assistant',content:firstText},{role:'user',content:'吉林市有什么好玩的地方？'},{role:'assistant',content:second.data.text}]})});
 console.log(JSON.stringify({thirdChatHttp:third.status,thirdStatus:third.data?.status,hasText:!!third.data?.text}));
-if(third.status!==200||third.data?.status!=='complete'||typeof third.data?.text!=='string'||!third.data.text.trim())process.exit(1);
+if(third.status!==200||third.data?.status!=='complete'||typeof third.data?.text!=='string'||!third.data.text.trim()||third.data.text.includes('<|')||third.data.text.includes('call:reply'))process.exit(1);
