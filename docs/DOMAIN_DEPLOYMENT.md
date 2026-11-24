@@ -8,7 +8,7 @@
 - 预期公开地址：`https://jizhengzhixing-official.pages.dev`
 - GitHub 仓库：`zzq778/-`
 - 生产分支：`main`
-- 构建命令：`exit 0`
+- 构建命令：留空（纯静态 HTML，无需构建）
 - 构建输出目录：`website`
 - 根目录：仓库根目录（留空）
 
@@ -21,7 +21,7 @@
 3. 授权 GitHub，并选择 `zzq778/-` 仓库。
 4. Production branch 选择 `main`。
 5. Framework preset 选择 None。
-6. Build command 填 `exit 0`。
+6. Build command 留空（纯静态 HTML，无需构建）。
 7. Build output directory 填 `website`。
 8. 保存并部署。
 
