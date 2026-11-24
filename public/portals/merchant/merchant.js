@@ -182,7 +182,7 @@
     if (cat) { state.issueCat = cat.getAttribute('data-issue-cat'); render(); return; }
     var doc = event.target.closest('[data-doc]');
     if (doc) {
-      P.docs.setStatus(doc.getAttribute('data-doc'), doc.getAttribute('data-status'));
+      if(!P.docs.setStatus(doc.getAttribute('data-doc'), doc.getAttribute('data-status'))){window.alert('无法保存，请检查设备存储。');return;}
       render();
       return;
     }
@@ -196,7 +196,7 @@
       var title = String(data.get('title') || '').trim();
       var detail = String(data.get('detail') || '').trim();
       if (!title) return;
-      P.issues.add({ category: state.issueCat, title: title, detail: detail, location: data.get('location') });
+      if(!P.issues.add({ category: state.issueCat, title: title, detail: detail, location: data.get('location') })){window.alert('无法保存，请检查设备存储。');return;}
       state.flash = '问题已提交，政府端待办里可以看到。';
       render();
       return;
@@ -209,13 +209,14 @@
         var parts = line.split('|').map(function (s) { return s.trim(); });
         return parts[0] ? { name: parts[0], issuer: parts[1] || '' } : null;
       }).filter(Boolean);
-      P.merchant.save({
+      var saved=P.merchant.save({
         name: f.get('name'), contact: f.get('contact'), phone: f.get('phone'), type: f.get('type'),
         address: f.get('address'),
         license: { code: f.get('licenseCode'), number: f.get('licenseNumber'), validUntil: f.get('licenseValidUntil') },
         specialties: specialties,
         qualifications: quals
       });
+      if(!saved){window.alert('无法保存，请检查设备存储。');return;}
       state.flash = '已保存到本机（' + new Date().toLocaleTimeString('zh-CN', { hour12: false }) + '）。';
       render();
       return;
@@ -224,10 +225,10 @@
       event.preventDefault();
       var text = new FormData(form).get('text');
       var id = form.getAttribute('data-id');
-      if (form.dataset.reply === 'issue') P.issues.reply(id, 'merchant', text);
+      if (form.dataset.reply === 'issue') {if(!P.issues.reply(id, 'merchant', text)){window.alert('未能保存答复。');return;}}
       else {
         var got = P.feedback.reply(id, 'merchant', text);
-        if (got) state.flash = '已回复游客。';
+        if (got) state.flash = '已回复游客。';else {window.alert('未能保存答复。');return;}
       }
       render();
     }
