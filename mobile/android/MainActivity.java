@@ -47,7 +47,6 @@ public final class MainActivity extends Activity {
   private int voiceRequest=0;
   private MediaRecorder voiceRecorder;
   private File voiceAudio;
-  private String voiceAccessCode;
   private long voiceStartedAt;
   private final Handler voiceHandler=new Handler(Looper.getMainLooper());
   @Override public void onCreate(Bundle savedInstanceState) {
@@ -176,7 +175,7 @@ public final class MainActivity extends Activity {
     }
     File file=voiceAudio;voiceAudio=null;
     if(file!=null)file.delete();
-    voiceAccessCode=null;voiceStartedAt=0L;
+    voiceStartedAt=0L;
   }
   private void completeVoice(int id,String text,String error){
     if(voiceRequest!=id)return;
@@ -193,7 +192,8 @@ public final class MainActivity extends Activity {
       r.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
       r.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
       r.setAudioSamplingRate(16000);
-      r.setAudioEncodingBitRate(32000);
+      r.setAudioChannels(1);
+      r.setAudioEncodingBitRate(64000);
       r.setOutputFile(file.getAbsolutePath());
       r.prepare();r.start();
       voiceStartedAt=SystemClock.elapsedRealtime();
@@ -211,7 +211,6 @@ public final class MainActivity extends Activity {
     }
     MediaRecorder r=voiceRecorder;voiceRecorder=null;
     File clip=voiceAudio;voiceAudio=null;
-    String token=voiceAccessCode;voiceAccessCode=null;
     try{r.stop();}catch(Exception e){
       try{r.release();}catch(Exception ignored){}
       if(clip!=null)clip.delete();
@@ -233,7 +232,6 @@ public final class MainActivity extends Activity {
         connection.setConnectTimeout(7000);
         connection.setReadTimeout(26000);
         connection.setDoOutput(true);
-        connection.setRequestProperty("Authorization","Bearer "+token);
         connection.setRequestProperty("Content-Type","audio/mp4");
         connection.setFixedLengthStreamingMode((int)clip.length());
         try(FileInputStream source=new FileInputStream(clip);
@@ -252,7 +250,6 @@ public final class MainActivity extends Activity {
             if(recognized.length()>600)recognized=recognized.substring(0,600);
           }
           if(recognized.isEmpty())error="未能识别出文字，请重试或使用输入法麦克风。";
-        }else if(status==401)error="访问码无效，请检查规划设置中的团队访问码。";
         else if(status==429)error="语音识别请求过多，请稍后再试。";
         else error="云端语音识别暂不可用（"+status+"），可使用输入法麦克风。";
       }catch(Exception e){
@@ -266,15 +263,12 @@ public final class MainActivity extends Activity {
     },"jzzx-voice-upload").start();
   }
   private final class NativeVoice {
-    @JavascriptInterface public void start(int id,String code){
+    @JavascriptInterface public void start(int id){
       if(id<=0)return;
       runOnUiThread(()->{
         if(isFinishing()||web==null)return;
         if(voiceRequest!=0){voiceResult(id,"","请先完成当前语音输入。");return;}
-        if(code==null||code.length()<16||code.length()>160){
-          voiceResult(id,"","请在规划设置中输入团队访问码，再使用云端语音识别。");return;
-        }
-        voiceRequest=id;voiceAccessCode=code;
+        voiceRequest=id;
         if(android.os.Build.VERSION.SDK_INT>=23&&checkSelfPermission(Manifest.permission.RECORD_AUDIO)!=PackageManager.PERMISSION_GRANTED){
           requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO},VOICE_PERMISSION);
           voiceStatus(id,"请允许吉政知行使用麦克风；录音将发送至云端转文字。");
