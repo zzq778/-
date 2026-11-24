@@ -25,8 +25,7 @@ try:
             f.locator('[data-op=logout]').wait_for()
         tc,t=page(urls['mobile'])
         t.locator('#chatInput').fill('帮我反馈停车指引不清')
-        t.locator('#conversationForm button[type=submit]').click()
-        t.locator('#accessCode').fill('team-preview-test-123456')
+        assert t.locator('#accessCode').count()==0
         t.locator('#conversationForm button[type=submit]').click()
         t.locator('[data-chat-feedback][data-destination=online]').wait_for()
         assert '反馈草稿' in t.locator('.conversation-reply').inner_text()

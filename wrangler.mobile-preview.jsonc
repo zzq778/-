@@ -1,0 +1,38 @@
+{
+  "name": "jizhengzhixing-mobile-preview",
+  "main": "src/mobile-entry.mjs",
+  "compatibility_date": "2026-11-13",
+  "workers_dev": true,
+  "ai": {
+    "binding": "AI"
+  },
+  "vars": {"MOBILE_CHAT_MODEL": "@cf/meta/llama-3.3-70b-instruct-fp8-fast", "PUBLIC_CHAT": "true"},
+  "assets": {
+    "directory": "./mobile/site",
+    "binding": "ASSETS",
+    "run_worker_first": [
+      "/api/*"
+    ]
+  },
+  "ratelimits": [
+    {
+      "name": "LIMITER",
+      "namespace_id": "1091",
+      "simple": {
+        "limit": 10,
+        "period": 60
+      }
+    },
+    {
+      "name": "PORTAL_LIMITER",
+      "namespace_id": "1092",
+      "simple": {
+        "limit": 60,
+        "period": 60
+      }
+    }
+  ],
+  "build": {
+    "command": "node scripts/build-mobile-workspaces.mjs"
+  }
+}

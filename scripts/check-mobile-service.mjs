@@ -1,6 +1,6 @@
 // Public, read-only readiness check; optional authenticated smoke test.
 // Never prints credentials or full model responses.
-const base='https://jizhengzhixing-mobile.zedi-li070614.workers.dev';
+const base=(process.env.MOBILE_SERVICE_BASE||'https://jizhengzhixing-mobile.zedi-li070614.workers.dev').replace(/\/$/,'');
 const signal=()=>AbortSignal.timeout(45000);
 async function call(path,options={}){
  const r=await fetch(base+path,{...options,redirect:'error',signal:signal()});
@@ -10,9 +10,16 @@ async function call(path,options={}){
 const status=await call('/api/status'),contract=await call('/api/v1/openapi.json');
 console.log(JSON.stringify({statusHttp:status.status,version:status.data?.version,ready:status.data?.ready,chatReady:status.data?.chatReady,contractHttp:contract.status,chatRoute:!!contract.data?.paths?.['/api/v1/chat']?.post}));
 if(status.status!==200||!status.data?.chatReady||contract.status!==200||!contract.data?.paths?.['/api/v1/chat']?.post){console.error('Mobile chat backend not ready');process.exit(1)}
-const code=process.env.TRAVEL_PREVIEW_CODE;
-if(code){
- const r=await call('/api/v1/chat',{method:'POST',headers:{'content-type':'application/json',origin:base,authorization:'Bearer '+code},body:JSON.stringify({question:'你好，请简短介绍你能做什么。'})});
- console.log(JSON.stringify({authenticatedChatHttp:r.status,status:r.data?.status,hasText:!!r.data?.text}));
- if(r.status!==200||r.data?.status!=='complete'||typeof r.data?.text!=='string'||!r.data.text.trim())process.exit(1);
-}else console.log('Only route/readiness checked. No authenticated model call (preview secret unavailable).');
+{
+ const r=await call('/api/v1/chat',{method:'POST',headers:{'content-type':'application/json',origin:base},body:JSON.stringify({question:'你好'})});
+ console.log(JSON.stringify({chatHttp:r.status,status:r.data?.status,hasText:!!r.data?.text,reason:r.data?.reason,failedStep:r.data?.failedStep,toolCount:r.data?.toolCount,version:r.data?.version}));
+ if(r.status!==200||r.data?.status!=='complete'||typeof r.data?.text!=='string'||!r.data.text.trim()||((value)=>value.includes('<|')||value.includes('call:reply'))(r.data.text))process.exit(1);
+ const firstText=r.data.text;
+ const second=await call('/api/v1/chat',{method:'POST',headers:{'content-type':'application/json',origin:base},body:JSON.stringify({question:'吉林市有什么好玩的地方？',history:[{role:'user',content:'你好'},{role:'assistant',content:firstText}]})});
+ console.log(JSON.stringify({secondChatHttp:second.status,status:second.data?.status,hasText:!!second.data?.text,reason:second.data?.reason,failedStep:second.data?.failedStep,toolCount:second.data?.toolCount,version:second.data?.version,sources:second.data?.sources?.length||0}));
+ if(second.status!==200||second.data?.status!=='complete'||typeof second.data?.text!=='string'||!second.data.text.trim()||((value)=>value.includes('<|')||value.includes('call:reply'))(second.data.text)||!Array.isArray(second.data?.sources)||!second.data.sources.length)process.exit(1);
+
+const third=await call('/api/v1/chat',{method:'POST',headers:{'content-type':'application/json',origin:base},body:JSON.stringify({question:'那冬天带父母去呢？',history:[{role:'user',content:'你好'},{role:'assistant',content:firstText},{role:'user',content:'吉林市有什么好玩的地方？'},{role:'assistant',content:second.data.text}]})});
+console.log(JSON.stringify({thirdChatHttp:third.status,thirdStatus:third.data?.status,hasText:!!third.data?.text}));
+if(third.status!==200||third.data?.status!=='complete'||typeof third.data?.text!=='string'||!third.data.text.trim()||third.data.text.includes('<|')||third.data.text.includes('call:reply'))process.exit(1);
+}
