@@ -48,7 +48,10 @@ async def run_browser(base_url):
                     assert not overflow, f"{path}: horizontal overflow at {width}px"
 
                     if path == "/":
-                        assert await page.locator('a[href="https://jizhengzhixing.zedi-li070614.workers.dev"]').count() >= 1
+                        assert await page.locator('a[href="https://jizhengzhixing-mobile-preview.zedi-li070614.workers.dev"]').count() == 4
+                        assert "让办事信息" in await page.locator("h1").inner_text()
+                        assert "更有方向" in await page.locator("h1").inner_text()
+                        assert await page.locator('a[href="https://jizhengzhixing.zedi-li070614.workers.dev"]').count() == 0
                         await page.locator(".faq-list summary").first.click()
                         opened = await page.locator(".faq-list details").first.evaluate(
                             "(element) => element.open"
