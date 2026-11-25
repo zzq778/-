@@ -296,8 +296,8 @@ static void audio_loop(void) {
 
 void app_main(void) {
     ESP_ERROR_CHECK(nvs_flash_init());
-    if(strlen(CONFIG_JZX_WIFI_SSID)==0||strlen(CONFIG_JZX_DEVICE_TOKEN)<24){
-        ESP_LOGE(TAG,"请在 menuconfig 配置 Wi-Fi 和 VOICE_DEVICE_TOKEN");
+    if(strlen(CONFIG_JZX_WIFI_SSID)==0||strlen(CONFIG_JZX_WORKER_URL)==0||strlen(CONFIG_JZX_DEVICE_TOKEN)<24){
+        ESP_LOGE(TAG,"请在 menuconfig 配置 Wi-Fi、Worker API URL 和 VOICE_DEVICE_TOKEN");
         return;
     }
     if(!wifi_start()) return;
