@@ -7,7 +7,7 @@ config JZX_WIFI_PASSWORD
  default ""
 config JZX_WORKER_URL
  string "Worker base URL"
- default "https://jizhengzhixing-official.pages.dev"
+ default ""
 config JZX_DEVICE_TOKEN
  string "VOICE_DEVICE_TOKEN"
  default ""
