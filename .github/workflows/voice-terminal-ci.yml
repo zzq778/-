@@ -32,3 +32,13 @@ jobs:
           idf.py set-target esp32c3
           idf.py build
         working-directory: firmware/esp32-c3
+      - name: Upload ESP32-C3 firmware binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: jzx-esp32-c3-firmware
+          path: |
+            firmware/esp32-c3/build/*.bin
+            firmware/esp32-c3/build/bootloader/bootloader.bin
+            firmware/esp32-c3/build/partition_table/partition-table.bin
+            firmware/esp32-c3/build/flash_args
+          if-no-files-found: error
