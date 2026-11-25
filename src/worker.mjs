@@ -3,6 +3,7 @@ import { DIRECT_BYTES, filePolicy, handleUploadApi, openLargeFile, streamMultipa
 import { runCivicAgent } from './agent.mjs';
 import { answerWenlv } from './wenlv/pipeline.mjs';
 import { runTravelAgent, PROMPT_VERSION } from './wenlv/travel-agent.mjs';
+import { handleVoiceTurn } from './voice.mjs';
 
 const MODEL = '@cf/zai-org/glm-4.7-flash';
 const FILE_MODEL = 'deepseek-flash';
@@ -85,6 +86,7 @@ export async function handleApi(request,env) {
   if (url.pathname === '/api/status' && request.method==='GET') {
     return reply({ ready:!!env.AI, provider:'Cloudflare Workers AI', mode:env.AI?'live':'unconfigured', model:MODEL, travelAgent:PROMPT_VERSION });
   }
+  if (url.pathname === '/api/voice/turn') return handleVoiceTurn(request,env,handleApi);
   if (url.pathname.startsWith('/api/upload/')) return handleUploadApi(request,env);
   if (url.pathname !== '/api/chat') return reply({ error:'NOT_FOUND',message:'接口不存在' },404);
   if (request.method !== 'POST') return reply({ error:'METHOD_NOT_ALLOWED',message:'仅支持 POST' },405);
