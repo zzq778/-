@@ -1,0 +1,33 @@
+name: 吉小知语音终端 CI
+on:
+  pull_request:
+    paths:
+      - 'src/**'
+      - 'tests/**'
+      - 'firmware/esp32-c3/**'
+      - '.github/workflows/voice-terminal-ci.yml'
+  push:
+    branches:
+      - feature/esp32-c3-voice-terminal
+jobs:
+  worker-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Run Worker test suite
+        run: npm test
+  firmware-build:
+    runs-on: ubuntu-latest
+    container:
+      image: espressif/idf:release-v5.5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build ESP32-C3 firmware
+        shell: bash
+        run: |
+          idf.py set-target esp32c3
+          idf.py build
+        working-directory: firmware/esp32-c3
