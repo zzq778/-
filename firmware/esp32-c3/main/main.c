@@ -172,8 +172,8 @@ static bool upload_turn(void) {
     const char *boundary="----JZXVoiceBoundary7MA4YWxk";
     char part[256];
     int part_len=snprintf(part,sizeof(part),
-        "--%s\\r\\nContent-Disposition: form-data; name=\\"region\\"\\r\\n\\r\\n%s\\r\\n"
-        "--%s\\r\\nContent-Disposition: form-data; name=\\"history\\"\\r\\n\\r\\n",
+        "--%s\r\\nContent-Disposition: form-data; name=\"region\"\r\\n\r\\n%s\r\\n"
+        "--%s\r\\nContent-Disposition: form-data; name=\"history\"\r\\n\r\\n",
         boundary,CONFIG_JZX_REGION,boundary);
     if(!s_history) s_history=cJSON_CreateArray();
     char *history=cJSON_PrintUnformatted(s_history);
@@ -181,10 +181,10 @@ static bool upload_turn(void) {
     size_t history_len=strlen(history);
     char tail[192];
     int tail_len=snprintf(tail,sizeof(tail),
-        "\\r\\n--%s\\r\\nContent-Disposition: form-data; name=\\"audio\\"; filename=\\"turn.wav\\"\\r\\nContent-Type: audio/wav\\r\\n\\r\\n",
+        "\r\\n--%s\r\\nContent-Disposition: form-data; name=\"audio\"; filename=\"turn.wav\"\r\\nContent-Type: audio/wav\r\\n\r\\n",
         boundary);
     char endbuf[80];
-    int end_len=snprintf(endbuf,sizeof(endbuf),"\\r\\n--%s--\\r\\n",boundary);
+    int end_len=snprintf(endbuf,sizeof(endbuf),"\r\\n--%s--\r\\n",boundary);
     uint8_t wav_header[WAV_HEADER_SIZE];
     make_wav_header(wav_header,(uint32_t)s_audio_count);
     size_t audio_len=WAV_HEADER_SIZE+s_audio_count*sizeof(int16_t);
@@ -286,7 +286,7 @@ static void audio_loop(void) {
                 ESP_LOGI(TAG,"语音结束，时长 %.1f s，提交云端",s_audio_count/(float)SAMPLE_RATE);
                 ESP_ERROR_CHECK(i2s_channel_disable(s_rx));
                 bool ok=upload_turn();
-                ESP_LOGI(TAG,ok?"播报完成，恢复聆听":"本轮失败，恢复聆听");
+                if(ok) ESP_LOGI(TAG,"播报完成，恢复聆听"); else ESP_LOGW(TAG,"本轮失败，恢复聆听");
                 ESP_ERROR_CHECK(i2s_channel_enable(s_rx));
                 silence_frames=0;
             }
