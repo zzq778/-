@@ -120,7 +120,7 @@ npx wrangler secret put VOICE_DEVICE_TOKEN
 - [x] 接入 `/api/voice/turn` 路由
 - [x] 新增 ASR → 吉小知 chat → TTS 接口单元测试
 - [ ] 运行 Node 测试套件
-- [ ] 新增并编译 ESP-IDF 固件
+- [x] 新增 ESP-IDF 固件源码（尚未编译或实机验证）
 - [ ] 配置 Worker Secret
 - [ ] 部署语音接口
 - [ ] 实机采集、识别、播报和连续对话联调
