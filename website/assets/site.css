@@ -824,3 +824,211 @@ a:focus-visible,summary:focus-visible {
     animation:none!important
   }
 }
+
+
+/* 首页方案 1：克制的金色日轮与长白山层景 */
+.hero {
+  min-height:calc(100svh - 82px);
+  padding:clamp(70px,8vh,104px) clamp(22px,6vw,96px) clamp(64px,7vh,86px);
+  grid-template-columns:minmax(0,1.08fr) minmax(390px,.92fr);
+  gap:clamp(34px,5vw,82px);
+  background:
+    radial-gradient(circle at 68% 36%,rgba(173,148,85,.14),transparent 26%),
+    linear-gradient(112deg,#043c31 0%,#06483a 46%,#0b503f 100%);
+  isolation:isolate
+}
+.hero:before {
+  content:none
+}
+.hero:after {
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:0;
+  pointer-events:none;
+  background:linear-gradient(90deg,rgba(1,31,26,.3) 0%,rgba(1,31,26,.08) 47%,transparent 72%)
+}
+.hero-glow,.orbit {
+  display:none
+}
+.mountain-scene {
+  position:absolute;
+  inset:0;
+  z-index:0;
+  overflow:hidden;
+  pointer-events:none
+}
+.sun-halo {
+  position:absolute;
+  width:clamp(260px,24vw,390px);
+  aspect-ratio:1;
+  top:20%;
+  right:13%;
+  border-radius:50%;
+  background:radial-gradient(circle,rgba(250,210,128,.5) 0 38%,rgba(238,190,99,.22) 54%,rgba(238,190,99,0) 73%);
+  filter:drop-shadow(0 0 32px rgba(241,194,100,.34))
+}
+.sun-disc {
+  position:absolute;
+  inset:18%;
+  border-radius:50%;
+  background:
+    radial-gradient(circle at 37% 31%,rgba(255,244,200,.82),transparent 25%),
+    linear-gradient(145deg,#f8d58e,#efb75f);
+  box-shadow:inset 0 0 34px rgba(255,245,211,.3),0 0 44px rgba(237,183,85,.44)
+}
+.mountain-art {
+  position:absolute;
+  inset:auto 0 0;
+  width:100%;
+  height:72%;
+  max-height:none;
+  opacity:1
+}
+.mountain-layer {
+  filter:drop-shadow(0 -12px 24px rgba(1,31,26,.08))
+}
+.mountain-far {
+  opacity:.94
+}
+.mountain-mid {
+  opacity:.98
+}
+.mountain-near {
+  opacity:1
+}
+.mountain-mist {
+  opacity:.8
+}
+.gold-thread {
+  filter:drop-shadow(0 0 7px rgba(240,211,145,.4))
+}
+.hero-copy,.hero-visual {
+  z-index:2
+}
+.hero-copy {
+  align-self:center;
+  max-width:690px;
+  padding-bottom:5vh
+}
+.hero h1 {
+  font-size:clamp(43px,4.35vw,70px);
+  line-height:1.36;
+  text-shadow:0 3px 20px rgba(0,29,24,.16)
+}
+.hero-lead {
+  color:#e0e8df;
+  max-width:650px;
+  font-size:clamp(15px,1.1vw,18px)
+}
+.hero-visual {
+  min-height:560px;
+  align-self:stretch
+}
+.demo-card {
+  width:min(410px,94%);
+  right:0;
+  bottom:92px;
+  padding:24px 26px 20px;
+  border-color:rgba(214,184,121,.42);
+  box-shadow:0 26px 70px rgba(0,25,21,.25)
+}
+.demo-question {
+  background:transparent;
+  padding:0;
+  font-family:var(--serif);
+  font-size:14px;
+  font-weight:600;
+  color:#26493d
+}
+.demo-answer {
+  font-size:12px;
+  line-height:2.05
+}
+.visual-caption {
+  left:auto;
+  right:0;
+  width:100%;
+  bottom:8px;
+  padding-left:4px;
+  border-bottom:1px solid rgba(230,210,159,.28);
+  padding-bottom:9px
+}
+
+@media(max-width:900px) {
+  .hero {
+    min-height:auto;
+    grid-template-columns:1fr;
+    padding-top:70px;
+    gap:0
+  }
+  .hero-copy {
+    max-width:660px;
+    padding-bottom:24px
+  }
+  .hero-visual {
+    min-height:390px
+  }
+  .sun-halo {
+    width:300px;
+    top:42%;
+    right:10%
+  }
+  .mountain-art {
+    width:100%;
+    height:58%;
+    left:0;
+    transform:none
+  }
+  .demo-card {
+    width:min(390px,82vw);
+    right:3%;
+    bottom:48px
+  }
+}
+
+@media(max-width:620px) {
+  .hero {
+    min-height:auto;
+    padding:56px 22px 44px
+  }
+  .hero:after {
+    background:linear-gradient(180deg,rgba(1,31,26,.18),transparent 62%)
+  }
+  .hero-copy {
+    padding-bottom:10px
+  }
+  .hero h1 {
+    font-size:clamp(36px,11.3vw,43px);
+    line-height:1.4
+  }
+  .hero-lead {
+    font-size:14px;
+    line-height:1.95
+  }
+  .hero-visual {
+    min-height:350px;
+    margin-top:10px
+  }
+  .sun-halo {
+    width:220px;
+    top:50%;
+    right:-22px
+  }
+  .mountain-art {
+    width:100%;
+    height:47%;
+    top:auto;
+    left:0;
+    transform:none
+  }
+  .demo-card {
+    width:calc(100vw - 44px);
+    right:0;
+    bottom:42px;
+    padding:17px 18px
+  }
+  .visual-caption {
+    bottom:0
+  }
+}
