@@ -1280,3 +1280,13 @@ a:focus-visible,summary:focus-visible {
   }
   .demo-card { bottom: clamp(140px, 17vh, 190px); }
 }
+
+
+@media (min-width: 901px) {
+  .landscape-image { z-index: 0; }
+  .mountain-scene:after { z-index: 1; }
+  .demo-card {
+    min-height: 300px;
+    bottom: clamp(120px, calc(17vh - 20px), 170px);
+  }
+}
