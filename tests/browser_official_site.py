@@ -55,26 +55,27 @@ async def run_browser(base_url):
 
                         scene = page.locator(".mountain-scene")
                         assert await scene.count() == 1, "homepage sunrise mountain scene is missing"
-                        assert await scene.locator(".mountain-layer").count() >= 3, "homepage needs layered mountain depth"
-                        sun = scene.locator(".sun-disc")
-                        assert await sun.is_visible(), "homepage sun disc must remain visible"
+                        landscape = scene.locator(".landscape-image")
+                        assert await landscape.count() == 1, "homepage scenic image is missing"
+                        await landscape.evaluate("(image) => image.decode()")
+                        assert await landscape.evaluate("(image) => image.naturalWidth >= 900"), "homepage scenic asset did not load at source resolution"
                         geometry = await page.evaluate(
                             """() => {
                                 const hero = document.querySelector('.hero').getBoundingClientRect();
-                                const sun = document.querySelector('.sun-disc').getBoundingClientRect();
+                                const landscape = document.querySelector('.landscape-image').getBoundingClientRect();
                                 const card = document.querySelector('.demo-card').getBoundingClientRect();
                                 return {
-                                    sunInsideHero:
-                                        sun.left < hero.right &&
-                                        sun.right > hero.left &&
-                                        sun.top < hero.bottom &&
-                                        sun.bottom > hero.top,
+                                    landscapeInsideHero:
+                                        landscape.left < hero.right &&
+                                        landscape.right > hero.left &&
+                                        landscape.top < hero.bottom &&
+                                        landscape.bottom > hero.top,
                                     cardInsideViewport:
                                         card.left >= 0 && card.right <= window.innerWidth,
                                 };
                             }"""
                         )
-                        assert geometry["sunInsideHero"], f"sun escaped hero at {width}px"
+                        assert geometry["landscapeInsideHero"], f"landscape escaped hero at {width}px"
                         assert geometry["cardInsideViewport"], f"dialog card escaped viewport at {width}px"
 
                         await page.locator(".faq-list summary").first.click()
