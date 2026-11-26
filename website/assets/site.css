@@ -1268,3 +1268,15 @@ a:focus-visible,summary:focus-visible {
     transform: none;
   }
 }
+
+
+/* Blend the scenic crop into the forest field and lower the dialogue card to the reference baseline. */
+@media (min-width: 901px) {
+  .mountain-scene:after {
+    background:
+      linear-gradient(90deg, rgba(3, 55, 45, 1) 0%, rgba(3, 55, 45, .96) 35%, rgba(3, 55, 45, .62) 45%, rgba(3, 55, 45, 0) 59%),
+      radial-gradient(ellipse at 70% 39%, rgba(255, 207, 130, .12), transparent 27%),
+      linear-gradient(180deg, transparent 30%, rgba(4, 52, 43, .04) 48%, rgba(2, 37, 31, .76) 100%);
+  }
+  .demo-card { bottom: clamp(140px, 17vh, 190px); }
+}
