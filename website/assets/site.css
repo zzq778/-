@@ -1032,3 +1032,261 @@ a:focus-visible,summary:focus-visible {
     bottom:0
   }
 }
+
+
+/* Homepage fidelity pass: use the actual generated Jilin sunrise landscape as a decorative asset,
+   while keeping all copy, navigation, and the assistant preview as live accessible HTML. */
+.hero {
+  min-height: calc(100svh - 82px);
+  padding: clamp(68px, 8vh, 104px) clamp(24px, 5.8vw, 92px) clamp(68px, 7vh, 94px);
+  grid-template-columns: minmax(0, 1.08fr) minmax(440px, .92fr);
+  gap: clamp(28px, 4.2vw, 72px);
+  background: linear-gradient(118deg, #04372e 0%, #064438 52%, #073b31 100%);
+  isolation: isolate;
+}
+.hero:before { content: none; }
+.hero:after {
+  z-index: 1;
+  background:
+    linear-gradient(90deg, rgba(1, 31, 26, .62) 0%, rgba(1, 31, 26, .36) 36%, rgba(1, 31, 26, .08) 68%, rgba(1, 31, 26, .18) 100%),
+    linear-gradient(0deg, rgba(1, 31, 26, .58) 0%, rgba(1, 31, 26, .12) 32%, transparent 64%);
+}
+.mountain-scene {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at 70% 34%, rgba(238, 190, 112, .13), transparent 30%),
+    linear-gradient(180deg, #063d32 0%, #06483a 56%, #032e27 100%);
+}
+.landscape-image {
+  position: absolute;
+  display: block;
+  width: 100%;
+  height: auto;
+  max-width: none;
+  left: 0;
+  top: 12%;
+  opacity: .98;
+  object-fit: contain;
+  filter: saturate(.94) contrast(1.04);
+  -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 9%, #000 82%, transparent 100%);
+  mask-image: linear-gradient(180deg, transparent 0%, #000 9%, #000 82%, transparent 100%);
+}
+.mountain-scene:after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 70% 39%, rgba(255, 207, 130, .12), transparent 27%),
+    linear-gradient(180deg, transparent 30%, rgba(4, 52, 43, .04) 48%, rgba(2, 37, 31, .76) 100%);
+}
+.hero-copy, .hero-visual { z-index: 2; }
+.hero-copy {
+  align-self: center;
+  max-width: 700px;
+  padding-bottom: 2vh;
+}
+.hero h1 {
+  font-size: clamp(44px, 4.55vw, 72px);
+  line-height: 1.32;
+  letter-spacing: .025em;
+  text-shadow: 0 3px 22px rgba(0, 24, 20, .22);
+}
+.hero h1 em { color: #e8bd70; }
+.hero-lead {
+  max-width: 650px;
+  color: #e0e8df;
+  font-size: clamp(14px, 1.08vw, 17px);
+  line-height: 2.05;
+  text-shadow: 0 1px 10px rgba(0, 24, 20, .18);
+}
+.hero-visual {
+  min-height: 620px;
+  align-self: stretch;
+}
+.demo-card {
+  width: min(500px, 96%);
+  right: 0;
+  bottom: clamp(142px, 24vh, 250px);
+  padding: 27px 30px 23px;
+  border-radius: 6px;
+  background: rgba(248, 247, 239, .97);
+  border: 1px solid rgba(225, 204, 157, .72);
+  box-shadow: 0 24px 70px rgba(0, 24, 20, .28);
+}
+.demo-top { font-size: 14px; }
+.demo-top small { font-size: 11px; }
+.assistant-dot {
+  width: 9px;
+  height: 9px;
+  box-shadow: 0 0 0 5px #e3ece4;
+}
+.demo-question {
+  margin: 23px 0 13px;
+  padding: 0 12px;
+  background: transparent;
+  border-radius: 0;
+  font-family: var(--serif);
+  font-size: 17px;
+  line-height: 1.9;
+  color: #24473c;
+}
+.demo-answer {
+  font-size: 14px;
+  line-height: 2.05;
+  color: #53665c;
+}
+.demo-bottom { gap: 9px; margin-top: 20px; }
+.demo-bottom span { font-size: 11px; padding: 5px 11px; }
+.visual-caption {
+  left: 0;
+  right: 0;
+  bottom: 14px;
+  width: 100%;
+  padding: 0 0 10px;
+  border-bottom: 1px solid rgba(230, 210, 159, .26);
+  color: #c4d1c5;
+  font-size: 10px;
+}
+@media (min-width: 1500px) {
+  .hero { padding-left: clamp(92px, 5.8vw, 116px); padding-right: clamp(92px, 5.8vw, 116px); }
+  .demo-card { width: min(520px, 96%); }
+}
+@media (max-width: 1100px) {
+  .hero {
+    min-height: 760px;
+    grid-template-columns: minmax(0, 1fr) minmax(350px, .9fr);
+    gap: 26px;
+    padding-left: 5vw;
+    padding-right: 5vw;
+  }
+  .hero h1 { font-size: clamp(42px, 5vw, 58px); }
+  .hero-visual { min-height: 560px; }
+  .demo-card { width: min(440px, 100%); bottom: clamp(115px, 20vh, 190px); padding: 22px 23px 20px; }
+  .demo-question { font-size: 15px; }
+  .demo-answer { font-size: 12px; }
+}
+@media (max-width: 900px) {
+  .hero {
+    min-height: auto;
+    grid-template-columns: 1fr;
+    gap: 0;
+    padding: 66px clamp(24px, 6vw, 56px) 48px;
+  }
+  .hero-copy { max-width: 700px; padding-bottom: 18px; }
+  .hero-visual { min-height: 480px; }
+  .landscape-image {
+    width: 150%;
+    left: -25%;
+    top: 38%;
+  }
+  .demo-card {
+    width: min(500px, 90%);
+    right: 2%;
+    bottom: 58px;
+  }
+  .visual-caption { bottom: 8px; }
+}
+@media (max-width: 620px) {
+  .hero { padding: 52px 22px 38px; }
+  .hero h1 { font-size: clamp(36px, 10.6vw, 43px); line-height: 1.38; }
+  .hero-lead { font-size: 13px; line-height: 1.95; }
+  .hero-points { margin-top: 25px; }
+  .hero-visual { min-height: 405px; margin-top: 8px; }
+  .landscape-image {
+    width: 205%;
+    left: -58%;
+    top: auto;
+    bottom: 18%;
+    opacity: .86;
+  }
+  .mountain-scene:after {
+    background:
+      linear-gradient(180deg, rgba(2, 43, 35, .12) 0%, transparent 34%, rgba(2, 37, 31, .76) 100%),
+      linear-gradient(90deg, rgba(1, 31, 26, .18), transparent 80%);
+  }
+  .demo-card {
+    width: 100%;
+    right: 0;
+    bottom: 48px;
+    padding: 18px 18px 16px;
+  }
+  .demo-question { font-size: 14px; margin: 15px 0 9px; padding: 0 5px; }
+  .demo-answer { font-size: 11px; line-height: 1.9; }
+  .demo-bottom { margin-top: 14px; gap: 6px; }
+  .demo-bottom span { font-size: 9px; padding: 4px 8px; }
+  .visual-caption { font-size: 8px; bottom: 0; }
+}
+
+
+/* Final composition tuning after the real-browser screenshot review. */
+@media (min-width: 901px) {
+  .landscape-image {
+    width: 64%;
+    left: 43.5%;
+    top: 9.5%;
+    transform: scaleY(1.2);
+    transform-origin: top center;
+  }
+  .demo-card {
+    width: min(500px, 96%);
+    min-height: 280px;
+    bottom: clamp(170px, 22vh, 230px);
+    display: flex;
+    flex-direction: column;
+    padding: 28px 28px 24px;
+  }
+  .demo-question {
+    font-size: 16px;
+    line-height: 1.95;
+    margin: 22px 0 14px;
+  }
+  .demo-answer { font-size: 13px; line-height: 2.05; }
+  .demo-bottom { margin-top: auto; padding-top: 18px; }
+}
+@media (min-width: 1500px) {
+  .demo-card { width: 480px; right: -4vw; }
+}
+@media (max-width: 900px) {
+  .landscape-image {
+    width: 150%;
+    left: -25%;
+    top: 38%;
+    bottom: auto;
+    transform: none;
+  }
+}
+@media (max-width: 620px) {
+  .landscape-image {
+    width: 205%;
+    left: -58%;
+    top: auto;
+    bottom: 18%;
+    transform: none;
+  }
+}
+
+
+/* Blend the scenic crop into the forest field and lower the dialogue card to the reference baseline. */
+@media (min-width: 901px) {
+  .mountain-scene:after {
+    background:
+      linear-gradient(90deg, rgba(3, 55, 45, 1) 0%, rgba(3, 55, 45, .96) 35%, rgba(3, 55, 45, .62) 45%, rgba(3, 55, 45, 0) 59%),
+      radial-gradient(ellipse at 70% 39%, rgba(255, 207, 130, .12), transparent 27%),
+      linear-gradient(180deg, transparent 30%, rgba(4, 52, 43, .04) 48%, rgba(2, 37, 31, .76) 100%);
+  }
+  .demo-card { bottom: clamp(140px, 17vh, 190px); }
+}
+
+
+@media (min-width: 901px) {
+  .landscape-image { z-index: 0; }
+  .mountain-scene:after { z-index: 1; }
+  .demo-card {
+    min-height: 300px;
+    bottom: clamp(120px, calc(17vh - 20px), 170px);
+  }
+}
