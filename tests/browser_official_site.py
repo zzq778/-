@@ -3,6 +3,8 @@ import threading
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
+ARTIFACTS = Path('/tmp/official-site-visual')
+
 from playwright.async_api import async_playwright
 
 ROOT = Path(__file__).resolve().parents[1] / "website"
@@ -26,7 +28,8 @@ async def run_browser(base_url):
     async with async_playwright() as playwright:
         browser = await playwright.chromium.launch()
         try:
-            for width in (320, 390, 820, 1280):
+            ARTIFACTS.mkdir(parents=True, exist_ok=True)
+            for width in (320, 390, 820, 1280, 1568):
                 page = await browser.new_page(
                     viewport={"width": width, "height": 900},
                     device_scale_factor=1,
@@ -78,6 +81,7 @@ async def run_browser(base_url):
                         assert geometry["landscapeInsideHero"], f"landscape escaped hero at {width}px"
                         assert geometry["cardInsideViewport"], f"dialog card escaped viewport at {width}px"
 
+                        await page.screenshot(path=str(ARTIFACTS / f"official-site-{width}.png"), full_page=True)
                         await page.locator(".faq-list summary").first.click()
                         opened = await page.locator(".faq-list details").first.evaluate(
                             "(element) => element.open"
