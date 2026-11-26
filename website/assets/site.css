@@ -1220,3 +1220,51 @@ a:focus-visible,summary:focus-visible {
   .demo-bottom span { font-size: 9px; padding: 4px 8px; }
   .visual-caption { font-size: 8px; bottom: 0; }
 }
+
+
+/* Final composition tuning after the real-browser screenshot review. */
+@media (min-width: 901px) {
+  .landscape-image {
+    width: 64%;
+    left: 43.5%;
+    top: 9.5%;
+    transform: scaleY(1.2);
+    transform-origin: top center;
+  }
+  .demo-card {
+    width: min(500px, 96%);
+    min-height: 280px;
+    bottom: clamp(170px, 22vh, 230px);
+    display: flex;
+    flex-direction: column;
+    padding: 28px 28px 24px;
+  }
+  .demo-question {
+    font-size: 16px;
+    line-height: 1.95;
+    margin: 22px 0 14px;
+  }
+  .demo-answer { font-size: 13px; line-height: 2.05; }
+  .demo-bottom { margin-top: auto; padding-top: 18px; }
+}
+@media (min-width: 1500px) {
+  .demo-card { width: 480px; right: -4vw; }
+}
+@media (max-width: 900px) {
+  .landscape-image {
+    width: 150%;
+    left: -25%;
+    top: 38%;
+    bottom: auto;
+    transform: none;
+  }
+}
+@media (max-width: 620px) {
+  .landscape-image {
+    width: 205%;
+    left: -58%;
+    top: auto;
+    bottom: 18%;
+    transform: none;
+  }
+}
