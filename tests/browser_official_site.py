@@ -52,6 +52,31 @@ async def run_browser(base_url):
                         assert "让办事信息" in await page.locator("h1").inner_text()
                         assert "更有方向" in await page.locator("h1").inner_text()
                         assert await page.locator('a[href="https://jizhengzhixing.zedi-li070614.workers.dev"]').count() == 0
+
+                        scene = page.locator(".mountain-scene")
+                        assert await scene.count() == 1, "homepage sunrise mountain scene is missing"
+                        assert await scene.locator(".mountain-layer").count() >= 3, "homepage needs layered mountain depth"
+                        sun = scene.locator(".sun-disc")
+                        assert await sun.is_visible(), "homepage sun disc must remain visible"
+                        geometry = await page.evaluate(
+                            """() => {
+                                const hero = document.querySelector('.hero').getBoundingClientRect();
+                                const sun = document.querySelector('.sun-disc').getBoundingClientRect();
+                                const card = document.querySelector('.demo-card').getBoundingClientRect();
+                                return {
+                                    sunInsideHero:
+                                        sun.left < hero.right &&
+                                        sun.right > hero.left &&
+                                        sun.top < hero.bottom &&
+                                        sun.bottom > hero.top,
+                                    cardInsideViewport:
+                                        card.left >= 0 && card.right <= window.innerWidth,
+                                };
+                            }"""
+                        )
+                        assert geometry["sunInsideHero"], f"sun escaped hero at {width}px"
+                        assert geometry["cardInsideViewport"], f"dialog card escaped viewport at {width}px"
+
                         await page.locator(".faq-list summary").first.click()
                         opened = await page.locator(".faq-list details").first.evaluate(
                             "(element) => element.open"
