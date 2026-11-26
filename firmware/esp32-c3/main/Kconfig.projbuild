@@ -1,0 +1,25 @@
+menu "吉小知语音终端"
+config JZX_WIFI_SSID
+ string "Wi-Fi SSID"
+ default ""
+config JZX_WIFI_PASSWORD
+ string "Wi-Fi password"
+ default ""
+config JZX_WORKER_URL
+ string "Worker base URL"
+ default ""
+config JZX_DEVICE_TOKEN
+ string "VOICE_DEVICE_TOKEN"
+ default ""
+config JZX_REGION
+ string "Default region"
+ default "长春市"
+config JZX_VAD_THRESHOLD
+ int "VAD RMS threshold"
+ range 100 10000
+ default 650
+config JZX_MAX_TURN_SECONDS
+ int "Maximum utterance length in seconds"
+ range 2 8
+ default 6
+endmenu
