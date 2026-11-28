@@ -5,6 +5,7 @@ import {execFileSync} from 'node:child_process';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {createHash} from 'node:crypto';
+import {fileURLToPath} from 'node:url';
 
 const site=new URL('../mobile/site/',import.meta.url);
 const names=["chaganhu-winter-1d","changbaishan-north-2d","changbaishan-west-3d","changchun-city-1d","changchun-family-1d","hero","jian-history-2d","jilin-lake-2d","jilin-wusong-2d","mountain","siping-red-1d","xianghai-birds-2d","yanbian-border-2d","yanbian-food-2d"];
@@ -27,7 +28,11 @@ test('mobile bundle embeds the real artwork and stylesheet with no relative refe
  const dir=mkdtempSync(join(tmpdir(),'jzzx-art-'));
  try{
   const output=join(dir,'index.html');
-  execFileSync('python3',[new URL('../mobile/android/bundle_site.py',import.meta.url).pathname,site.pathname,output]);
+  execFileSync('python3',[
+   fileURLToPath(new URL('../mobile/android/bundle_site.py',import.meta.url)),
+   fileURLToPath(site),
+   output,
+  ]);
   const html=readFileSync(output,'utf8');
   assert.match(html,/Visual layer for mobile v0\.9\.7/);
   assert.match(html,/id="modeBadge"/);
