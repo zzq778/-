@@ -1,0 +1,144 @@
+import { app, BrowserWindow, dialog, shell } from 'electron';
+import path from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+
+import {
+  APP_URL,
+  canRequestMicrophone,
+  classifyNavigation,
+  isSafeExternalUrl,
+  isTrustedAppUrl,
+} from './config.mjs';
+
+const desktopDir = path.dirname(fileURLToPath(import.meta.url));
+const projectDir = path.dirname(desktopDir);
+const offlinePath = path.join(desktopDir, 'offline.html');
+const offlineUrl = pathToFileURL(offlinePath).href;
+
+let mainWindow = null;
+
+function openExternalUrl(url) {
+  if (isSafeExternalUrl(url)) void shell.openExternal(url);
+}
+
+function installPermissionPolicy(window) {
+  const grantedMicrophoneOrigins = new Set();
+  const appSession = window.webContents.session;
+
+  appSession.setPermissionCheckHandler(
+    (_webContents, permission, requestingOrigin, details = {}) => {
+      const requestingUrl = details.requestingUrl || requestingOrigin;
+      if (permission !== 'media' || details.mediaType !== 'audio') return false;
+      if (!isTrustedAppUrl(requestingUrl)) return false;
+      return grantedMicrophoneOrigins.has(new URL(requestingUrl).origin);
+    },
+  );
+
+  appSession.setPermissionRequestHandler(
+    (_webContents, permission, callback, details = {}) => {
+      const requestingUrl = details.requestingUrl || window.webContents.getURL();
+      if (!canRequestMicrophone(permission, requestingUrl, details.mediaTypes)) {
+        callback(false);
+        return;
+      }
+
+      const origin = new URL(requestingUrl).origin;
+      if (grantedMicrophoneOrigins.has(origin)) {
+        callback(true);
+        return;
+      }
+
+      void dialog.showMessageBox(window, {
+        type: 'question',
+        title: '允许使用麦克风？',
+        message: '吉小知希望使用麦克风进行语音输入',
+        detail: '只有当前吉政知行助手页面可在本次运行期间使用麦克风。',
+        buttons: ['允许', '拒绝'],
+        defaultId: 1,
+        cancelId: 1,
+        noLink: true,
+      }).then(({ response }) => {
+        const allowed = response === 0;
+        if (allowed) grantedMicrophoneOrigins.add(origin);
+        callback(allowed);
+      }).catch(() => callback(false));
+    },
+  );
+}
+
+function createMainWindow() {
+  const window = new BrowserWindow({
+    width: 1440,
+    height: 900,
+    minWidth: 1024,
+    minHeight: 700,
+    show: false,
+    autoHideMenuBar: true,
+    backgroundColor: '#092820',
+    icon: path.join(projectDir, 'public', 'assets', 'icon-512.png'),
+    title: '吉政知行',
+    webPreferences: {
+      contextIsolation: true,
+      sandbox: true,
+      nodeIntegration: false,
+    },
+  });
+
+  window.webContents.setWindowOpenHandler(({ url }) => {
+    if (isTrustedAppUrl(url)) void window.loadURL(url);
+    else openExternalUrl(url);
+    return { action: 'deny' };
+  });
+
+  const guardNavigation = (event) => {
+    const action = classifyNavigation(event.url, event.isMainFrame, offlineUrl);
+    if (action === 'allow') return;
+    event.preventDefault();
+    if (action === 'external') openExternalUrl(event.url);
+  };
+
+  window.webContents.on('will-frame-navigate', guardNavigation);
+  window.webContents.on('will-redirect', guardNavigation);
+
+  installPermissionPolicy(window);
+
+  window.webContents.on(
+    'did-fail-load',
+    (_event, errorCode, _errorDescription, validatedUrl, isMainFrame) => {
+      if (!isMainFrame || errorCode === -3 || validatedUrl === offlineUrl) return;
+      void window.loadFile(offlinePath);
+    },
+  );
+
+  window.once('ready-to-show', () => window.show());
+  window.on('closed', () => {
+    if (mainWindow === window) mainWindow = null;
+  });
+
+  void window.loadURL(APP_URL);
+  return window;
+}
+
+const hasSingleInstanceLock = app.requestSingleInstanceLock();
+
+if (!hasSingleInstanceLock) {
+  app.quit();
+} else {
+  app.on('second-instance', () => {
+    if (!mainWindow) return;
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.focus();
+  });
+
+  app.whenReady().then(() => {
+    mainWindow = createMainWindow();
+
+    app.on('activate', () => {
+      if (BrowserWindow.getAllWindows().length === 0) mainWindow = createMainWindow();
+    });
+  });
+
+  app.on('window-all-closed', () => {
+    if (process.platform !== 'darwin') app.quit();
+  });
+}
