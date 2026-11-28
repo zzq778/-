@@ -29,3 +29,17 @@ export function isSafeExternalUrl(rawUrl) {
     return false;
   }
 }
+
+export function classifyNavigation(rawUrl, isMainFrame, offlineUrl) {
+  if (rawUrl === offlineUrl || isTrustedAppUrl(rawUrl)) return 'allow';
+  if (isMainFrame && isSafeExternalUrl(rawUrl)) return 'external';
+  return 'deny';
+}
+
+export function canRequestMicrophone(permission, requestingUrl, mediaTypes) {
+  return permission === 'media'
+    && isTrustedAppUrl(requestingUrl)
+    && Array.isArray(mediaTypes)
+    && mediaTypes.length > 0
+    && mediaTypes.every((mediaType) => mediaType === 'audio');
+}

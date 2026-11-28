@@ -10,6 +10,7 @@ on:
       - public/assets/icon-512.png
       - package.json
       - package-lock.json
+      - tests/**
       - .github/workflows/windows-desktop.yml
   pull_request:
     paths:
@@ -17,6 +18,7 @@ on:
       - public/assets/icon-512.png
       - package.json
       - package-lock.json
+      - tests/**
       - .github/workflows/windows-desktop.yml
 
 permissions:

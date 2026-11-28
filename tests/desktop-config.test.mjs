@@ -1,7 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { APP_URL, isSafeExternalUrl, isTrustedAppUrl } from '../desktop/config.mjs';
+import {
+  APP_URL,
+  canRequestMicrophone,
+  classifyNavigation,
+  isSafeExternalUrl,
+  isTrustedAppUrl,
+} from '../desktop/config.mjs';
 
 test('桌面应用从官网介绍页启动', () => {
   assert.equal(APP_URL, 'https://jizhengzhixing-official.pages.dev/');
@@ -49,4 +55,21 @@ test('只有不带凭据的普通 HTTPS 地址可以交给系统浏览器', () =
   assert.equal(isSafeExternalUrl('http://example.com/'), false);
   assert.equal(isSafeExternalUrl('javascript:alert(1)'), false);
   assert.equal(isSafeExternalUrl('not a url'), false);
+});
+
+test('导航策略允许可信页面、外送主框架 HTTPS，并拒绝外部子框架', () => {
+  const offlineUrl = 'file:///desktop/offline.html';
+  assert.equal(classifyNavigation(APP_URL, true, offlineUrl), 'allow');
+  assert.equal(classifyNavigation(offlineUrl, true, offlineUrl), 'allow');
+  assert.equal(classifyNavigation('https://www.jl.gov.cn/', true, offlineUrl), 'external');
+  assert.equal(classifyNavigation('https://www.jl.gov.cn/', false, offlineUrl), 'deny');
+  assert.equal(classifyNavigation('javascript:alert(1)', true, offlineUrl), 'deny');
+});
+
+test('只有可信助手来源的纯音频媒体请求可以进入麦克风授权流程', () => {
+  const assistant = 'https://jizhengzhixing-mobile-preview.zedi-li070614.workers.dev/chat';
+  assert.equal(canRequestMicrophone('media', assistant, ['audio']), true);
+  assert.equal(canRequestMicrophone('media', assistant, ['audio', 'video']), false);
+  assert.equal(canRequestMicrophone('media', 'https://example.com/', ['audio']), false);
+  assert.equal(canRequestMicrophone('geolocation', assistant, []), false);
 });

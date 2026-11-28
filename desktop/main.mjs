@@ -1,8 +1,14 @@
-import { app, BrowserWindow, shell } from 'electron';
+import { app, BrowserWindow, dialog, shell } from 'electron';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
-import { APP_URL, isSafeExternalUrl, isTrustedAppUrl } from './config.mjs';
+import {
+  APP_URL,
+  canRequestMicrophone,
+  classifyNavigation,
+  isSafeExternalUrl,
+  isTrustedAppUrl,
+} from './config.mjs';
 
 const desktopDir = path.dirname(fileURLToPath(import.meta.url));
 const projectDir = path.dirname(desktopDir);
@@ -13,6 +19,51 @@ let mainWindow = null;
 
 function openExternalUrl(url) {
   if (isSafeExternalUrl(url)) void shell.openExternal(url);
+}
+
+function installPermissionPolicy(window) {
+  const grantedMicrophoneOrigins = new Set();
+  const appSession = window.webContents.session;
+
+  appSession.setPermissionCheckHandler(
+    (_webContents, permission, requestingOrigin, details = {}) => {
+      const requestingUrl = details.requestingUrl || requestingOrigin;
+      if (permission !== 'media' || details.mediaType !== 'audio') return false;
+      if (!isTrustedAppUrl(requestingUrl)) return false;
+      return grantedMicrophoneOrigins.has(new URL(requestingUrl).origin);
+    },
+  );
+
+  appSession.setPermissionRequestHandler(
+    (_webContents, permission, callback, details = {}) => {
+      const requestingUrl = details.requestingUrl || window.webContents.getURL();
+      if (!canRequestMicrophone(permission, requestingUrl, details.mediaTypes)) {
+        callback(false);
+        return;
+      }
+
+      const origin = new URL(requestingUrl).origin;
+      if (grantedMicrophoneOrigins.has(origin)) {
+        callback(true);
+        return;
+      }
+
+      void dialog.showMessageBox(window, {
+        type: 'question',
+        title: '允许使用麦克风？',
+        message: '吉小知希望使用麦克风进行语音输入',
+        detail: '只有当前吉政知行助手页面可在本次运行期间使用麦克风。',
+        buttons: ['允许', '拒绝'],
+        defaultId: 1,
+        cancelId: 1,
+        noLink: true,
+      }).then(({ response }) => {
+        const allowed = response === 0;
+        if (allowed) grantedMicrophoneOrigins.add(origin);
+        callback(allowed);
+      }).catch(() => callback(false));
+    },
+  );
 }
 
 function createMainWindow() {
@@ -39,11 +90,17 @@ function createMainWindow() {
     return { action: 'deny' };
   });
 
-  window.webContents.on('will-navigate', (event, url) => {
-    if (isTrustedAppUrl(url) || url === offlineUrl) return;
+  const guardNavigation = (event) => {
+    const action = classifyNavigation(event.url, event.isMainFrame, offlineUrl);
+    if (action === 'allow') return;
     event.preventDefault();
-    openExternalUrl(url);
-  });
+    if (action === 'external') openExternalUrl(event.url);
+  };
+
+  window.webContents.on('will-frame-navigate', guardNavigation);
+  window.webContents.on('will-redirect', guardNavigation);
+
+  installPermissionPolicy(window);
 
   window.webContents.on(
     'did-fail-load',
